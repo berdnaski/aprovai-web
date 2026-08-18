@@ -31,8 +31,9 @@ O texto principal nunca é `#000`: preto puro sobre fundo claro gera contraste e
 | `--primary` | `oklch(0.44 0.17 305)` | `#6B3FA0` | roxo de marca, fechado — botão primário, link ativo, foco |
 | `--primary-hover` | `oklch(0.38 0.17 305)` | `#5A3486` | hover do primary — mesmo matiz, ~5% mais escuro |
 | `--primary-foreground` | `oklch(0.99 0 0)` | `#FDFDFD` | texto sobre `--primary` |
-| `--accent` | `oklch(0.62 0.16 155)` | `#00A874` | verde de marca — uso cirúrgico: sucesso, confirmação, badge "aprovado" |
-| `--accent-foreground` | `oklch(0.99 0 0)` | `#FDFDFD` | texto sobre `--accent` |
+| `--brand-accent` | `oklch(0.62 0.16 155)` | `#00A874` | verde de marca — uso cirúrgico: sucesso, confirmação, badge "aprovado" (nome é `--brand-accent`, não `--accent`; ver 6.1) |
+| `--brand-accent-foreground` | `oklch(0.99 0 0)` | `#FDFDFD` | texto sobre `--brand-accent` |
+| `--accent` | `#F4F4F5` | `#F4F4F5` | hover neutro do shadcn — cinza, **não** o verde de marca |
 | `--destructive` | `oklch(0.53 0.16 25)` | `#C4432E` | erro, ação destrutiva — terroso, não vermelho-semáforo |
 | `--destructive-foreground` | `oklch(0.99 0 0)` | `#FDFDFD` | texto sobre `--destructive` |
 | `--warning` | `oklch(0.72 0.15 75)` | `#C4831F` | pendências, alertas de prazo — âmbar terroso |
@@ -41,7 +42,7 @@ O texto principal nunca é `#000`: preto puro sobre fundo claro gera contraste e
 ### 1.3 Regra de uso
 
 - **`--primary` é ação, não decoração.** Aparece em: botão primário, link, item de menu ativo, borda de foco. Nunca em fundo de seção, nunca em texto de corpo.
-- **`--accent` (verde) é raro de propósito.** Se ele aparecer em toda tela, perde o significado de "confirmação". Reservado a: status `APPROVED`/`MATCHED`/`RELEASED`, toast de sucesso, ícone de check.
+- **`--brand-accent` (verde) é raro de propósito.** Se ele aparecer em toda tela, perde o significado de "confirmação". Reservado a: status `APPROVED`/`MATCHED`/`RELEASED`, toast de sucesso, ícone de check.
 - **90% de qualquer tela é `--background`, `--surface`, `--foreground`, `--muted-foreground`, `--border`.** As cores de marca são o tempero, não o prato.
 - **Nunca usar as cores cruas do Tailwind** (`purple-600`, `green-500`, etc). Todo componente referencia os tokens semânticos acima.
 
@@ -64,15 +65,25 @@ Nota: a primeira versão do projeto usava Satoshi (Fontshare). Trocada por Inter
 
 ### 2.2 Escala
 
-| token | tamanho | peso | uso |
-|---|---|---|---|
-| `text-display` | 32px / 1.2 | 700 (Bold) | título de página isolada (ex: "Criar conta") |
-| `text-heading` | 20px / 1.3 | 600 (SemiBold) | título de card, seção |
-| `text-body` | 15px / 1.5 | 400 (Regular) | texto corrido, descrição |
-| `text-label` | 13px / 1.4 | 500 (Medium) | label de campo, botão |
-| `text-caption` | 12px / 1.4 | 400 (Regular) | helper text, timestamp, contador |
+Os tokens abaixo existem como utilities reais em `src/index.css` (bloco `@utility` do Tailwind v4). Não são descrição: são a definição. Uma tela escreve `text-display`, nunca `text-[30px] leading-[1.15] font-bold`.
 
-Tracking: `-0.01em` em `text-display`/`text-heading` (aperta títulos grandes, padrão de interface densa); `0` no resto.
+| token | tamanho / altura | peso | tracking | uso |
+|---|---|---|---|---|
+| `text-display` | 30px / 1.15 | 700 (Bold) | `-0.025em` | título de página isolada (ex: "Criar conta") |
+| `text-heading` | 20px / 1.3 | 600 (SemiBold) | `-0.01em` | título de card, seção |
+| `text-subhead` | 15px / 1.6 | 400 (Regular) | `0` | subtítulo sob o `text-display`, texto de apoio |
+| `text-body` | 14px / 1.55 | 400 (Regular) | `0` | texto corrido, descrição, input |
+| `text-label` | 13px / 1.4 | 500 (Medium) | `0` | label de campo, botão |
+| `text-caption` | 12.5px / 1.45 | 400 (Regular) | `0` | helper text, timestamp, mensagem de erro |
+| `text-overline` | 11.5px / 1.4 | 500 (Medium) | `0.04em` + uppercase | rótulo de agrupamento acima de um bloco |
+
+O peso e a altura de linha vêm no token. `text-label` já é Medium: escrever `text-label font-medium` é redundante, e `text-label font-normal` é uma exceção deliberada (usada quando o rótulo é texto secundário, não label de campo).
+
+Notas sobre valores que mudaram durante a implementação:
+
+- **display era 32px, virou 30px.** As telas de onboarding foram construídas em 30px e ficaram com respiro melhor no viewport de notebook; as de auth estavam em 28px. Unificado em 30px, que é o meio-termo que já estava validado na tela.
+- **body era 15px, virou 14px + `text-subhead` em 15px.** Um único token para "texto que não é título" não dava conta: o subtítulo sob o H1 pede 15px, e o corpo dentro de formulário e tabela pede 14px. Separar os dois eliminou o valor arbitrário que aparecia em toda tela.
+- **tracking do display é `-0.025em`, não `-0.01em`.** A 30px em Bold, `-0.01em` deixa o título frouxo. `-0.01em` continua correto em `text-heading` (20px).
 
 ---
 
@@ -103,7 +114,9 @@ Um elemento recorrente que qualquer tela do AprovAI carrega, para não parecer t
 
 ## 6. Aplicação em shadcn/ui
 
-Os tokens acima substituem os valores em `src/index.css` (`:root`), que hoje usam `oklch(x 0 0)` — croma zero, cinza puro do scaffold padrão. O bloco `.dark` permanece no arquivo mas não é mantido/testado nesta fase (ver decisão: só modo claro por ora).
+Os tokens de cor vivem em `:root` e os de tipografia em blocos `@utility`, ambos em `src/index.css`. O bloco `.dark` permanece no arquivo mas não é mantido/testado nesta fase (ver decisão: só modo claro por ora).
+
+Regra de manutenção: falta um tamanho, um peso ou uma cor? Adiciona-se o token aqui e em `index.css` antes de usá-lo numa tela. Valor arbitrário direto no `className` (`text-[17px]`, `bg-purple-600`) é o que este documento existe para impedir — é assim que dois botões acabam com dois roxos diferentes.
 
 Mapeamento direto:
 ```
@@ -116,9 +129,8 @@ Mapeamento direto:
 --secondary          → 1.2 --muted (usado para botão secundário/outline)
 --muted              → 1.2 --muted
 --muted-foreground   → 1.2 --muted-foreground
---accent             → 1.2 --accent (nota: shadcn usa --accent para hover neutro
-                        por padrão; redefinimos seu papel para verde de marca —
-                        ver 6.1)
+--accent             → permanece neutro (hover do shadcn); o verde de marca
+                        vive em --brand-accent, ver 6.1
 --destructive        → 1.2 --destructive
 --border / --input   → 1.2 --border
 --ring               → 1.2 --ring

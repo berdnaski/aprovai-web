@@ -54,7 +54,6 @@
 }
 
 :root {
-    /* AprovAI design spec — docs/design-spec.md §1.2 */
     --background: oklch(0.985 0.004 75);
     --foreground: #202020;
     --card: oklch(1 0 0);
@@ -72,11 +71,9 @@
     --muted: oklch(0.965 0.004 75);
     --muted-foreground: #71717a;
 
-    /* shadcn --accent stays neutral (hover state), per §6.1 */
     --accent: #f4f4f5;
     --accent-foreground: #202020;
 
-    /* brand green — reserved for success/confirmation, §1.3 */
     --brand-accent: oklch(0.62 0.16 155);
     --brand-accent-foreground: oklch(0.99 0 0);
 
@@ -121,4 +118,50 @@
   html {
     @apply font-sans;
     }
+}
+
+@utility text-display {
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+@utility text-heading {
+  font-size: 20px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+@utility text-subhead {
+  font-size: 15px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+@utility text-body {
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 400;
+}
+
+@utility text-label {
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+@utility text-caption {
+  font-size: 12.5px;
+  line-height: 1.45;
+  font-weight: 400;
+}
+
+@utility text-overline {
+  font-size: 11.5px;
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
