@@ -6,6 +6,9 @@
   ],
   "compilerOptions": {
     "ignoreDeprecations": "6.0",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
