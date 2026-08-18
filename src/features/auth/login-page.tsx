@@ -1,12 +1,11 @@
 import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
 import { Eye, EyeOff } from "lucide-react"
 
-import logo from "@/assets/aprovai.svg"
-import { getApiErrorMessage } from "@/api/client"
+import { getApiErrorCode, getApiErrorMessage } from "@/api/client"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -16,117 +15,169 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { useLogin } from "@/hooks/auth/use-login"
+import { useLogin, useResendVerification } from "@/hooks/auth/use-auth"
+import { AuthLayout } from "@/features/auth/auth-layout"
+
 import { loginSchema, type LoginFormValues } from "./login-schema"
 
 const fieldClass =
-  "h-10 rounded-lg border-border/70 bg-muted/50 px-4 text-[14px] md:text-[12px] placeholder:text-muted-foreground/70 focus-visible:bg-card"
+  "h-12 rounded-xl border-border/70 bg-muted/50 px-4 text-body md:text-body placeholder:text-muted-foreground/70 focus-visible:bg-card"
 
 export function LoginPage() {
   const navigate = useNavigate()
-  const registerMutation = useLogin()
+  const [searchParams] = useSearchParams()
+  const loginMutation = useLogin()
+  const resendMutation = useResendVerification()
   const [showPassword, setShowPassword] = useState(false)
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null)
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     mode: "onBlur",
-    defaultValues: {
-      email: "",
-      password: ""
-    },
+    defaultValues: { email: "", password: "" },
   })
 
   function onSubmit(values: LoginFormValues) {
-    registerMutation.mutate(values, {
-      onSuccess: () => {
-        navigate(`/home`)
+    setUnverifiedEmail(null)
+
+    loginMutation.mutate(values, {
+      onSuccess: (session) => {
+        const redirect = searchParams.get("redirect")
+
+        if (!session.membership) {
+          navigate("/onboarding/empresa", { replace: true })
+          return
+        }
+
+        navigate(redirect ?? "/", { replace: true })
       },
       onError: (error) => {
+        if (getApiErrorCode(error) === "FORBIDDEN") {
+          setUnverifiedEmail(values.email)
+        }
+
         toast.error(getApiErrorMessage(error))
       },
     })
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-100">
-        <div className="mb-9 flex flex-col items-center text-center">
-          <img src={logo} alt="AprovAI" className="mb-8 h-7 w-auto" />
-          <h3 className="leading-tight font-medium tracking-[-0.02em] text-foreground">
-            Bem-vindo de volta!
-          </h3>
-          <p className="mt-2 text-[14px] text-muted-foreground">
-            Não tem uam conta?{" "}
-            <a href="/registrar" className="font-semibold text-foreground hover:text-primary">
-              Criar conta
-            </a>
+    <AuthLayout
+      title="Bem-vindo de volta"
+      description={
+        <>
+          Ainda não tem conta?{" "}
+          <Link
+            to="/registrar"
+            className="font-semibold text-foreground hover:text-primary"
+          >
+            Criar conta
+          </Link>
+        </>
+      }
+    >
+      {unverifiedEmail ? (
+        <div className="mb-5 rounded-xl border border-warning/30 bg-warning/[0.06] p-4">
+          <p className="text-label font-normal leading-relaxed text-foreground">
+            Confirme seu e-mail antes de entrar. Enviamos um link para{" "}
+            <span className="font-medium">{unverifiedEmail}</span>.
           </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={resendMutation.isPending}
+            onClick={() =>
+              resendMutation.mutate(unverifiedEmail, {
+                onSuccess: () =>
+                  toast.success("Novo link enviado. Confira sua caixa de entrada."),
+                onError: (error) => toast.error(getApiErrorMessage(error)),
+              })
+            }
+            className="mt-3 h-9 bg-card font-medium"
+          >
+            {resendMutation.isPending ? "Enviando..." : "Reenviar e-mail"}
+          </Button>
         </div>
+      ) : null}
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-3">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-3"
+        >
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="E-mail corporativo"
+                    autoComplete="email"
+                    className={fieldClass}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className="px-1 text-caption" />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <div className="relative">
                     <Input
-                      type="email"
-                      placeholder="E-mail corporativo"
-                      autoComplete="email"
-                      className={fieldClass}
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Senha"
+                      autoComplete="current-password"
+                      className={`${fieldClass} pr-11`}
                       {...field}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((value) => !value)}
+                      className="absolute top-1/2 right-3.5 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                      aria-label={
+                        showPassword ? "Ocultar senha" : "Mostrar senha"
+                      }
+                    >
+                      {showPassword ? (
+                        <EyeOff className="size-[18px]" />
+                      ) : (
+                        <Eye className="size-[18px]" />
+                      )}
+                    </button>
+                  </div>
+                </FormControl>
+                <FormMessage className="px-1 text-caption" />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Senha (mínimo 8 caracteres)"
-                        autoComplete="new-password"
-                        className={`${fieldClass} pr-11`}
-                        {...field}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((value) => !value)}
-                        className="absolute top-1/2 right-3.5 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                        aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="size-[18px]" />
-                        ) : (
-                          <Eye className="size-[18px]" />
-                        )}
-                      </button>
-                    </div>
-                  </FormControl>
-                  <FormMessage className="px-1 text-[12.5px]" />
-                </FormItem>
-              )}
-            />
-
-            <Button
-              type="submit"
-              disabled={registerMutation.isPending}
-              className="mt-2 h-10 rounded-lg bg-primary text-[14px] cursor-pointer font-semibold text-primary-foreground hover:bg-primary-hover"
+          <div className="flex justify-end">
+            <Link
+              to="/esqueci-a-senha"
+              className="text-label font-normal text-muted-foreground hover:text-primary"
             >
-              {registerMutation.isPending ? "Entrando..." : "Entrar"}
-            </Button>
-          </form>
-        </Form>
-      </div>
-    </div>
+              Esqueci minha senha
+            </Link>
+          </div>
+
+          <Button
+            type="submit"
+            disabled={loginMutation.isPending}
+            className="mt-1 h-12 rounded-xl bg-primary text-body font-semibold text-primary-foreground hover:bg-primary-hover"
+          >
+            {loginMutation.isPending ? "Entrando..." : "Entrar"}
+          </Button>
+      </form>
+    </Form>
+    </AuthLayout>
   )
 }
