@@ -2,8 +2,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 
 import { setUnauthorizedHandler } from "@/api/client"
+import { AppLayout } from "@/components/layout/app-layout"
 import { authKeys } from "@/hooks/auth/use-session"
 import { Toaster } from "@/components/ui/sonner"
+import { ChangePasswordPage } from "@/features/account/change-password-page"
+import { ConfirmPasswordChangePage } from "@/features/auth/confirm-password-change-page"
 import { ForgotPasswordPage } from "@/features/auth/forgot-password-page"
 import { LoginPage } from "@/features/auth/login-page"
 import { RegisterPage } from "@/features/auth/register-page"
@@ -35,8 +38,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/verificar-email" element={<VerifyEmailPage />} />
-          <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route
+            path="/confirm-password-change"
+            element={<ConfirmPasswordChangePage />}
+          />
 
           <Route element={<RedirectIfAuthenticated />}>
             <Route path="/registrar" element={<RegisterPage />} />
@@ -56,7 +63,10 @@ function App() {
               <Route path="/onboarding" element={<OnboardingPage />} />
 
               <Route element={<RequireOnboarding />}>
-                <Route path="/" element={<HomePage />} />
+                <Route element={<AppLayout />}>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/conta/senha" element={<ChangePasswordPage />} />
+                </Route>
               </Route>
             </Route>
           </Route>

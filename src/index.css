@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 @custom-variant dark (&:is(.dark *));
 
@@ -31,6 +30,8 @@
     --color-brand-accent: var(--brand-accent);
     --color-brand-accent-foreground: var(--brand-accent-foreground);
     --color-warning: var(--warning);
+    --color-warning-strong: var(--warning-strong);
+    --color-brand-accent-strong: var(--brand-accent-strong);
     --color-muted-foreground: var(--muted-foreground);
     --color-muted: var(--muted);
     --color-secondary-foreground: var(--secondary-foreground);
@@ -75,16 +76,18 @@
     --accent-foreground: #202020;
 
     --brand-accent: oklch(0.62 0.16 155);
+    --brand-accent-strong: oklch(0.46 0.13 155);
     --brand-accent-foreground: oklch(0.99 0 0);
 
     --destructive: oklch(0.53 0.16 25);
     --destructive-foreground: oklch(0.99 0 0);
 
     --warning: oklch(0.72 0.15 75);
+    --warning-strong: oklch(0.52 0.13 75);
 
     --border: #e5e5e5;
     --input: #e5e5e5;
-    --ring: oklch(0.44 0.17 305 / 35%);
+    --ring: oklch(0.44 0.17 305 / 40%);
 
     --chart-1: oklch(0.44 0.17 305);
     --chart-2: oklch(0.62 0.16 155);
@@ -94,14 +97,14 @@
 
     --radius: 10px;
 
-    --sidebar: oklch(1 0 0);
+    --sidebar: oklch(0.985 0.004 75);
     --sidebar-foreground: #202020;
     --sidebar-primary: oklch(0.44 0.17 305);
     --sidebar-primary-foreground: oklch(0.99 0 0);
-    --sidebar-accent: oklch(0.965 0.004 75);
+    --sidebar-accent: #f4f4f5;
     --sidebar-accent-foreground: #202020;
     --sidebar-border: #e5e5e5;
-    --sidebar-ring: oklch(0.44 0.17 305 / 35%);
+    --sidebar-ring: oklch(0.44 0.17 305 / 40%);
 }
 
 @layer base {
@@ -164,4 +167,8 @@
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
 }

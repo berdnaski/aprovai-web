@@ -3,7 +3,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
-import { Eye, EyeOff } from "lucide-react"
 
 import { getApiErrorCode, getApiErrorMessage } from "@/api/client"
 import { Button } from "@/components/ui/button"
@@ -15,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/shared/password-input"
 import { useLogin, useResendVerification } from "@/hooks/auth/use-auth"
 import { AuthLayout } from "@/features/auth/auth-layout"
 
@@ -28,7 +28,6 @@ export function LoginPage() {
   const [searchParams] = useSearchParams()
   const loginMutation = useLogin()
   const resendMutation = useResendVerification()
-  const [showPassword, setShowPassword] = useState(false)
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null)
 
   const form = useForm<LoginFormValues>({
@@ -131,29 +130,12 @@ export function LoginPage() {
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <div className="relative">
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Senha"
-                      autoComplete="current-password"
-                      className={`${fieldClass} pr-11`}
-                      {...field}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((value) => !value)}
-                      className="absolute top-1/2 right-3.5 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                      aria-label={
-                        showPassword ? "Ocultar senha" : "Mostrar senha"
-                      }
-                    >
-                      {showPassword ? (
-                        <EyeOff className="size-[18px]" />
-                      ) : (
-                        <Eye className="size-[18px]" />
-                      )}
-                    </button>
-                  </div>
+                  <PasswordInput
+                    placeholder="Senha"
+                    autoComplete="current-password"
+                    className={fieldClass}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage className="px-1 text-caption" />
               </FormItem>

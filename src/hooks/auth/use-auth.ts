@@ -2,6 +2,8 @@ import { useMutation } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
 
 import {
+  changePassword,
+  confirmPasswordChange,
   forgotPassword,
   login,
   logout,
@@ -53,6 +55,19 @@ export function useResetPassword() {
   return useMutation({
     mutationFn: (input: { token: string; password: string }) =>
       resetPassword(input.token, input.password),
+  })
+}
+
+export function useChangePassword() {
+  return useMutation({ mutationFn: changePassword })
+}
+
+export function useConfirmPasswordChange() {
+  const { clearSession } = useSessionActions()
+
+  return useMutation({
+    mutationFn: confirmPasswordChange,
+    onSuccess: () => clearSession(),
   })
 }
 

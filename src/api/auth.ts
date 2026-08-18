@@ -118,3 +118,18 @@ export async function resetPassword(
 ): Promise<void> {
   await apiClient.post("/auth/reset-password", { token, password })
 }
+
+export interface ChangePasswordPayload {
+  currentPassword: string
+  newPassword: string
+}
+
+export async function changePassword(
+  payload: ChangePasswordPayload,
+): Promise<void> {
+  await apiClient.post("/auth/change-password", payload)
+}
+
+export async function confirmPasswordChange(token: string): Promise<void> {
+  await apiClient.post("/auth/confirm-password-change", { token })
+}

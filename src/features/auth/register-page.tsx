@@ -1,9 +1,7 @@
-import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
-import { Eye, EyeOff } from "lucide-react"
 
 import { getApiErrorMessage } from "@/api/client"
 import { ApprovalMark } from "@/components/shared/approval-mark"
@@ -16,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/shared/password-input"
 import { useRegister, useResendVerification } from "@/hooks/auth/use-auth"
 import { useCooldown } from "@/hooks/use-cooldown"
 
@@ -27,7 +26,6 @@ const fieldClass =
 
 export function RegisterPage() {
   const registerMutation = useRegister()
-  const [showPassword, setShowPassword] = useState(false)
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -113,29 +111,12 @@ export function RegisterPage() {
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <div className="relative">
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Senha (mínimo 8 caracteres)"
-                      autoComplete="new-password"
-                      className={`${fieldClass} pr-11`}
-                      {...field}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((value) => !value)}
-                      className="absolute top-1/2 right-3.5 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                      aria-label={
-                        showPassword ? "Ocultar senha" : "Mostrar senha"
-                      }
-                    >
-                      {showPassword ? (
-                        <EyeOff className="size-4.5" />
-                      ) : (
-                        <Eye className="size-4.5" />
-                      )}
-                    </button>
-                  </div>
+                  <PasswordInput
+                    placeholder="Senha (mínimo 8 caracteres)"
+                    autoComplete="new-password"
+                    className={fieldClass}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage className="px-1 text-caption" />
               </FormItem>
