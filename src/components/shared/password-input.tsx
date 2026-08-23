@@ -1,6 +1,5 @@
+import { Eye, EyeSlash } from "@phosphor-icons/react"
 import { useState } from "react"
-import { Eye, EyeOff } from "lucide-react"
-
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
@@ -27,7 +26,7 @@ export function PasswordInput({
         aria-label={visible ? "Ocultar senha" : "Mostrar senha"}
       >
         {visible ? (
-          <EyeOff className="size-[18px]" />
+          <EyeSlash className="size-[18px]" />
         ) : (
           <Eye className="size-[18px]" />
         )}
