@@ -1,10 +1,9 @@
+import { CaretRight, DotsThree } from "@phosphor-icons/react"
 import * as React from "react"
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
 
 import { cn } from "@/lib/utils"
-import { ChevronRightIcon, MoreHorizontalIcon } from "lucide-react"
-
 function Breadcrumb({ className, ...props }: React.ComponentProps<"nav">) {
   return (
     <nav
@@ -86,7 +85,7 @@ function BreadcrumbSeparator({
       {...props}
     >
       {children ?? (
-        <ChevronRightIcon />
+        <CaretRight />
       )}
     </li>
   )
@@ -107,7 +106,7 @@ function BreadcrumbEllipsis({
       )}
       {...props}
     >
-      <MoreHorizontalIcon
+      <DotsThree
       />
       <span className="sr-only">More</span>
     </span>
