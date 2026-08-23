@@ -1,8 +1,7 @@
+import { Envelope, X } from "@phosphor-icons/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
-import { Mail, X } from "lucide-react"
-
 import { getApiErrorMessage } from "@/api/client"
 import { Button } from "@/components/ui/button"
 import {
@@ -109,7 +108,7 @@ export function TeamStep({
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Mail className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Envelope className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       type="email"
                       placeholder="colega@empresa.com.br"

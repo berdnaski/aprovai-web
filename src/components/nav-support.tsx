@@ -1,5 +1,4 @@
-import { LifeBuoyIcon, SendIcon } from "lucide-react"
-
+import { Lifebuoy, PaperPlaneTilt } from "@phosphor-icons/react"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -9,8 +8,8 @@ import {
 } from "@/components/ui/sidebar"
 
 const items = [
-  { label: "Suporte", href: "#", icon: <LifeBuoyIcon /> },
-  { label: "Enviar feedback", href: "#", icon: <SendIcon /> },
+  { label: "Suporte", href: "#", icon: <Lifebuoy /> },
+  { label: "Enviar feedback", href: "#", icon: <PaperPlaneTilt /> },
 ]
 
 export function NavSupport() {

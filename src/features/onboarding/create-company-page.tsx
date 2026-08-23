@@ -1,11 +1,15 @@
+import {
+  ArrowRight,
+  Buildings,
+  MagnifyingGlass,
+  PencilSimple,
+} from "@phosphor-icons/react"
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { ArrowRight, Building2, Pencil, Search } from "lucide-react"
-
 import { getApiErrorMessage } from "@/api/client"
 import { SetupShell } from "@/components/layout/setup-shell"
 import { ApprovalMark } from "@/components/shared/approval-mark"
@@ -142,7 +146,7 @@ export function CreateCompanyPage() {
                     </FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Building2 className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Buildings className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           placeholder="00.000.000/0000-00"
                           inputMode="numeric"
@@ -180,7 +184,7 @@ export function CreateCompanyPage() {
                     "Consultando a Receita..."
                   ) : (
                     <>
-                      <Search className="size-4" />
+                      <MagnifyingGlass className="size-4" />
                       Buscar dados da empresa
                     </>
                   )}
@@ -222,7 +226,7 @@ export function CreateCompanyPage() {
                   }}
                   className="shrink-0 text-muted-foreground hover:text-foreground"
                 >
-                  <Pencil className="size-3.5" />
+                  <PencilSimple className="size-3.5" />
                   Alterar
                 </Button>
               </div>

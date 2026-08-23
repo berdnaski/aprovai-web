@@ -1,22 +1,5 @@
+import { BookmarkSimple, Buildings, ChartBar, CreditCard, FileArrowUp, FileText, Package, Receipt, Scales, Scroll, ShoppingCart, Stack, Truck, UsersThree, Wallet } from "@phosphor-icons/react"
 import * as React from "react"
-import {
-  BookMarkedIcon,
-  BuildingIcon,
-  ChartBarIcon,
-  CreditCardIcon,
-  FileCheckIcon,
-  FileTextIcon,
-  LayersIcon,
-  PackageIcon,
-  ReceiptIcon,
-  ScaleIcon,
-  ScrollTextIcon,
-  ShoppingCartIcon,
-  TruckIcon,
-  UsersIcon,
-  WalletIcon,
-} from "lucide-react"
-
 import { NavGroup, type NavEntry } from "@/components/nav-group"
 import { NavSupport } from "@/components/nav-support"
 import { NavUser } from "@/components/nav-user"
@@ -32,21 +15,21 @@ import { NAV_AREAS, canSee, type NavArea } from "@/lib/permissions"
 import { useSession } from "@/hooks/auth/use-session"
 
 const ICONS: Record<string, React.ReactNode> = {
-  "purchase-requests": <FileTextIcon />,
-  "purchase-orders": <ShoppingCartIcon />,
-  receipts: <TruckIcon />,
-  invoices: <ReceiptIcon />,
-  matching: <FileCheckIcon />,
-  payables: <WalletIcon />,
-  "cost-centers": <LayersIcon />,
-  "approval-rules": <ScaleIcon />,
-  suppliers: <PackageIcon />,
-  categories: <BookMarkedIcon />,
-  members: <UsersIcon />,
-  "audit-logs": <ScrollTextIcon />,
-  analytics: <ChartBarIcon />,
-  billing: <CreditCardIcon />,
-  company: <BuildingIcon />,
+  "purchase-requests": <FileText />,
+  "purchase-orders": <ShoppingCart />,
+  receipts: <Truck />,
+  invoices: <Receipt />,
+  matching: <FileArrowUp />,
+  payables: <Wallet />,
+  "cost-centers": <Stack />,
+  "approval-rules": <Scales />,
+  suppliers: <Package />,
+  categories: <BookmarkSimple />,
+  members: <UsersThree />,
+  "audit-logs": <Scroll />,
+  analytics: <ChartBar />,
+  billing: <CreditCard />,
+  company: <Buildings />,
 }
 
 const GROUPS: { label: string; keys: string[] }[] = [

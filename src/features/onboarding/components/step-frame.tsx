@@ -1,5 +1,4 @@
-import { ArrowLeft, ArrowRight } from "lucide-react"
-
+import { ArrowLeft, ArrowRight } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 
 export function StepFrame({
