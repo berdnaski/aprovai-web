@@ -1,6 +1,5 @@
+import { CaretRight } from "@phosphor-icons/react"
 import { Link } from "react-router-dom"
-import { ChevronRight } from "lucide-react"
-
 import { cn } from "@/lib/utils"
 
 export interface Breadcrumb {
@@ -29,7 +28,7 @@ export function PageHeader({
             {breadcrumbs.map((crumb, index) => (
               <li key={crumb.label} className="flex items-center gap-1">
                 {index > 0 ? (
-                  <ChevronRight className="size-3.5 shrink-0 opacity-60" />
+                  <CaretRight className="size-3.5 shrink-0 opacity-60" />
                 ) : null}
                 {crumb.to ? (
                   <Link

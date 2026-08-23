@@ -1,7 +1,6 @@
+import { CaretRight } from "@phosphor-icons/react"
 import * as React from "react"
 import { Link, useLocation } from "react-router-dom"
-import { ChevronRightIcon } from "lucide-react"
-
 import {
   Collapsible,
   CollapsibleContent,
@@ -51,7 +50,7 @@ export function NavGroup({
         }
       >
         {label}
-        <ChevronRightIcon className="ml-auto size-3.5 transition-transform duration-150 group-data-open/nav-group:rotate-90" />
+        <CaretRight className="ml-auto size-3.5 transition-transform duration-150 group-data-open/nav-group:rotate-90" />
       </CollapsibleTrigger>
 
       <CollapsibleContent>

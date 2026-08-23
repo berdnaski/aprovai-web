@@ -45,7 +45,7 @@ export function useMembers(enabled = true) {
 export function useCostCenters(enabled = true) {
   return useQuery({
     queryKey: onboardingKeys.costCenters,
-    queryFn: listCostCenters,
+    queryFn: () => listCostCenters(),
     enabled,
   })
 }

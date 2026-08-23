@@ -1,11 +1,5 @@
+import { CaretUpDown, ShieldCheck, SignOut, User } from "@phosphor-icons/react"
 import { Link } from "react-router-dom"
-import {
-  ChevronsUpDownIcon,
-  LogOutIcon,
-  ShieldIcon,
-  UserIcon,
-} from "lucide-react"
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -69,7 +63,7 @@ export function NavUser() {
                 {membership ? ROLE_LABELS[membership.role] : user.email}
               </span>
             </div>
-            <ChevronsUpDownIcon className="ml-auto size-4 text-muted-foreground" />
+            <CaretUpDown className="ml-auto size-4 text-muted-foreground" />
           </DropdownMenuTrigger>
 
           <DropdownMenuContent
@@ -102,7 +96,7 @@ export function NavUser() {
                 className="text-label"
                 render={<Link to="/perfil" />}
               >
-                <UserIcon className="text-muted-foreground" />
+                <User className="text-muted-foreground" />
                 Meu perfil
               </DropdownMenuItem>
 
@@ -111,7 +105,7 @@ export function NavUser() {
                   className="text-label"
                   render={<Link to="/plataforma" />}
                 >
-                  <ShieldIcon className="text-muted-foreground" />
+                  <ShieldCheck className="text-muted-foreground" />
                   Ir para plataforma
                 </DropdownMenuItem>
               ) : null}
@@ -125,7 +119,7 @@ export function NavUser() {
               disabled={logoutMutation.isPending}
               onClick={() => logoutMutation.mutate()}
             >
-              <LogOutIcon />
+              <SignOut />
               {logoutMutation.isPending ? "Saindo..." : "Sair"}
             </DropdownMenuItem>
           </DropdownMenuContent>

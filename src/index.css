@@ -161,6 +161,12 @@
   font-weight: 400;
 }
 
+@utility text-micro {
+  font-size: 11px;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
 @utility text-overline {
   font-size: 11.5px;
   line-height: 1.4;
@@ -171,4 +177,25 @@
 
 @utility tabular {
   font-variant-numeric: tabular-nums;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility rise-in {
+  animation: rise-in 200ms ease-out backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in {
+    animation: none;
+  }
 }

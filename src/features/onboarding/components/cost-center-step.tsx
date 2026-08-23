@@ -1,8 +1,7 @@
+import { Plus } from "@phosphor-icons/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
-import { Plus } from "lucide-react"
-
 import { getApiErrorMessage } from "@/api/client"
 import { ApprovalMark } from "@/components/shared/approval-mark"
 import { Button } from "@/components/ui/button"

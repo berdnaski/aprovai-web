@@ -1,5 +1,4 @@
-import { LogOut } from "lucide-react"
-
+import { SignOut } from "@phosphor-icons/react"
 import logo from "@/assets/aprovai.svg"
 import { Button } from "@/components/ui/button"
 import { SetupProgress } from "@/features/onboarding/components/setup-progress"
@@ -38,7 +37,7 @@ export function SetupShell({
               disabled={logoutMutation.isPending}
               className="text-label font-normal text-muted-foreground hover:text-foreground"
             >
-              <LogOut className="size-4" />
+              <SignOut className="size-4" />
               <span className="hidden sm:inline">Sair</span>
             </Button>
           </div>

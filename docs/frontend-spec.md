@@ -30,7 +30,9 @@ Backend de referência: `aprovia-api`, prefixo `/api`, ~130 rotas, 4 perfis (`RE
 - **Erro da API é a fonte da mensagem.** O backend já devolve mensagens em português, para leigos (ver `docs/procure-to-pay.md` e o histórico de reescrita de erros). O front exibe `error.message` direto no toast — não reescreve, não genericiza para "algo deu errado".
 - **Cada tela declara o(s) perfil(is) que a acessam.** Rotas fora do perfil do usuário logado nem aparecem no menu — não é seguranca (isso é o backend), é não confundir quem não pode agir ali.
 - **Toda action destrutiva ou irreversível passa por confirmação.** Modal de confirmação nomeado explicitamente nas specs de tela abaixo sempre que a ação for `DELETE`, cancelamento, ou perda de dado.
-- **Paginação segue o contrato único da API**: toda listagem usa `{ items, meta: { total, page, perPage, totalPages } }` — um único componente `<DataTable>` compartilhado consome esse formato para todas as ~15 telas de lista.
+- **Paginação segue o contrato único `{ items, meta: { total, page, perPage, totalPages } }`.** O tipo `PageMeta` e o componente `<DataTablePagination>` vivem em `components/ui/data-table.tsx` e servem todas as listagens.
+  - Endpoints que já paginam no servidor alimentam `meta` direto da resposta.
+  - Endpoints que hoje devolvem array puro (`GET /members`, `GET /cost-centers`, `GET /budgets/{id}/entries`) passam pelo helper `localPage(rows, page, perPage)`, que produz o mesmo `{ items, meta }`. A UI é idêntica nos dois casos: quando esses endpoints ganharem paginação no servidor, troca-se o helper pela resposta da API sem tocar na tela.
 
 ### 0.3 Estrutura de pastas
 
@@ -91,6 +93,10 @@ src/
 │   ├── platform/
 │   └── profile/
 ├── routes/                       # definição das rotas React Router, 1 arquivo por área
+│   ├── guards.tsx                # RequireAuth, RequireCompany, RequireOnboarding, RedirectIfAuthenticated
+│   ├── public-routes.tsx         # rotas de token (verificação, reset) e de visitante (login, registro)
+│   ├── onboarding-routes.tsx     # criação de empresa e progresso do onboarding
+│   └── app-routes.tsx            # tudo sob AppLayout, agrupado por RoleGuard
 └── lib/                          # money.ts, dates.ts, cn.ts (shadcn utils)
 ```
 
@@ -98,14 +104,16 @@ src/
 
 | componente | usado em | contrato |
 |---|---|---|
-| `<DataTable>` | toda listagem paginada (~15 telas) | recebe `columns`, `data: Page<T>`, `onPageChange`, `isLoading`; renderiza skeleton, empty state, paginação |
-| `<StatusBadge>` | qualquer enum de status (`RequestStatus`, `PurchaseOrderStatus`, `InvoiceStatus`, `MatchStatus`, `PayableStatus`, `InviteStatus`...) | mapa `status → {label pt-BR, cor}` centralizado em `lib/status-labels.ts`, uma entrada por enum do backend |
+| `<DataTable>` | toda listagem (~15 telas) | recebe `columns: DataTableColumn<T>[]`, `rows`, `rowKey`; opcionais `sort`/`onSortChange`, `selection`/`onSelectionChange`, `onRowClick`, `isLoading`, `empty`. Acompanham: `<DataTableShell>` (card + título + contador + toolbar + footer), `<DataTablePagination>`, `<StatusPill>`, `<CellPerson>` |
+| `<StatusPill>` | qualquer enum de status (`RequestStatus`, `PurchaseOrderStatus`, `InvoiceStatus`, `MatchStatus`, `PayableStatus`, `InviteStatus`...) | recebe `tone` (`neutral`/`brand`/`success`/`warning`/`danger`) e o rótulo como filho. Os mapas `enum → label pt-BR` vivem em `types/enums.ts`, ao lado do enum que espelham — ver nota abaixo |
 | `<MoneyDisplay>` | qualquer valor `*Cents` | recebe string de centavos, formata BRL |
 | `<ConfirmDialog>` | toda ação destrutiva/irreversível | título, descrição, campo de justificativa opcional (usado em cancelamentos que exigem `reason`), botão de confirmação com `isPending` |
 | `<EmptyState>` | toda lista vazia | ícone, texto, opcionalmente botão de ação primária |
 | `<PageHeader>` | topo de toda tela | título, breadcrumb, slot de ação primária à direita |
 | `<RoleGuard>` | em torno de rotas/blocos de UI | recebe `allow: CompanyMemberRole[]`, esconde/redireciona se o perfil do usuário não estiver na lista |
 | `<FileDropzone>` | upload de anexos e XML | drag-and-drop + seleção manual, mostra progresso, valida extensão antes de enviar |
+
+**Rótulos de enum ficam em `types/enums.ts`, não em `lib/status-labels.ts`.** Uma versão anterior deste spec previa um arquivo separado só para os mapas de label. Na implementação isso se mostrou pior: o enum e o texto que o traduz mudam juntos (uma variante nova no backend exige as duas edições), e separá-los em arquivos distintos abre espaço para um ficar sem o outro. Cada enum e seu mapa (`CompanyMemberRole` + `ROLE_LABELS`, `BudgetEntryType` + `BUDGET_ENTRY_TYPE_LABELS`, …) moram no mesmo arquivo, e o `tone` visual é decidido na tela — porque a mesma variante pode ser neutra numa listagem e de destaque em outra.
 
 ---
 
@@ -207,7 +215,11 @@ Cobre: `POST /invites`, `GET /invites`, `GET /invites/token/{token}`, `POST /inv
 
 ### 4.1 Tela — Equipe (`/equipe`)
 - **Acesso**: todos os perfis veem (listagem), ações restritas a `FINANCE_ADMIN`.
-- `<DataTable>` de `GET /members`: nome, e-mail, papel (`<StatusBadge>` de `CompanyMemberRole`), líder, situação (ativo/inativo).
+- `<DataTable>` de `GET /members`: pessoa (avatar + nome + e-mail), perfil (`<StatusPill>` de `CompanyMemberRole`), alçada, líder direto. Ordenável por pessoa/perfil/alçada, com busca por nome ou e-mail e paginação.
+- **Não há coluna "situação".** `GET /members` devolve apenas membros ativos — a coluna seria constante. Quem foi inativado sai da lista; o histórico dele permanece nos pedidos.
+- Linha de indicadores no topo: pessoas ativas, quantas podem aprovar, **quantas estão sem líder definido** (em âmbar quando > 0 — significa que pedidos acima do teto travam) e ausentes hoje.
+- Bloco "Quem decide cada faixa": as faixas de valor derivadas das alçadas cadastradas, cada uma listando todos que a cobrem. Responde "um pedido de R$ X vai para quem?" e expõe faixas com um único aprovador.
+- Seleção múltipla habilita ações em massa (`FINANCE_ADMIN`): vincular as pessoas escolhidas a um Centro de Custo, ou inativá-las.
 - Ação "convidar membro" (só `FINANCE_ADMIN`) abre modal 4.3.
 - Aba secundária "Convites pendentes" lista `GET /invites`, com ações reenviar (`POST /invites/{id}/resend`) e revogar (`DELETE /invites/{id}`, via `<ConfirmDialog>`).
 - Linha da tabela expande para detalhe do membro (rota `/equipe/{id}`).
@@ -218,7 +230,8 @@ Cobre: `POST /invites`, `GET /invites`, `GET /invites/token/{token}`, `POST /inv
   - **Papel**: select `CompanyMemberRole` → `PATCH /members/{id}/role`. Se a API retornar `LastAdminError` (409), mostra o erro inline, não deixa trocar.
   - **Alçada de aprovação**: input de valor (BRL) → `PATCH /members/{id}/limit`.
   - **Líder direto**: combobox de busca de outro membro → `PATCH /members/{id}/manager`. Erros de ciclo (`HierarchyCycleError`, `SelfManagerError`) exibidos no combobox.
-  - **Responsabilidades**: `GET /members/{id}/responsibilities` lista o que a pessoa gerencia (Centros de Custo, aprovações pendentes) — informativo, sem ação.
+  - **Centros de Custo**: `<DataTable>` com os centros em que a pessoa aparece, uma linha por centro, coluna "papel" distinguindo gestor de vinculado. Vincular a outro centro e desvincular por linha.
+  - **Quem depende desta pessoa**: `GET /members/{id}/responsibilities` — quem responde a ela (`subordinates`) e de quem ela é substituto (`substituteFor`). Informativo, sem ação; some quando não há nada.
 - Botão "inativar membro" (`DELETE /members/{id}`) via `<ConfirmDialog>`. Se a API voltar 409 com `details` de responsabilidades pendentes (`MemberHasResponsibilitiesError`), o modal lista essas responsabilidades em vez de fechar, orientando a resolver antes.
 
 ### 4.3 Modal — Convidar membro
@@ -263,8 +276,11 @@ Cobre: `POST /cost-centers`, `GET /cost-centers`, `GET /cost-centers/{id}`, `PAT
 
 ### 5.4 Modal — Transferir gestão
 - Acionado a partir do detalhe do membro (4.2) quando ele vai ser inativado/rebaixado e gerencia Centros de Custo.
-- **Form**: lista dos CCs que o membro gerencia (pré-marcados), novo gestor (combobox).
-- **API**: `POST /cost-centers/transfer-management`.
+- **Form**: lista dos CCs que o membro gerencia com checkbox por linha (todos pré-marcados), novo gestor (combobox com busca).
+- **API**, conforme a seleção:
+  - **todos marcados** → `POST /cost-centers/transfer-management` (move tudo de uma vez; é o caminho que libera a inativação do RF25).
+  - **seleção parcial** → um `PATCH /cost-centers/{id}` por centro escolhido, alterando `managerId`. O endpoint de transferência move todos obrigatoriamente, então transferência parcial passa por aqui.
+- Quando a seleção é parcial, o modal informa de quantos centros a pessoa continua gestora.
 
 ---
 
@@ -311,11 +327,14 @@ Cobre: `POST /cost-centers/{costCenterId}/budgets`, `GET /cost-centers/{costCent
 - Painel de consumo do período vigente (`GET /cost-centers/{costCenterId}/budgets/current`): valor total, comprometido, disponível — barra de progresso visual, cor muda perto do limite de tolerância.
 - `<DataTable>` de histórico de períodos (`GET /cost-centers/{costCenterId}/budgets`): período, total, comprometido, disponível.
 - Botão "definir orçamento do período" → modal com período (mês/trimestre/ano conforme regra de negócio) + valor → `POST /cost-centers/{costCenterId}/budgets`.
-- Linha do histórico abre `/orcamentos/{id}`.
+- Linha do histórico troca o período exibido no painel; a seta ao fim da linha abre `/orcamentos/{id}` (extrato completo do período).
 
 ### 7.2 Tela — Detalhe do orçamento (`/orcamentos/{id}`)
-- Dados do período, valor (editável via `PATCH /budgets/{id}`).
-- `<DataTable>` do extrato: `GET /budgets/{id}/entries` — tipo (`CONSUMPTION`/`REVERSAL`), valor, pedido relacionado (link), data. É o "livro-caixa" do orçamento, somente leitura.
+- **Acesso**: mesma regra da aba 7.1 (`RoleGuard area="cost-centers"`).
+- Cabeçalho com o período (`GET /budgets/{id}`), link de volta ao Centro de Custo e botão "exportar CSV" (`GET /budgets/{id}/entries/export`).
+- Três indicadores derivados do extrato: teto do período, comprometido, disponível — o disponível vira âmbar quando negativo ("o período estourou o teto"). Somados em `BigInt` sobre os centavos, nunca em ponto flutuante.
+- `<DataTable>` do extrato: `GET /budgets/{id}/entries` — data, tipo (`<StatusPill>` de `CONSUMPTION`/`REVERSAL`), descrição, pedido relacionado (link) e valor com sinal (− consumo, + estorno). Paginado, somente leitura.
+- A edição do valor do período fica na aba 7.1 ("ajustar teto", que exige motivo pela RF30) — não é duplicada aqui.
 
 ---
 
