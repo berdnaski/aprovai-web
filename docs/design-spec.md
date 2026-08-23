@@ -76,6 +76,7 @@ Os tokens abaixo existem como utilities reais em `src/index.css` (bloco `@utilit
 | `text-label` | 13px / 1.4 | 500 (Medium) | `0` | label de campo, botão |
 | `text-caption` | 12.5px / 1.45 | 400 (Regular) | `0` | helper text, timestamp, mensagem de erro |
 | `text-overline` | 11.5px / 1.4 | 500 (Medium) | `0.04em` + uppercase | rótulo de agrupamento acima de um bloco |
+| `text-micro` | 11px / 1.5 | 500 (Medium) | `0` | pill de status dentro de tabela densa — o único lugar abaixo de `text-caption` |
 
 O peso e a altura de linha vêm no token. `text-label` já é Medium: escrever `text-label font-medium` é redundante, e `text-label font-normal` é uma exceção deliberada (usada quando o rótulo é texto secundário, não label de campo).
 
@@ -92,6 +93,24 @@ Notas sobre valores que mudaram durante a implementação:
 - Grid base: **4px**. Todo espaçamento é múltiplo de 4 (4, 8, 12, 16, 24, 32, 48).
 - `--radius`: **10px** em cards e botões, **8px** em inputs, **6px** em badges/chips pequenos. Cantos arredondados mas contidos — nem o `rounded-full` de pílula que a IA generativa adora, nem o raio zero de broadsheet.
 - Sombra: uma só, sutil, para elevação de card/modal — `0 1px 2px oklch(0.2 0 0 / 0.04), 0 1px 8px oklch(0.2 0 0 / 0.04)`. Nunca sombra colorida (`shadow-purple-500/50`), que é outro tique de IA generativa.
+
+### 3.1 Densidade de tabela
+
+As listagens são o lugar onde o produto é usado o dia inteiro, e onde a escala do corpo (14px) desperdiça linha. O padrão, implementado em `components/ui/data-table.tsx`:
+
+| elemento | valor |
+|---|---|
+| altura da linha do corpo | 44px (`h-11`) |
+| altura do cabeçalho | 36px (`h-9`) |
+| altura do header do card | 48px (`min-h-12`) |
+| texto de célula e de cabeçalho | `text-caption` (12,5px) |
+| pill de status | `text-micro` (11px) |
+| gutter da primeira/última coluna | 16px (`first:pl-4 last:pr-4`) |
+| fundo do cabeçalho | `bg-muted/35`, sticky com `backdrop-blur-sm` |
+| divisor entre linhas | `border-border/40` |
+| linha selecionada | `bg-primary/4` + `border-l-2 border-l-primary` |
+
+O contraste de hierarquia dentro da linha vem do **peso** (nome em `font-medium`, e-mail em `text-muted-foreground`), não do tamanho — é o que mantém a linha em 44px sem achatar a leitura.
 
 ---
 
