@@ -102,3 +102,63 @@ export const CostCenterBudgetStatus = {
 
 export type CostCenterBudgetStatus =
   (typeof CostCenterBudgetStatus)[keyof typeof CostCenterBudgetStatus]
+
+export const RegistrationStatus = {
+  ACTIVE: "ACTIVE",
+  CLOSED: "CLOSED",
+  INACTIVE: "INACTIVE",
+  SUSPENDED: "SUSPENDED",
+  VOID: "VOID",
+  UNKNOWN: "UNKNOWN",
+} as const
+
+export type RegistrationStatus =
+  (typeof RegistrationStatus)[keyof typeof RegistrationStatus]
+
+export const REGISTRATION_STATUS_LABELS: Record<RegistrationStatus, string> = {
+  ACTIVE: "Ativa",
+  CLOSED: "Baixada",
+  INACTIVE: "Inapta",
+  SUSPENDED: "Suspensa",
+  VOID: "Nula",
+  UNKNOWN: "Não consultada",
+}
+
+export const ValidationStatus = {
+  VALIDATED: "VALIDATED",
+  PENDING: "PENDING",
+  FAILED: "FAILED",
+} as const
+
+export type ValidationStatus =
+  (typeof ValidationStatus)[keyof typeof ValidationStatus]
+
+export const VALIDATION_STATUS_LABELS: Record<ValidationStatus, string> = {
+  VALIDATED: "Conferido",
+  PENDING: "Não conferido",
+  FAILED: "Falhou",
+}
+
+export const SupplierUsage = {
+  ALLOWED: "ALLOWED",
+  BLOCKS_SUBMISSION: "BLOCKS_SUBMISSION",
+  BLOCKS_APPROVAL: "BLOCKS_APPROVAL",
+} as const
+
+export type SupplierUsage = (typeof SupplierUsage)[keyof typeof SupplierUsage]
+
+export const SUPPLIER_USAGE_LABELS: Record<SupplierUsage, string> = {
+  ALLOWED: "Liberado",
+  BLOCKS_SUBMISSION: "Não abre pedido",
+  BLOCKS_APPROVAL: "Não aprova",
+}
+
+export const CnpjLookupFailure = {
+  TIMEOUT: "TIMEOUT",
+  UNAVAILABLE: "UNAVAILABLE",
+  NOT_FOUND: "NOT_FOUND",
+  MALFORMED: "MALFORMED",
+} as const
+
+export type CnpjLookupFailure =
+  (typeof CnpjLookupFailure)[keyof typeof CnpjLookupFailure]

@@ -2,12 +2,7 @@ import { CompanyMemberRole } from "@/types/enums"
 
 export type NavAccess = "full" | "read" | "none"
 
-export interface NavArea {
-  key: string
-  label: string
-  to: string
-  access: Record<CompanyMemberRole, NavAccess>
-}
+export type NavArea = (typeof NAV_AREAS)[number]
 
 const { REQUESTER, APPROVER, FINANCE_ADMIN } = CompanyMemberRole
 
@@ -23,7 +18,7 @@ function access(
   }
 }
 
-export const NAV_AREAS: NavArea[] = [
+export const NAV_AREAS = [
   {
     key: "purchase-requests",
     label: "Pedidos",
@@ -114,7 +109,9 @@ export const NAV_AREAS: NavArea[] = [
     to: "/empresa/dados",
     access: access("none", "none", "full"),
   },
-]
+] as const
+
+export type NavAreaKey = (typeof NAV_AREAS)[number]["key"]
 
 export function accessFor(
   area: NavArea,

@@ -46,7 +46,10 @@ export function NavGroup({
     >
       <CollapsibleTrigger
         render={
-          <SidebarGroupLabel className="text-overline text-muted-foreground transition-colors hover:text-foreground" />
+          <SidebarGroupLabel
+            render={<button type="button" />}
+            className="w-full text-overline text-muted-foreground transition-colors hover:text-foreground"
+          />
         }
       >
         {label}

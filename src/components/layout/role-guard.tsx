@@ -3,12 +3,13 @@ import { Navigate, Outlet } from "react-router-dom"
 import { toast } from "sonner"
 
 import { usePermissions } from "@/hooks/auth/use-permissions"
+import type { NavAreaKey } from "@/lib/permissions"
 
 export function RoleGuard({
   area,
   requireManage = false,
 }: {
-  area: string
+  area: NavAreaKey
   requireManage?: boolean
 }) {
   const { areaAccess, isLoading } = usePermissions()
@@ -40,7 +41,7 @@ export function RequireRole({
   fallback = null,
   children,
 }: {
-  area: string
+  area: NavAreaKey
   requireManage?: boolean
   fallback?: React.ReactNode
   children: React.ReactNode

@@ -3,13 +3,17 @@ import {
   ArrowUp,
   CaretLeft,
   CaretRight,
+  MagnifyingGlass,
   type Icon,
 } from "@phosphor-icons/react"
+import { useEffect, useRef } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+
+export type Tone = "neutral" | "brand" | "success" | "warning" | "danger"
 
 export interface DataTableColumn<T> {
   id: string
@@ -26,6 +30,22 @@ const HIDE_CLASS = {
   sm: "hidden sm:table-cell",
   lg: "hidden lg:table-cell",
   xl: "hidden xl:table-cell",
+}
+
+const DOT_CLASS: Record<Tone, string> = {
+  neutral: "bg-muted-foreground/40",
+  brand: "bg-primary",
+  success: "bg-brand-accent",
+  warning: "bg-warning",
+  danger: "bg-destructive",
+}
+
+const TONE_TEXT_CLASS: Record<Tone, string> = {
+  neutral: "text-muted-foreground",
+  brand: "text-primary",
+  success: "text-brand-accent-strong",
+  warning: "text-warning-strong",
+  danger: "text-destructive",
 }
 
 export function DataTableShell({
@@ -98,6 +118,8 @@ export function DataTable<T>({
   onSortChange,
   selection,
   onSelectionChange,
+  rowActions,
+  rowAccent,
 }: {
   columns: DataTableColumn<T>[]
   rows: T[]
@@ -110,6 +132,8 @@ export function DataTable<T>({
   onSortChange?: (id: string) => void
   selection?: string[]
   onSelectionChange?: (ids: string[]) => void
+  rowActions?: (row: T) => React.ReactNode
+  rowAccent?: (row: T) => Tone | undefined
 }) {
   if (!isLoading && rows.length === 0 && empty) {
     return <div className="px-3 py-10">{empty}</div>
@@ -117,8 +141,12 @@ export function DataTable<T>({
 
   const selectable = selection !== undefined && onSelectionChange !== undefined
   const allIds = rows.map(rowKey)
-  const allSelected = selectable && allIds.length > 0 && allIds.every((id) => selection.includes(id))
-  const someSelected = selectable && !allSelected && allIds.some((id) => selection.includes(id))
+  const allSelected =
+    selectable &&
+    allIds.length > 0 &&
+    allIds.every((id) => selection.includes(id))
+  const someSelected =
+    selectable && !allSelected && allIds.some((id) => selection.includes(id))
 
   function toggleAll() {
     if (!selectable) {
@@ -144,7 +172,7 @@ export function DataTable<T>({
     <div className="w-full overflow-x-auto">
       <table className="w-full border-collapse text-left">
         <thead className="sticky top-0 z-10">
-          <tr className="border-b border-border bg-card">
+          <tr className="border-b border-border bg-muted/35 backdrop-blur-sm">
             {selectable ? (
               <th scope="col" className="w-9 pl-4">
                 <Checkbox
@@ -165,7 +193,7 @@ export function DataTable<T>({
                 <span
                   className={cn(
                     "inline-flex items-center gap-1.5 whitespace-nowrap text-overline",
-                    active ? "text-foreground" : "text-muted-foreground",
+                    active ? "text-foreground" : "text-muted-foreground/70",
                   )}
                 >
                   {ColumnIcon ? (
@@ -215,6 +243,8 @@ export function DataTable<T>({
                 </th>
               )
             })}
+
+            {rowActions ? <th scope="col" className="w-16 pr-4" /> : null}
           </tr>
         </thead>
 
@@ -223,32 +253,35 @@ export function DataTable<T>({
             ? Array.from({ length: skeletonRows }).map((_, index) => (
                 <tr
                   key={index}
-                  className="border-b border-border/50 last:border-0"
+                  className="border-b border-border/40 last:border-0"
                 >
                   {selectable ? <td className="pl-4" /> : null}
                   {columns.map((column) => (
                     <td
                       key={column.id}
                       className={cn(
-                        "px-3 py-2.5",
+                        "h-11 px-3 first:pl-4 last:pr-4",
                         column.hideBelow && HIDE_CLASS[column.hideBelow],
                       )}
                     >
-                      <Skeleton className="h-4 w-full max-w-28" />
+                      <Skeleton className="h-3.5 w-full max-w-28" />
                     </td>
                   ))}
+                  {rowActions ? <td className="pr-4" /> : null}
                 </tr>
               ))
             : rows.map((row) => {
                 const id = rowKey(row)
                 const checked = selectable && selection.includes(id)
+                const accent = rowAccent?.(row)
+                const marked = accent === "warning" || accent === "danger"
 
                 return (
                   <tr
                     key={id}
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
                     className={cn(
-                      "group/row border-b border-border/40 transition-colors last:border-0",
+                      "group/row relative border-b border-border/40 text-caption transition-colors last:border-0",
                       checked
                         ? "border-l-2 border-l-primary bg-primary/4"
                         : "hover:bg-muted/40",
@@ -268,23 +301,279 @@ export function DataTable<T>({
                       </td>
                     ) : null}
 
-                    {columns.map((column) => (
+                    {columns.map((column, columnIndex) => (
                       <td
                         key={column.id}
                         className={cn(
-                          "h-12 px-3 align-middle text-caption text-foreground first:pl-4 last:pr-4",
+                          "relative h-11 px-3 align-middle text-caption text-foreground first:pl-4 last:pr-4",
                           column.align === "end" && "text-right",
                           column.hideBelow && HIDE_CLASS[column.hideBelow],
                         )}
                       >
+                        {marked && columnIndex === 0 && !selectable ? (
+                          <span
+                            aria-hidden
+                            className={cn(
+                              "absolute inset-y-0 left-0 w-0.5",
+                              accent === "danger"
+                                ? "bg-destructive"
+                                : "bg-warning",
+                            )}
+                          />
+                        ) : null}
                         {column.cell(row)}
                       </td>
                     ))}
+
+                    {rowActions ? (
+                      <td
+                        className="pr-4 align-middle"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <span className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-focus-within/row:opacity-100 group-hover/row:opacity-100">
+                          {rowActions(row)}
+                        </span>
+                      </td>
+                    ) : null}
                   </tr>
                 )
               })}
         </tbody>
       </table>
+    </div>
+  )
+}
+
+export function StatusDot({
+  tone,
+  label,
+  align = "start",
+}: {
+  tone: Tone
+  label: string
+  align?: "start" | "end"
+}) {
+  return (
+    <span
+      className={cn(
+        "flex min-w-0 items-center gap-1.5",
+        align === "end" ? "justify-end" : "justify-start",
+      )}
+    >
+      <span
+        aria-hidden
+        className={cn("size-1.5 shrink-0 rounded-full", DOT_CLASS[tone])}
+      />
+      <span className={cn("truncate text-caption", TONE_TEXT_CLASS[tone])}>
+        {label}
+      </span>
+    </span>
+  )
+}
+
+export function RowAction({
+  icon: ActionIcon,
+  label,
+  onClick,
+  tone = "neutral",
+}: {
+  icon: Icon
+  label: string
+  onClick: () => void
+  tone?: "neutral" | "danger"
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={cn(
+        "flex size-7 items-center justify-center rounded-md transition-colors",
+        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+        tone === "danger"
+          ? "text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+      )}
+    >
+      <ActionIcon size={15} aria-hidden />
+    </button>
+  )
+}
+
+export function TableSearch({
+  value,
+  onChange,
+  placeholder,
+  label,
+  className,
+}: {
+  value: string
+  onChange: (value: string) => void
+  placeholder: string
+  label: string
+  className?: string
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "/") {
+        return
+      }
+
+      const target = event.target as HTMLElement | null
+      const typing =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target?.isContentEditable
+
+      if (typing) {
+        return
+      }
+
+      event.preventDefault()
+      inputRef.current?.focus()
+    }
+
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [])
+
+  return (
+    <div className={cn("relative min-w-0 sm:w-72", className)}>
+      <MagnifyingGlass
+        size={14}
+        className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground"
+        aria-hidden
+      />
+
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && value) {
+            event.preventDefault()
+            onChange("")
+          }
+        }}
+        placeholder={placeholder}
+        aria-label={label}
+        className={cn(
+          "h-8 w-full rounded-md border border-border bg-card pr-9 pl-8 text-caption text-foreground",
+          "placeholder:text-muted-foreground",
+          "transition-colors focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+        )}
+      />
+
+      {value ? (
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          aria-label="Limpar busca"
+          className="absolute top-1/2 right-2 -translate-y-1/2 rounded-sm px-1 text-micro text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          limpar
+        </button>
+      ) : (
+        <kbd
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 rounded border border-border px-1 py-px font-sans text-micro leading-none text-muted-foreground/70"
+        >
+          /
+        </kbd>
+      )}
+    </div>
+  )
+}
+
+export function TableSegments<T extends string>({
+  value,
+  onChange,
+  segments,
+  className,
+}: {
+  value: T
+  onChange: (value: T) => void
+  segments: { id: T; label: string; count?: number; tone?: Tone }[]
+  className?: string
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Filtrar listagem"
+      className={cn(
+        "inline-flex items-center gap-0.5 rounded-lg border border-border bg-muted/50 p-0.5",
+        className,
+      )}
+    >
+      {segments.map((segment) => {
+        const active = value === segment.id
+        const empty = segment.count === 0 && !active
+
+        return (
+          <button
+            key={segment.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(segment.id)}
+            className={cn(
+              "flex h-7 items-center gap-1.5 rounded-md px-2.5 text-caption whitespace-nowrap transition-colors",
+              "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+              active
+                ? "bg-card text-foreground shadow-xs"
+                : empty
+                  ? "text-muted-foreground/50 hover:text-muted-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {segment.tone && segment.tone !== "neutral" ? (
+              <span
+                aria-hidden
+                className={cn(
+                  "size-1.5 shrink-0 rounded-full",
+                  DOT_CLASS[segment.tone],
+                  empty && "opacity-40",
+                )}
+              />
+            ) : null}
+
+            {segment.label}
+
+            {segment.count !== undefined ? (
+              <span
+                className={cn(
+                  "tabular text-micro",
+                  active ? "text-muted-foreground" : "text-muted-foreground/60",
+                )}
+              >
+                {segment.count}
+              </span>
+            ) : null}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+export function TableToolbar({
+  children,
+  className,
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-x-3 gap-y-2 pb-3",
+        className,
+      )}
+    >
+      {children}
     </div>
   )
 }
@@ -295,7 +584,7 @@ export function StatusPill({
   children,
   className,
 }: {
-  tone?: "neutral" | "brand" | "success" | "warning" | "danger"
+  tone?: Tone
   dot?: boolean
   children: React.ReactNode
   className?: string

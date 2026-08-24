@@ -104,14 +104,21 @@ src/
 
 | componente | usado em | contrato |
 |---|---|---|
-| `<DataTable>` | toda listagem (~15 telas) | recebe `columns: DataTableColumn<T>[]`, `rows`, `rowKey`; opcionais `sort`/`onSortChange`, `selection`/`onSelectionChange`, `onRowClick`, `isLoading`, `empty`. Acompanham: `<DataTableShell>` (card + título + contador + toolbar + footer), `<DataTablePagination>`, `<StatusPill>`, `<CellPerson>` |
+| `<DataTable>` | toda listagem (~15 telas) | recebe `columns: DataTableColumn<T>[]`, `rows`, `rowKey`; opcionais `sort`/`onSortChange`, `selection`/`onSelectionChange`, `onRowClick`, `isLoading`, `empty`, `rowActions`, `rowAccent`. Acompanham: `<DataTableShell>` (card + título + contador + toolbar + footer), `<DataTablePagination>`, `<StatusPill>`, `<StatusDot>`, `<CellPerson>`, `<RowAction>`, `<TableToolbar>`, `<TableSearch>`, `<TableSegments>` |
 | `<StatusPill>` | qualquer enum de status (`RequestStatus`, `PurchaseOrderStatus`, `InvoiceStatus`, `MatchStatus`, `PayableStatus`, `InviteStatus`...) | recebe `tone` (`neutral`/`brand`/`success`/`warning`/`danger`) e o rótulo como filho. Os mapas `enum → label pt-BR` vivem em `types/enums.ts`, ao lado do enum que espelham — ver nota abaixo |
+| `<StatusDot>` | coluna de estado dentro de listagem densa | ponto de cor + rótulo, sem cápsula de fundo. Recebe `tone` e `label`. Substitui `<StatusPill>` **dentro de tabela**: numa coluna em que quase toda linha está no mesmo estado, a cápsula colorida vira mancha; o ponto entrega o mesmo dado com muito menos tinta. A cápsula (`<StatusPill>`) continua sendo a escolha certa fora de tabela — cabeçalho de detalhe, onde o status é dado isolado |
+| `<RowAction>` | ações por linha (editar, arquivar, abrir) | botão-ícone de 28px que aparece no hover/foco da linha. Recebe `icon`, `label` (vira `aria-label` e `title`), `onClick`, `tone`. Vive na coluna que `rowActions` reserva no fim da tabela — nunca posicionado por cima de outra coluna |
+| `<TableToolbar>` + `<TableSearch>` + `<TableSegments>` | barra acima da tabela | `<TableSearch>` traz atalho `/` para focar e `Esc` para limpar; `<TableSegments>` são filtros com a contagem embutida, e o segmento com contagem zero fica apagado em vez de sumir (some/aparece faria a barra dançar conforme o dado muda) |
 | `<MoneyDisplay>` | qualquer valor `*Cents` | recebe string de centavos, formata BRL |
 | `<ConfirmDialog>` | toda ação destrutiva/irreversível | título, descrição, campo de justificativa opcional (usado em cancelamentos que exigem `reason`), botão de confirmação com `isPending` |
 | `<EmptyState>` | toda lista vazia | ícone, texto, opcionalmente botão de ação primária |
 | `<PageHeader>` | topo de toda tela | título, breadcrumb, slot de ação primária à direita |
 | `<RoleGuard>` | em torno de rotas/blocos de UI | recebe `allow: CompanyMemberRole[]`, esconde/redireciona se o perfil do usuário não estiver na lista |
 | `<FileDropzone>` | upload de anexos e XML | drag-and-drop + seleção manual, mostra progresso, valida extensão antes de enviar |
+
+**Densidade e anatomia da linha.** A listagem é onde o produto é usado o dia inteiro, então a linha é densa: 44px de altura, célula em `text-caption`, cabeçalho de 36px em `text-overline` sobre `bg-muted/35`. A hierarquia dentro da linha vem do **peso**, não do tamanho — nome em `font-medium`, identificador secundário (CNPJ, e-mail, descrição) em `text-micro` cinza logo abaixo. Detalhes de implementação em `docs/design-spec.md` §3.1.
+
+**Ações de linha têm coluna própria.** `rowActions` reserva uma coluna no fim da tabela, tanto no cabeçalho quanto nas linhas. As ações aparecem no hover/foco, mas o espaço existe sempre — posicionar por cima de outra coluna (`absolute`) faz o ícone cobrir o dado, e foi assim que a primeira versão desta tela quebrou.
 
 **Rótulos de enum ficam em `types/enums.ts`, não em `lib/status-labels.ts`.** Uma versão anterior deste spec previa um arquivo separado só para os mapas de label. Na implementação isso se mostrou pior: o enum e o texto que o traduz mudam juntos (uma variante nova no backend exige as duas edições), e separá-los em arquivos distintos abre espaço para um ficar sem o outro. Cada enum e seu mapa (`CompanyMemberRole` + `ROLE_LABELS`, `BudgetEntryType` + `BUDGET_ENTRY_TYPE_LABELS`, …) moram no mesmo arquivo, e o `tone` visual é decidido na tela — porque a mesma variante pode ser neutra numa listagem e de destaque em outra.
 
@@ -299,13 +306,20 @@ Cobre: `GET /approval-rules`, `PUT /approval-rules`, `GET /approval-rules/resolv
 
 ### 6.2 Tela — Categorias (`/categorias`)
 - **Acesso**: `FINANCE_ADMIN` edita; todos veem (usado no formulário de pedido).
-- `<DataTable>` simples de `GET /categories`: nome, descrição, situação (toggle ativo/inativo inline → `PATCH /categories/{id}/active`).
+- `<DataTable>` de `GET /categories?includeInactive=true`: categoria (nome + descrição como linha secundária) e situação (`<StatusDot>` — "Em uso" / "Arquivada").
+- `<TableSegments>` acima da tabela: **Em uso** (padrão), **Arquivadas**, **Todas**, cada um com a contagem. O filtro padrão é "Em uso" porque arquivada é exceção e não deve ocupar a vista principal.
+- `<TableSearch>` filtra por nome ou descrição. Busca, filtro e paginação são resolvidos no cliente sobre o lote de `GET /categories` (o endpoint devolve array puro; ver §0.2).
+- `rowActions` por linha: editar (abre o modal) e arquivar/reativar (`PATCH /categories/{id}/active` via `<ConfirmDialog>`, porque arquivar tira a categoria de novos pedidos).
+- Rodapé informa quantas estão arquivadas, ou a paginação quando passa de uma página.
 - Modal "nova categoria" / "editar categoria": nome, descrição → `POST /categories` / `PATCH /categories/{id}`.
 
 ### 6.3 Tela — Fornecedores (`/fornecedores`)
 - **Acesso**: `FINANCE_ADMIN` edita; todos veem (usado no formulário de pedido).
-- `<DataTable>` de `GET /suppliers`: razão social, CNPJ formatado, situação cadastral (`RegistrationStatus`), validação (`ValidationStatus`), bloqueado (badge vermelho se sim).
-- Linha abre `/fornecedores/{id}`.
+- `<DataTable>` de `GET /suppliers`: fornecedor (nome fantasia ou razão social + CNPJ formatado como linha secundária), situação de uso (`<StatusDot>` de `SupplierUsage`), conferência na Receita (`<StatusDot>` de `ValidationStatus`, a partir de `lg`) e local (a partir de `xl`).
+- `rowAccent` marca a linha com um filete de 2px **só quando o fornecedor foge do normal**: âmbar em `BLOCKS_APPROVAL`, vermelho em `BLOCKS_SUBMISSION`/bloqueado. Fornecedor liberado não recebe marca — um marcador presente em toda linha não informaria nada.
+- `<TableSegments>`: **Todos**, **Com trava** (`blocked=true` — bloqueio manual da empresa, trava na largada) e **Sem conferir** (`validationStatus=PENDING` — CNPJ pendente na Receita, deixa criar mas trava a aprovação final). Os três ficam sempre visíveis; o de contagem zero fica apagado.
+- Busca, filtro e paginação são **do servidor** — `GET /suppliers` já pagina, então os query params vão direto para a API (ver §0.2). As contagens dos chips vêm de consultas de `perPage: 1` por filtro, lendo `meta.total`.
+- Linha abre `/fornecedores/{id}`; `rowActions` traz o atalho de abrir.
 
 ### 6.4 Tela — Detalhe do fornecedor (`/fornecedores/{id}`)
 - Dados cadastrais (edição via `PATCH /suppliers/{id}`).
