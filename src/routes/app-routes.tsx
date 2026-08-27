@@ -3,6 +3,7 @@ import { Route } from "react-router-dom"
 import { AppLayout } from "@/components/layout/app-layout"
 import { RoleGuard } from "@/components/layout/role-guard"
 import { ChangePasswordPage } from "@/features/account/change-password-page"
+import { ApprovalRulesPage } from "@/features/approval-rules/approval-rules-page"
 import { BudgetDetailPage } from "@/features/budgets/budget-detail-page"
 import { CategoriesPage } from "@/features/categories/categories-page"
 import { CostCenterDetailPage } from "@/features/cost-centers/cost-center-detail-page"
@@ -28,6 +29,10 @@ export function appRoutes() {
       <Route element={<RoleGuard area="suppliers" />}>
         <Route path="/fornecedores" element={<SuppliersPage />} />
         <Route path="/fornecedores/:id" element={<SupplierDetailPage />} />
+      </Route>
+
+      <Route element={<RoleGuard area="approval-rules" />}>
+        <Route path="/matriz-de-alcadas" element={<ApprovalRulesPage />} />
       </Route>
 
       <Route element={<RoleGuard area="categories" />}>

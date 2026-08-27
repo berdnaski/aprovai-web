@@ -296,13 +296,20 @@ Cobre: `POST /cost-centers`, `GET /cost-centers`, `GET /cost-centers/{id}`, `PAT
 Cobre: `GET /approval-rules`, `PUT /approval-rules`, `GET /approval-rules/resolve`, `POST /approval-rules/simulate`, `DELETE /approval-rules`, `GET /categories`, `POST /categories`, `GET /categories/{id}`, `PATCH /categories/{id}`, `PATCH /categories/{id}/active`, `GET /suppliers/lookup/{cnpj}`, `POST /suppliers`, `GET /suppliers`, `GET /suppliers/{id}`, `PATCH /suppliers/{id}`, `PATCH /suppliers/{id}/blocked`, `POST /suppliers/{id}/revalidate`.
 
 ### 6.1 Tela — Matriz de alçadas (`/matriz-de-alcadas`)
-- **Acesso**: `FINANCE_ADMIN` edita; `APPROVER` vê em leitura (entender por que um pedido caiu nele).
-- Editor de faixas: lista ordenável de `{ minAmountCents, maxAmountCents | null, approverType, ... }` vinda de `GET /approval-rules`.
-- Botão "adicionar faixa" insere linha editável; última faixa sempre com teto "sem limite" (`max: null`), reforçado visualmente (não pode remover isso, só a última linha tem esse toggle).
-- Validação client-side antes de enviar (evita round-trip óbvio): faixas contíguas, sem sobreposição, primeira começando em zero — mas a validação de verdade é a resposta da API (`ApprovalMatrixGapError`, `ApprovalMatrixOverlapError`, etc. já vêm com mensagem pronta).
-- Salvar tudo de uma vez: `PUT /approval-rules` (substitui a matriz inteira).
-- Botão "remover matriz" (`DELETE /approval-rules`, `<ConfirmDialog>` com aviso forte: pedidos novos ficarão sem rota até nova matriz).
-- Painel lateral "simular": formulário com valor + Centro de Custo + solicitante → `POST /approval-rules/simulate`, mostra a cadeia de aprovadores resultante sem gravar nada. Serve tanto para testar a matriz quanto para o Requester entender antes de criar um pedido.
+- **Acesso**: `FINANCE_ADMIN` edita; `APPROVER` vê em leitura (entender por que um pedido caiu nele). `REQUESTER` não vê a tela.
+
+**Abrangências (RF35).** A empresa não tem *uma* matriz: tem a matriz padrão (`costCenterId` e `categoryId` nulos) e, opcionalmente, exceções por Centro de Custo, por categoria, ou pela combinação dos dois. Um pedido resolve pela mais específica que o cobrir. A tela lista as matrizes numa trilha lateral (padrão fixa no topo, exceções da mais específica para a mais ampla) e edita uma por vez; abaixo de `xl` a trilha vira um seletor no próprio título.
+
+- Editor de faixas: `{ minAmountCents, maxAmountCents | null, approverType, requiresDualApproval }` vindas de `GET /approval-rules`, ordenadas por valor.
+- **Só os cortes são editáveis, não os pares início/fim independentes.** O início de uma faixa é o teto da faixa de baixo mais um centavo: os dois campos existem na tela e editar qualquer um move o outro. Buraco, sobreposição e "não começa em zero" deixam de ser representáveis, em vez de serem validados depois. Resta validar que os tetos sobem.
+- Dois valores são fixos por regra do domínio, mostrados com cadeado e o motivo em tooltip: a primeira faixa começa em `R$ 0,00` e a última fica sem teto (`max: null`).
+- Salvar tudo de uma vez: `PUT /approval-rules` (substitui a matriz *daquela* abrangência). Como a gravação é integral, o editor trabalha sobre rascunho e uma barra fixa é a única saída dele — ela grava todas as matrizes com rascunho pendente e some quando não há nada a salvar.
+- Botão "remover exceção" (`DELETE /approval-rules?costCenterId=&categoryId=`, via `<ConfirmDialog>`): aqueles pedidos voltam a seguir a matriz padrão. **A matriz padrão não pode ser removida** — `ranges: []` sobre a abrangência global é recusado com `ApprovalMatrixEmptyError`, e não haveria para onde cair. Exceção criada e ainda não salva some sem chamar a API.
+- Painel lateral "simular": valor + Centro de Custo + solicitante (+ categoria, + data) → `POST /approval-rules/simulate`, mostra a cadeia resultante sem gravar nada. A data serve para conferir substituição por ausência (RN29). A faixa que pegou o valor é destacada na escada atrás.
+  - **A simulação roda contra a matriz gravada**, não contra o rascunho — não há endpoint que aceite faixas não persistidas. Com alterações pendentes, o painel avisa.
+  - `POST /simulate` é `@Roles(FINANCE_ADMIN)`: o `APPROVER` em leitura não vê o botão, e o `REQUESTER` não alcança a tela. (Uma versão anterior deste spec dizia que o painel serviria ao Requester antes de criar um pedido — o backend nunca permitiu isso.)
+- Falha de simulação é um beco sem saída se parar na mensagem: o backend manda a regra violada em `details.rule`, e a tela oferece o caminho — `RN27` (ninguém com alçada) e `RN24` com `memberId` (hierarquia circular) linkam para Equipe. A mensagem da API é exibida sem reescrita (§0.2).
+- `GET /approval-rules/resolve` existe na camada de API mas nenhuma tela consome: nesta, `POST /simulate` responde o mesmo e mais (devolve `ruleId` *e* a cadeia). Fica para o formulário de pedido (§8), onde a cadeia não interessa.
 
 ### 6.2 Tela — Categorias (`/categorias`)
 - **Acesso**: `FINANCE_ADMIN` edita; todos veem (usado no formulário de pedido).

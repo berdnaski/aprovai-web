@@ -1,8 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import {
+  deleteApprovalMatrix,
   listApprovalRules,
   replaceApprovalMatrix,
+  simulateRoute,
+  type ApprovalScope,
 } from "@/api/approval-rules"
 
 export const approvalRuleKeys = {
@@ -12,19 +15,38 @@ export const approvalRuleKeys = {
 export function useApprovalRules(enabled = true) {
   return useQuery({
     queryKey: approvalRuleKeys.all,
-    queryFn: listApprovalRules,
+    queryFn: () => listApprovalRules(),
     enabled,
   })
 }
 
-export function useReplaceApprovalMatrix() {
+function useInvalidateApprovalRules() {
   const queryClient = useQueryClient()
+
+  return () => {
+    void queryClient.invalidateQueries({ queryKey: approvalRuleKeys.all })
+    void queryClient.invalidateQueries({ queryKey: ["onboarding", "status"] })
+  }
+}
+
+export function useReplaceApprovalMatrix() {
+  const invalidate = useInvalidateApprovalRules()
 
   return useMutation({
     mutationFn: replaceApprovalMatrix,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: approvalRuleKeys.all })
-      void queryClient.invalidateQueries({ queryKey: ["onboarding", "status"] })
-    },
+    onSuccess: invalidate,
   })
+}
+
+export function useDeleteApprovalMatrix() {
+  const invalidate = useInvalidateApprovalRules()
+
+  return useMutation({
+    mutationFn: (scope: ApprovalScope) => deleteApprovalMatrix(scope),
+    onSuccess: invalidate,
+  })
+}
+
+export function useSimulateRoute() {
+  return useMutation({ mutationFn: simulateRoute })
 }

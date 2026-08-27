@@ -97,6 +97,16 @@ export function getApiErrorCode(error: unknown): string | null {
   return null
 }
 
+export function getApiErrorDetails(
+  error: unknown,
+): Record<string, unknown> | undefined {
+  if (axios.isAxiosError<ApiErrorBody>(error)) {
+    return error.response?.data?.details
+  }
+
+  return undefined
+}
+
 export function getApiErrorStatus(error: unknown): number | null {
   if (axios.isAxiosError(error)) {
     return error.response?.status ?? null

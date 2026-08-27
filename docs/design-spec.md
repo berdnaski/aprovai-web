@@ -31,7 +31,7 @@ O texto principal nunca é `#000`: preto puro sobre fundo claro gera contraste e
 | `--primary` | `oklch(0.44 0.17 305)` | `#6B3FA0` | roxo de marca, fechado — botão primário, link ativo, foco |
 | `--primary-hover` | `oklch(0.38 0.17 305)` | `#5A3486` | hover do primary — mesmo matiz, ~5% mais escuro |
 | `--primary-foreground` | `oklch(0.99 0 0)` | `#FDFDFD` | texto sobre `--primary` |
-| `--brand-accent` | `oklch(0.62 0.16 155)` | `#00A874` | verde de marca — uso cirúrgico: sucesso, confirmação, badge "aprovado" (nome é `--brand-accent`, não `--accent`; ver 6.1) |
+| `--brand-accent` | `oklch(0.62 0.16 155)` | `#00A874` | verde de marca — uso cirúrgico: sucesso, confirmação, badge "aprovado" (nome é `--brand-accent`, não `--accent`; ver 6.2) |
 | `--brand-accent-foreground` | `oklch(0.99 0 0)` | `#FDFDFD` | texto sobre `--brand-accent` |
 | `--accent` | `#F4F4F5` | `#F4F4F5` | hover neutro do shadcn — cinza, **não** o verde de marca |
 | `--destructive` | `oklch(0.53 0.16 25)` | `#C4432E` | erro, ação destrutiva — terroso, não vermelho-semáforo |
@@ -149,12 +149,24 @@ Mapeamento direto:
 --muted              → 1.2 --muted
 --muted-foreground   → 1.2 --muted-foreground
 --accent             → permanece neutro (hover do shadcn); o verde de marca
-                        vive em --brand-accent, ver 6.1
+                        vive em --brand-accent, ver 6.2
 --destructive        → 1.2 --destructive
 --border / --input   → 1.2 --border
 --ring               → 1.2 --ring
 ```
 
-### 6.1 Ajuste ao padrão shadcn
+### 6.1 A escala tipográfica precisa ser declarada no `tailwind-merge`
+
+Os tokens de `2.2` são `@utility`, não classes nativas do Tailwind — então o `tailwind-merge`, que roda dentro do `cn()`, não os reconhecia e classificava `text-caption` como **cor**. Ao encontrar uma cor de verdade na mesma chamada, ele descartava um dos dois:
+
+```
+cn("text-caption", "text-destructive")  →  "text-destructive"
+```
+
+O tamanho sumia e o texto caía para o herdado — maior que o previsto, estourando a largura de linhas e tabelas. Não havia erro nem aviso: só um layout que não fecha. Afetava 536 usos em 79 arquivos.
+
+`src/lib/utils.ts` registra os tokens no grupo `font-size` via `extendTailwindMerge`. **Todo token novo de tamanho adicionado em `2.2` precisa entrar nessa lista também** — caso contrário ele volta a ser tratado como cor, e o sintoma reaparece longe da causa.
+
+### 6.2 Ajuste ao padrão shadcn
 
 shadcn usa `--accent`/`--accent-foreground` para estado de hover neutro (menu item hover, etc), não para "cor de destaque de marca". Como este projeto reserva verde para significado semântico (sucesso), a tela cria um token adicional `--brand-accent` para o verde, e mantém `--accent` no papel neutro padrão do shadcn (hover discreto, tom de `--muted`). Isso evita reescrever o comportamento interno de componentes shadcn que já assumem `--accent` como neutro.
