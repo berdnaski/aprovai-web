@@ -162,3 +162,75 @@ export const CnpjLookupFailure = {
 
 export type CnpjLookupFailure =
   (typeof CnpjLookupFailure)[keyof typeof CnpjLookupFailure]
+
+export const RequestStatus = {
+  DRAFT: "DRAFT",
+  PENDING: "PENDING",
+  CHANGES_REQUESTED: "CHANGES_REQUESTED",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+  CANCELED: "CANCELED",
+  COMPLETED: "COMPLETED",
+} as const
+
+export type RequestStatus = (typeof RequestStatus)[keyof typeof RequestStatus]
+
+
+export const RequestView = {
+  MINE: "MINE",
+  PENDING_FOR_ME: "PENDING_FOR_ME",
+  ALL: "ALL",
+} as const
+
+export type RequestView = (typeof RequestView)[keyof typeof RequestView]
+
+export const Urgency = {
+  LOW: "LOW",
+  MEDIUM: "MEDIUM",
+  HIGH: "HIGH",
+} as const
+
+export type Urgency = (typeof Urgency)[keyof typeof Urgency]
+
+export const URGENCY_LABELS: Record<Urgency, string> = {
+  LOW: "Baixa",
+  MEDIUM: "Normal",
+  HIGH: "Alta",
+}
+
+export const DecisionType = {
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+  CHANGES_REQUESTED: "CHANGES_REQUESTED",
+  APPROVED_WITH_OVERRIDE: "APPROVED_WITH_OVERRIDE",
+} as const
+
+export type DecisionType = (typeof DecisionType)[keyof typeof DecisionType]
+
+
+export const DecisionChannel = {
+  PLATFORM: "PLATFORM",
+  EMAIL: "EMAIL",
+} as const
+
+export type DecisionChannel =
+  (typeof DecisionChannel)[keyof typeof DecisionChannel]
+
+export const StepStatus = {
+  WAITING: "WAITING",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+  ESCALATED: "ESCALATED",
+  CANCELED: "CANCELED",
+} as const
+
+export type StepStatus = (typeof StepStatus)[keyof typeof StepStatus]
+
+export const ExtractionStatus = {
+  QUEUED: "QUEUED",
+  SUCCEEDED: "SUCCEEDED",
+  FAILED: "FAILED",
+} as const
+
+export type ExtractionStatus =
+  (typeof ExtractionStatus)[keyof typeof ExtractionStatus]

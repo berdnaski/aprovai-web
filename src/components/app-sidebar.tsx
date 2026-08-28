@@ -1,4 +1,3 @@
-import { BookmarkSimple, Buildings, ChartBar, CreditCard, FileArrowUp, FileText, Package, Receipt, Scales, Scroll, ShoppingCart, Stack, Truck, UsersThree, Wallet } from "@phosphor-icons/react"
 import * as React from "react"
 import { NavGroup, type NavEntry } from "@/components/nav-group"
 import { NavSupport } from "@/components/nav-support"
@@ -11,26 +10,9 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { NAV_ICONS } from "@/lib/nav-icons"
 import { NAV_AREAS, canSee, type NavArea } from "@/lib/permissions"
 import { useSession } from "@/hooks/auth/use-session"
-
-const ICONS: Record<string, React.ReactNode> = {
-  "purchase-requests": <FileText />,
-  "purchase-orders": <ShoppingCart />,
-  receipts: <Truck />,
-  invoices: <Receipt />,
-  matching: <FileArrowUp />,
-  payables: <Wallet />,
-  "cost-centers": <Stack />,
-  "approval-rules": <Scales />,
-  suppliers: <Package />,
-  categories: <BookmarkSimple />,
-  members: <UsersThree />,
-  "audit-logs": <Scroll />,
-  analytics: <ChartBar />,
-  billing: <CreditCard />,
-  company: <Buildings />,
-}
 
 const GROUPS: { label: string; keys: string[] }[] = [
   {
@@ -61,7 +43,8 @@ const GROUPS: { label: string; keys: string[] }[] = [
 ]
 
 function toEntry(area: NavArea): NavEntry {
-  return { label: area.label, to: area.to, icon: ICONS[area.key] }
+  const AreaIcon = NAV_ICONS[area.key]
+  return { label: area.label, to: area.to, icon: <AreaIcon /> }
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { Link } from "react-router-dom"
+import { Link, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/api/client"
@@ -25,6 +25,9 @@ const fieldClass =
   "h-12 rounded-xl border-border/70 bg-muted/50 px-4 text-body md:text-body placeholder:text-muted-foreground/70 focus-visible:bg-card"
 
 export function RegisterPage() {
+  const [searchParams] = useSearchParams()
+  const redirect = searchParams.get("redirect")
+
   const registerMutation = useRegister()
 
   const form = useForm<RegisterFormValues>({
@@ -55,7 +58,7 @@ export function RegisterPage() {
         <>
           Já tem uma conta?{" "}
           <Link
-            to="/entrar"
+            to={redirect ? `/entrar?redirect=${encodeURIComponent(redirect)}` : "/entrar"}
             className="font-semibold text-foreground hover:text-primary"
           >
             Entrar

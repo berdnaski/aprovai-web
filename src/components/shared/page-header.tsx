@@ -15,7 +15,7 @@ export function PageHeader({
   className,
 }: {
   title: string
-  description?: string
+  description?: React.ReactNode
   breadcrumbs?: Breadcrumb[]
   action?: React.ReactNode
   className?: string

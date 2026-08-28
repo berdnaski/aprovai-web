@@ -45,7 +45,7 @@ export function NavUser() {
             render={
               <SidebarMenuButton
                 size="lg"
-                className="data-open:bg-accent"
+                className="group-data-[collapsible=icon]:justify-center data-open:bg-accent"
               />
             }
           >
@@ -55,7 +55,7 @@ export function NavUser() {
                 {monogram}
               </AvatarFallback>
             </Avatar>
-            <div className="grid flex-1 text-left">
+            <div className="grid flex-1 text-left group-data-[collapsible=icon]:hidden">
               <span className="truncate text-label text-foreground">
                 {user.name}
               </span>
@@ -63,7 +63,7 @@ export function NavUser() {
                 {membership ? ROLE_LABELS[membership.role] : user.email}
               </span>
             </div>
-            <CaretUpDown className="ml-auto size-4 text-muted-foreground" />
+            <CaretUpDown className="ml-auto size-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
           </DropdownMenuTrigger>
 
           <DropdownMenuContent

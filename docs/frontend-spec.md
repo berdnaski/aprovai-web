@@ -13,15 +13,17 @@ Backend de referência: `aprovia-api`, prefixo `/api`, ~130 rotas, 4 perfis (`RE
 | camada | escolha |
 |---|---|
 | build | Vite |
-| framework | React 18 + TypeScript |
-| roteamento | React Router v6 (data routers) |
+| framework | React 19 + TypeScript |
+| roteamento | React Router v7, `<BrowserRouter>` + `<Routes>` |
 | estado de servidor | TanStack Query — toda chamada de API passa por ele, zero `useEffect` + `fetch` manual |
-| estado de formulário | React Hook Form + Zod (schema espelha o DTO da API) |
-| UI | shadcn/ui + Tailwind CSS |
-| tabelas | TanStack Table, para as ~15 telas de listagem |
-| ícones | lucide-react (dependência do shadcn) |
-| datas | date-fns |
+| estado de formulário | React Hook Form + Zod nas telas de auth e onboarding; estado local nas telas de configuração, onde o salvamento é por campo |
+| UI | shadcn/ui sobre Base UI + Tailwind CSS |
+| tabelas | `<DataTable>` própria (`components/ui/data-table.tsx`), sem TanStack Table |
+| ícones | `@phosphor-icons/react` |
+| datas | `Intl.DateTimeFormat` / `toLocaleDateString`, sem biblioteca |
 | notificação de UI (toast) | sonner (padrão shadcn) |
+
+Estas escolhas divergem do que este spec listava antes (React 18, data routers, TanStack Table, lucide-react, date-fns). O código nunca usou nenhuma delas: a tabela acima descreve o que está instalado. Trocar qualquer uma agora seria reescrever telas que funcionam, então o spec é que se ajusta.
 
 ### 0.2 Princípios de implementação
 
@@ -97,7 +99,8 @@ src/
 │   ├── public-routes.tsx         # rotas de token (verificação, reset) e de visitante (login, registro)
 │   ├── onboarding-routes.tsx     # criação de empresa e progresso do onboarding
 │   └── app-routes.tsx            # tudo sob AppLayout, agrupado por RoleGuard
-└── lib/                          # money.ts, dates.ts, cn.ts (shadcn utils)
+└── lib/                          # money.ts, cnpj.ts, people.ts, permissions.ts,
+                                  # nav-icons.ts, status-labels.ts, utils.ts (cn)
 ```
 
 ### 0.4 Componentes compartilhados (construir antes de qualquer tela)
@@ -114,7 +117,7 @@ src/
 | `<EmptyState>` | toda lista vazia | ícone, texto, opcionalmente botão de ação primária |
 | `<PageHeader>` | topo de toda tela | título, breadcrumb, slot de ação primária à direita |
 | `<RoleGuard>` | em torno de rotas/blocos de UI | recebe `allow: CompanyMemberRole[]`, esconde/redireciona se o perfil do usuário não estiver na lista |
-| `<FileDropzone>` | upload de anexos e XML | drag-and-drop + seleção manual, mostra progresso, valida extensão antes de enviar |
+| `<FileDropzone>` | upload de anexos e XML | `components/shared/file-dropzone.tsx`. Recebe `onSelect(file)`, `accept?` (lista de extensões), `isUploading`, `label`, `hint`. Faz drag-and-drop e seleção manual, mostra o estado de envio e recusa a extensão errada antes de chamar a API, com a mensagem no próprio componente |
 
 **Densidade e anatomia da linha.** A listagem é onde o produto é usado o dia inteiro, então a linha é densa: 44px de altura, célula em `text-caption`, cabeçalho de 36px em `text-overline` sobre `bg-muted/35`. A hierarquia dentro da linha vem do **peso**, não do tamanho — nome em `font-medium`, identificador secundário (CNPJ, e-mail, descrição) em `text-micro` cinza logo abaixo. Detalhes de implementação em `docs/design-spec.md` §3.1.
 
@@ -126,6 +129,8 @@ src/
 
 ## 1. Autenticação
 
+**Os caminhos de token ficam em inglês de propósito.** `/verify-email`, `/reset-password` e `/confirm-password-change` são montados por `auth-mail.service.ts` e já foram para caixas de entrada: traduzir quebraria links vivos. O resto da navegação segue em português. Versões anteriores deste spec listavam `/verificar-email`, `/login` e `/redefinir-senha`, que nunca existiram no código.
+
 Cobre: `POST /auth/register`, `GET /auth/verify-email`, `POST /auth/resend-verification`, `POST /auth/login`, `GET /auth/me`, `POST /auth/refresh`, `POST /auth/forgot-password`, `POST /auth/reset-password`, `POST /auth/change-password`, `POST /auth/confirm-password-change`, `POST /auth/logout`.
 
 Autenticação é por cookie `httpOnly` (`access_token`, `refresh_token`) — o cliente HTTP do front usa `credentials: 'include'` em toda chamada; nunca armazena token em `localStorage`.
@@ -134,18 +139,19 @@ Autenticação é por cookie `httpOnly` (`access_token`, `refresh_token`) — o 
 - **Acesso**: público.
 - **Form**: nome, e-mail, senha (+confirmação), checkbox de aceite de termos.
 - **API**: `POST /auth/register`.
-- **Sucesso**: redireciona para `/registrar/confirme-seu-email` com o e-mail em query, mostra mensagem "enviamos um link de confirmação".
+- **Sucesso**: a própria tela troca para o estado "confirme seu e-mail" (1.2). Não há redirect: o e-mail vem de `registerMutation.data.email`, da resposta da API.
 - **Erro**: e-mail já cadastrado → mensagem da API inline no campo e-mail.
 
-### 1.2 Tela — Confirme seu e-mail (`/registrar/confirme-seu-email`)
-- **Acesso**: público, chega só via redirect do 1.1.
+### 1.2 Estado — Confirme seu e-mail (dentro de `/registrar`)
+- **Não tem rota própria.** É o componente `VerificationSent`, que `RegisterPage` renderiza quando a mutação de cadastro tem sucesso.
 - Mostra o e-mail informado, botão "reenviar e-mail" → `POST /auth/resend-verification`, com cooldown de 60s no botão (evita spam de clique).
+- Uma versão anterior deste spec pedia a rota `/registrar/confirme-seu-email?email=`. Ficou como estado porque o e-mail já está em memória (não precisa trafegar na URL, onde entraria no histórico do navegador) e porque uma rota alcançável "só via redirect" fica quebrada em acesso direto. O custo: recarregar a página perde o aviso e volta ao formulário.
 
-### 1.3 Tela — Verificação de e-mail (`/verificar-email`)
+### 1.3 Tela — Verificação de e-mail (`/verify-email`)
 - **Acesso**: público, via link do e-mail (`?token=`).
 - Chama `GET /auth/verify-email?token=` no mount. Três estados: carregando, sucesso (botão "ir para o login"), erro (token expirado/inválido, botão "reenviar verificação").
 
-### 1.4 Tela — Login (`/login`)
+### 1.4 Tela — Login (`/entrar`)
 - **Acesso**: público.
 - **Form**: e-mail, senha, link "esqueci minha senha".
 - **API**: `POST /auth/login`.
@@ -157,23 +163,23 @@ Autenticação é por cookie `httpOnly` (`access_token`, `refresh_token`) — o 
 - **Form**: e-mail.
 - **API**: `POST /auth/forgot-password` — sempre mostra a mesma mensagem de sucesso, independente do e-mail existir (não vaza existência de conta, é intencional no backend).
 
-### 1.6 Tela — Redefinir senha (`/redefinir-senha`)
+### 1.6 Tela — Redefinir senha (`/reset-password`)
 - **Acesso**: público, via link do e-mail (`?token=`).
 - **Form**: nova senha + confirmação.
 - **API**: `POST /auth/reset-password`.
 - **Sucesso**: redireciona ao login com toast de confirmação.
 
-### 1.7 Modal — Alterar senha (dentro do perfil, seção 20)
+### 1.7 Tela — Alterar senha (`/conta/senha`)
 - **Form**: senha atual, nova senha, confirmação.
-- **API**: `POST /auth/change-password` (dispara e-mail de confirmação) → usuário confirma clicando no link do e-mail → `GET`/página que chama `POST /auth/confirm-password-change`.
-- Modal fecha com toast "verifique seu e-mail para confirmar a alteração".
+- **API**: `POST /auth/change-password` (dispara e-mail de confirmação) → usuário confirma clicando no link do e-mail → `/confirm-password-change`, que chama `POST /auth/confirm-password-change`.
+- É tela própria, não modal dentro do perfil: a confirmação passa por e-mail, então o fluxo não cabe num modal que se fecha.
 
 ### 1.8 Ação — Logout
-- Botão no menu do usuário (topbar). `POST /auth/logout`, limpa cache do TanStack Query, redireciona para `/login`.
+- Botão no menu do usuário (topbar). `POST /auth/logout`, limpa cache do TanStack Query, redireciona para `/entrar`.
 
 ### 1.9 Sessão / refresh
-- Não é tela. Interceptor no `api/client.ts`: em qualquer 401, tenta `POST /auth/refresh` uma vez; se falhar, limpa estado e redireciona `/login`.
-- `GET /auth/me` é chamado no boot do app (dentro de um `AuthProvider`) para popular o usuário logado e decidir se mostra app ou tela de login.
+- Não é tela. Interceptor no `api/client.ts`: em qualquer 401, tenta `POST /auth/refresh` uma vez; se falhar, chama o handler registrado, que apenas **zera a sessão no cache**. O interceptor não navega — quem redireciona é o guard `RequireAuth`, para `/entrar?redirect={rota atual}`, preservando o destino. Manter o roteador fora da camada de API é proposital.
+- `GET /auth/me` roda pelo hook `useSession()` sobre o TanStack Query, não por um `AuthProvider`: o cache da query já é o estado compartilhado.
 
 ---
 
@@ -194,6 +200,8 @@ Fluxo obrigatório e sequencial, sem pular etapa — `GET /onboarding` devolve `
 - Stepper visual com as etapas de `OnboardingStep` (`ACCOUNT → COMPANY → TEAM → REVIEW → DONE`).
 - Lista de requisitos pendentes vindos de `GET /onboarding` (ex: "crie ao menos um Centro de Custo com gestor definido").
 - Cada requisito pendente linka para a tela relevante (Centro de Custo, matriz de alçadas).
+
+**Links de notificação.** `notification-templates.ts` grava o caminho de destino na coluna `link` da notificação, no momento em que ela nasce: o valor é congelado, então mudar a rota depois exige corrigir também as linhas já gravadas. Os caminhos precisam bater com `src/routes/` do front, incluindo os de telas ainda não construídas (`/ordens-de-compra`, `/notas-fiscais`, `/conferencias`, `/contas-a-pagar`).
 - Botão "concluir configuração" habilitado só quando `canComplete: true` → `POST /onboarding/complete`.
 - Se `POST /onboarding/complete` voltar 409, mostra a lista de pendências do corpo do erro.
 
@@ -256,7 +264,8 @@ Cobre: `POST /invites`, `GET /invites`, `GET /invites/token/{token}`, `POST /inv
 - `GET /invites/token/{token}` no load, mostra nome da empresa, papel oferecido.
 - Se não logado: botões "criar conta" / "já tenho conta", ambos preservando o token no retorno.
 - Se logado com e-mail diferente do convite: mensagem clara "este convite foi enviado para outro endereço" (não botão de aceitar).
-- Botão "aceitar convite" → `POST /invites/token/{token}/accept`. Sucesso força novo login (mesmo motivo do 2.1) e vai para o dashboard.
+- Botão "aceitar convite" → `POST /invites/token/{token}/accept`, seguido de `POST /auth/refresh` e refetch da sessão. **Não é preciso pedir a senha de novo**: `companyId`/`memberId`/`role` vêm do payload do JWT (não de consulta ao banco), então um refetch puro devolveria a sessão velha — mas `refresh-token.use-case` re-deriva o vínculo e emite cookie novo. (Versão anterior deste spec mandava forçar login.)
+- **A rota é `/convites/{token}`, no plural.** É o que `invite-mail.template.ts` monta no link do e-mail. `/convite/{token}` (singular) responde também, como apelido, para os links já enviados.
 
 ---
 
@@ -366,8 +375,8 @@ Núcleo do sistema. Cobre: `POST /purchase-requests`, `GET /purchase-requests`, 
 ### 8.1 Tela — Meus pedidos / Pendentes para mim / Todos (`/pedidos`)
 - **Acesso**: todos os perfis, conteúdo muda por `view`.
 - Três abas mapeando direto o parâmetro `view` de `GET /purchase-requests`: **Meus pedidos** (`MINE`), **Pendentes para mim** (`PENDING_FOR_ME`, badge com contagem, só visível/relevante para `APPROVER`/`FINANCE_ADMIN`), **Todos** (`ALL`, visibilidade filtrada pelo backend conforme RN43).
-- `<DataTable>`: número, título, solicitante, Centro de Custo, valor, `<StatusBadge>` de `RequestStatus`, urgência, data.
-- Filtros: status (múltiplo), Centro de Custo, fornecedor, categoria, busca por número/título — todos mapeando os query params de `GET /purchase-requests`.
+- `<DataTable>`: pedido (título + número, com o ponto de urgência antes do título), Centro de Custo (a partir de `lg`), solicitante (a partir de `xl`), situação (`<StatusBadge>` de `RequestStatus`), valor e data de abertura (a partir de `lg`). Urgência não tem coluna própria: vira um ponto colorido ao lado do título, e some quando é `MEDIUM` — um marcador presente em toda linha não informaria nada.
+- Filtros: situação, Centro de Custo, fornecedor e categoria, mais busca por número/título — todos mapeando os query params de `GET /purchase-requests`. Cada filtro mostra o **nome da dimensão** quando vazio e o **valor** quando escolhido, ganhando cor de ativo; a opção de limpar fica dentro da lista ("Todas as situações"). A API aceita `status` como array, mas a tela envia um valor por vez: seleção múltipla numa barra de filtro exige um controle bem mais pesado, e não houve demanda.
 - Botão "novo pedido" → `/pedidos/novo`.
 - Linha abre `/pedidos/{id}`.
 
@@ -378,14 +387,16 @@ Núcleo do sistema. Cobre: `POST /purchase-requests`, `GET /purchase-requests`, 
 - **Seção de itens** (inline na mesma tela, não modal separado — é o coração do form): tabela editável com adicionar linha (`POST /purchase-requests/{id}/items`), editar quantidade/preço inline (`PATCH .../items/{itemId}`), remover linha (`DELETE .../items/{itemId}`, `<ConfirmDialog>` leve). Total recalculado a cada mudança, refletindo `GET /purchase-requests/{id}` — nunca somado no front.
 - **Seção de anexos**: `<FileDropzone>`, lista de arquivos (`GET .../files`) com download (`GET .../files/{fileId}/download`, abre URL assinada em nova aba) e remoção (`DELETE .../files/{fileId}`).
 - **Extração assistida por IA**: botão "extrair dados de um documento" abre modal 8.6.
-- Rodapé fixo: botão "salvar rascunho" (sempre disponível) e "enviar para aprovação" (`POST /purchase-requests/{id}/submit`) — desabilitado se não houver itens.
-- **Fluxo de duplicata (RN36)**: se `submit` voltar 400 listando pedidos parecidos, modal mostra a lista com link para cada um e checkbox "confirmo que não é duplicata" → reenvia `submit` com `confirmDuplicate: true`.
-- **Fluxo de override de orçamento**: se o backend indicar `requiresOverride: true` na resposta da criação/edição, banner amarelo persistente na tela explicando que o pedido excede o orçamento disponível e vai precisar de aprovação com ressalva — não bloqueia o envio, só avisa.
+- **Não há botão "salvar rascunho".** O rascunho grava sozinho: campos de texto no `blur`, selects e urgência no ato, com um indicador de estado no cabeçalho (`Salvando` / `Salvo` / `Não salvou`). É rascunho, nada é notificado, e um botão de salvar convivendo com auto-save gera dois modelos mentais concorrentes.
+- Painel lateral fixo de envio, no lugar de um rodapé: mostra o total, a lista do que ainda falta para poder enviar (título, Centro de Custo, fornecedor, ao menos um item — exatamente o que o backend exige) e o botão "enviar para aprovação", habilitado só quando tudo está pronto. Antes, o que faltava só aparecia como erro **depois** do clique.
+- **Fluxo de duplicata (RN36)**: se `submit` voltar 400, `details.duplicates` traz `[{ number, amountCents, createdAt }]` — **sem `id`**, então o link de cada um vai para `/pedidos?search={number}`, não para o detalhe direto. Checkbox "confirmo que não é duplicata" → reenvia `submit` com `confirmDuplicate: true`.
+- **Fluxo de override de orçamento**: não implementado — `requiresOverride` existe na entidade e é gravado na submissão, mas **não é exposto em `PurchaseRequestResponseDto`**, então o front não tem como saber. O aviso na tela depende de o backend passar a devolver o campo. O caminho segue funcionando: quem aprova vê a opção "aprovar com ressalva" no modal 8.4.
 
 ### 8.3 Tela — Detalhe do pedido (`/pedidos/{id}`)
 - **Acesso**: todos os perfis com visibilidade (RN43, backend decide, front só reage a 403/404).
 - Cabeçalho: número, título, `<StatusBadge>`, valor total, urgência.
 - Corpo: dados do pedido (read-only fora de `DRAFT`), tabela de itens (read-only), anexos (lista + download), resultado da extração de IA se houver.
+- `GET /purchase-requests/{id}` devolve **só o pedido** — itens, anexos e trilha vêm de `GET .../items`, `GET .../files` e `GET .../timeline`, em chamadas próprias.
 - **Timeline** (`GET /pedidos/{id}/timeline`): componente vertical de eventos — criação, submissão, cada decisão com decisor/justificativa/data, cancelamento. É o mesmo componente usado dentro do modal de decisão (8.4) para dar contexto.
 - **Painel de ações**, condicional ao status e ao perfil do usuário logado (o backend já valida; o front só evita mostrar botão que vai dar 403 na cara):
   - `DRAFT` + dono → "editar" (vai para 8.2), "excluir" (`DELETE`, `<ConfirmDialog>`).

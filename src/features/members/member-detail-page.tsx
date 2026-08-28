@@ -29,7 +29,7 @@ import {
 import { MemberCostCenters } from "./components/member-cost-centers"
 import { MemberSummary } from "./components/member-summary"
 import { MembersError } from "./components/members-error"
-import { SettingGroup, SettingRow } from "./components/setting-row"
+import { SettingGroup, SettingRow } from "@/components/shared/setting-row"
 import { TransferManagementDialog } from "./components/transfer-management-dialog"
 
 const ROLES: CompanyMemberRole[] = [

@@ -6,7 +6,7 @@ import {
   getOnboardingStatus,
   lookupCompanyCnpj,
 } from "@/api/onboarding"
-import { createCompany, getMyCompany, listMembers } from "@/api/companies"
+import { createCompany, listMembers } from "@/api/companies"
 import { createCostCenter, listCostCenters } from "@/api/cost-centers"
 import { createInvite, listInvites, revokeInvite } from "@/api/invites"
 
@@ -22,14 +22,6 @@ export function useOnboardingStatus(enabled = true) {
   return useQuery({
     queryKey: onboardingKeys.status,
     queryFn: getOnboardingStatus,
-    enabled,
-  })
-}
-
-export function useMyCompany(enabled = true) {
-  return useQuery({
-    queryKey: onboardingKeys.company,
-    queryFn: getMyCompany,
     enabled,
   })
 }

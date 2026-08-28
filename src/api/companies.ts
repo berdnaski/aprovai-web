@@ -50,6 +50,37 @@ export async function getMyCompany(): Promise<Company> {
   return data
 }
 
+export interface UpdateCompanyPayload {
+  legalName?: string
+  tradeName?: string | null
+  industry?: string | null
+  companySize?: string | null
+}
+
+export async function updateCompany(
+  payload: UpdateCompanyPayload,
+): Promise<Company> {
+  const { data } = await apiClient.patch<Company>("/companies/me", payload)
+  return data
+}
+
+export interface UpdateCompanyPolicyPayload {
+  overrunTolerancePercent?: number
+  reminderHours?: number
+  escalationHours?: number
+  dualApprovalThresholdCents?: string | null
+}
+
+export async function updateCompanyPolicy(
+  payload: UpdateCompanyPolicyPayload,
+): Promise<Company> {
+  const { data } = await apiClient.patch<Company>(
+    "/companies/me/policy",
+    payload,
+  )
+  return data
+}
+
 export async function listMembers(): Promise<CompanyMember[]> {
   const { data } = await apiClient.get<CompanyMember[]>("/members")
   return data

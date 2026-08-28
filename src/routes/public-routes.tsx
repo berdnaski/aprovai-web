@@ -1,5 +1,6 @@
 import { Route } from "react-router-dom"
 
+import { AcceptInvitePage } from "@/features/invites/accept-invite-page"
 import { ConfirmPasswordChangePage } from "@/features/auth/confirm-password-change-page"
 import { ForgotPasswordPage } from "@/features/auth/forgot-password-page"
 import { LoginPage } from "@/features/auth/login-page"
@@ -11,6 +12,8 @@ import { RedirectIfAuthenticated } from "@/routes/guards"
 export function tokenRoutes() {
   return (
     <>
+      <Route path="/convite/:token" element={<AcceptInvitePage />} />
+      <Route path="/convites/:token" element={<AcceptInvitePage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route

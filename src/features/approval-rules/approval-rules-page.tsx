@@ -16,7 +16,8 @@ import {
   useReplaceApprovalMatrix,
 } from "@/hooks/approval-rules/use-approval-rules"
 import { useCategories } from "@/hooks/categories/use-categories"
-import { useCostCenters, useMyCompany } from "@/hooks/onboarding/use-onboarding"
+import { useMyCompany } from "@/hooks/companies/use-companies"
+import { useCostCenters } from "@/hooks/onboarding/use-onboarding"
 import { useMembers } from "@/hooks/members/use-members"
 
 import { CreateScopeDialog } from "./components/create-scope-dialog"

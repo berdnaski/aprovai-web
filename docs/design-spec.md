@@ -44,6 +44,7 @@ O texto principal nunca é `#000`: preto puro sobre fundo claro gera contraste e
 - **`--primary` é ação, não decoração.** Aparece em: botão primário, link, item de menu ativo, borda de foco. Nunca em fundo de seção, nunca em texto de corpo.
 - **`--brand-accent` (verde) é raro de propósito.** Se ele aparecer em toda tela, perde o significado de "confirmação". Reservado a: status `APPROVED`/`MATCHED`/`RELEASED`, toast de sucesso, ícone de check.
 - **90% de qualquer tela é `--background`, `--surface`, `--foreground`, `--muted-foreground`, `--border`.** As cores de marca são o tempero, não o prato.
+- **A moldura de navegação usa `--background`, não `--surface`.** Sidebar e barra superior são cromo, não conteúdo elevado: ficam na mesma cor da página e se separam pela borda. Branco é o que sobe (card, modal, input), e é isso que faz um card se destacar. Por um tempo a barra superior ficou em `bg-card` enquanto a sidebar ficava em `--background`: as duas são a mesma camada e destoavam uma da outra.
 - **Nunca usar as cores cruas do Tailwind** (`purple-600`, `green-500`, etc). Todo componente referencia os tokens semânticos acima.
 
 ---

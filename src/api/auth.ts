@@ -96,6 +96,10 @@ export async function me(): Promise<AuthResponse> {
   }
 }
 
+export async function refreshSession(): Promise<void> {
+  await apiClient.post("/auth/refresh")
+}
+
 export async function logout(): Promise<void> {
   await apiClient.post("/auth/logout")
 }

@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom"
 
-import { useMyCompany } from "@/hooks/onboarding/use-onboarding"
+import { useMyCompany } from "@/hooks/companies/use-companies"
 import { useSession } from "@/hooks/auth/use-session"
 
 function FullScreenLoader() {
