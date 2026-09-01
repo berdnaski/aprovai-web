@@ -3,6 +3,7 @@ import {
   Gavel,
   PencilSimple,
   Prohibit,
+  ShoppingCart,
   Trash,
   UserSwitch,
 } from "@phosphor-icons/react"
@@ -121,6 +122,17 @@ export function RequestDetailPage() {
         >
           <PencilSimple size={15} aria-hidden />
           Editar
+        </Button>
+      ) : null}
+
+      {request.status === RequestStatus.APPROVED && isFinanceAdmin ? (
+        <Button
+          size="lg"
+          onClick={() => navigate(`/pedidos/${request.id}/emitir-ordem`)}
+          className="gap-1.5 bg-primary font-medium text-primary-foreground hover:bg-primary-hover"
+        >
+          <ShoppingCart size={15} aria-hidden />
+          Emitir ordem de compra
         </Button>
       ) : null}
 
