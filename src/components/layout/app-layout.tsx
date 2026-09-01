@@ -4,6 +4,7 @@ import { Link, Outlet } from "react-router-dom"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { CommandPalette } from "@/components/shared/command-palette"
+import { NotificationBell } from "@/components/shared/notification-bell"
 import { Button } from "@/components/ui/button"
 import {
   SidebarInset,
@@ -55,9 +56,12 @@ export function AppLayout() {
               </kbd>
             </button>
 
-            <div className="flex min-w-0 items-center justify-end">
+            <div className="flex min-w-0 items-center justify-end gap-1.5">
+              <NotificationBell />
+
               <Button
                 size="sm"
+                nativeButton={false}
                 render={<Link to="/pedidos/novo" />}
                 className="gap-1.5 bg-primary font-medium text-primary-foreground hover:bg-primary-hover"
               >

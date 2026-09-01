@@ -38,15 +38,9 @@ export const NAV_AREAS = [
     access: access("full", "none", "full"),
   },
   {
-    key: "invoices",
-    label: "Notas fiscais",
-    to: "/notas-fiscais",
-    access: access("none", "none", "full"),
-  },
-  {
-    key: "matching",
-    label: "Conferências",
-    to: "/conferencias",
+    key: "conferral",
+    label: "Conferência",
+    to: "/conferencia",
     access: access("none", "none", "full"),
   },
   {

@@ -234,3 +234,183 @@ export const ExtractionStatus = {
 
 export type ExtractionStatus =
   (typeof ExtractionStatus)[keyof typeof ExtractionStatus]
+
+export const NotificationEvent = {
+  INVITE_RECEIVED: "INVITE_RECEIVED",
+  REQUEST_PENDING: "REQUEST_PENDING",
+  DECISION_MADE: "DECISION_MADE",
+  REQUEST_RETURNED: "REQUEST_RETURNED",
+  SLA_REMINDER: "SLA_REMINDER",
+  ESCALATED: "ESCALATED",
+  BUDGET_ALERT: "BUDGET_ALERT",
+  MONTHLY_REPORT: "MONTHLY_REPORT",
+  PO_ISSUED: "PO_ISSUED",
+  DELIVERY_OVERDUE: "DELIVERY_OVERDUE",
+  INVOICE_RECEIVED: "INVOICE_RECEIVED",
+  MATCH_DIVERGENT: "MATCH_DIVERGENT",
+  PAYABLE_DUE: "PAYABLE_DUE",
+} as const
+
+export type NotificationEvent =
+  (typeof NotificationEvent)[keyof typeof NotificationEvent]
+
+export const NOTIFICATION_EVENT_LABELS: Record<NotificationEvent, string> = {
+  INVITE_RECEIVED: "Convite recebido",
+  REQUEST_PENDING: "Pedido aguardando sua aprovação",
+  DECISION_MADE: "Decisão tomada no seu pedido",
+  REQUEST_RETURNED: "Pedido devolvido para ajuste",
+  SLA_REMINDER: "Lembrete de prazo",
+  ESCALATED: "Etapa escalada",
+  BUDGET_ALERT: "Alerta de orçamento",
+  MONTHLY_REPORT: "Relatório mensal",
+  PO_ISSUED: "Ordem de compra emitida",
+  DELIVERY_OVERDUE: "Entrega atrasada",
+  INVOICE_RECEIVED: "Nota fiscal recebida",
+  MATCH_DIVERGENT: "Divergência na conferência",
+  PAYABLE_DUE: "Conta a pagar vencendo",
+}
+
+export const NOTIFICATION_EVENT_GROUPS: Record<NotificationEvent, string> = {
+  INVITE_RECEIVED: "Equipe",
+  REQUEST_PENDING: "Aprovações",
+  DECISION_MADE: "Pedidos",
+  REQUEST_RETURNED: "Pedidos",
+  SLA_REMINDER: "Lembretes",
+  ESCALATED: "Aprovações",
+  BUDGET_ALERT: "Orçamento",
+  MONTHLY_REPORT: "Relatórios",
+  PO_ISSUED: "Ordens de compra",
+  DELIVERY_OVERDUE: "Recebimentos",
+  INVOICE_RECEIVED: "Conferência",
+  MATCH_DIVERGENT: "Conferência",
+  PAYABLE_DUE: "Contas a pagar",
+}
+
+export const PurchaseOrderStatus = {
+  DRAFT: "DRAFT",
+  ISSUED: "ISSUED",
+  SENT: "SENT",
+  PARTIALLY_RECEIVED: "PARTIALLY_RECEIVED",
+  RECEIVED: "RECEIVED",
+  CLOSED: "CLOSED",
+  CANCELED: "CANCELED",
+} as const
+
+export type PurchaseOrderStatus =
+  (typeof PurchaseOrderStatus)[keyof typeof PurchaseOrderStatus]
+
+export const ReceiptStatus = {
+  PARTIAL: "PARTIAL",
+  COMPLETE: "COMPLETE",
+  REJECTED: "REJECTED",
+} as const
+
+export type ReceiptStatus = (typeof ReceiptStatus)[keyof typeof ReceiptStatus]
+
+export const InvoiceStatus = {
+  RECEIVED: "RECEIVED",
+  MATCHED: "MATCHED",
+  DIVERGENT: "DIVERGENT",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+} as const
+
+export type InvoiceStatus = (typeof InvoiceStatus)[keyof typeof InvoiceStatus]
+
+export const InvoiceParseStatus = {
+  PENDING: "PENDING",
+  PARSED: "PARSED",
+  FAILED: "FAILED",
+} as const
+
+export type InvoiceParseStatus =
+  (typeof InvoiceParseStatus)[keyof typeof InvoiceParseStatus]
+
+export const TaxKind = {
+  ICMS: "ICMS",
+  IPI: "IPI",
+  PIS: "PIS",
+  COFINS: "COFINS",
+  ISS: "ISS",
+  IRRF: "IRRF",
+  CSLL: "CSLL",
+  INSS: "INSS",
+} as const
+
+export type TaxKind = (typeof TaxKind)[keyof typeof TaxKind]
+
+export const MatchStatus = {
+  MATCHED: "MATCHED",
+  DIVERGENT: "DIVERGENT",
+  OVERRIDDEN: "OVERRIDDEN",
+  REJECTED: "REJECTED",
+} as const
+
+export type MatchStatus = (typeof MatchStatus)[keyof typeof MatchStatus]
+
+export const DivergenceKind = {
+  PRICE_ABOVE_ORDER: "PRICE_ABOVE_ORDER",
+  QUANTITY_ABOVE_RECEIVED: "QUANTITY_ABOVE_RECEIVED",
+  QUANTITY_ABOVE_ORDER: "QUANTITY_ABOVE_ORDER",
+  ITEM_NOT_IN_ORDER: "ITEM_NOT_IN_ORDER",
+  ITEM_NOT_INVOICED: "ITEM_NOT_INVOICED",
+  SUPPLIER_MISMATCH: "SUPPLIER_MISMATCH",
+  TOTAL_MISMATCH: "TOTAL_MISMATCH",
+} as const
+
+export type DivergenceKind =
+  (typeof DivergenceKind)[keyof typeof DivergenceKind]
+
+export const DIVERGENCE_KIND_LABELS: Record<DivergenceKind, string> = {
+  PRICE_ABOVE_ORDER: "Cobraram mais caro que o combinado",
+  QUANTITY_ABOVE_RECEIVED: "Faturaram mais do que chegou",
+  QUANTITY_ABOVE_ORDER: "Faturaram mais do que foi pedido",
+  ITEM_NOT_IN_ORDER: "Item que não estava na ordem",
+  ITEM_NOT_INVOICED: "Item da ordem que não veio na nota",
+  SUPPLIER_MISMATCH: "Fornecedor diferente do da ordem",
+  TOTAL_MISMATCH: "Total da nota não bate com a ordem",
+}
+
+export const PayableStatus = {
+  BLOCKED: "BLOCKED",
+  RELEASED: "RELEASED",
+  PAID: "PAID",
+  CANCELED: "CANCELED",
+} as const
+
+export type PayableStatus = (typeof PayableStatus)[keyof typeof PayableStatus]
+
+export const PayableReleaseReason = {
+  MATCHED: "MATCHED",
+  NO_INVOICE_REQUIRED: "NO_INVOICE_REQUIRED",
+  BELOW_MATCH_THRESHOLD: "BELOW_MATCH_THRESHOLD",
+} as const
+
+export type PayableReleaseReason =
+  (typeof PayableReleaseReason)[keyof typeof PayableReleaseReason]
+
+export const PAYABLE_RELEASE_REASON_LABELS: Record<
+  PayableReleaseReason,
+  string
+> = {
+  MATCHED: "Conferência bateu",
+  NO_INVOICE_REQUIRED: "Liberado sem nota fiscal",
+  BELOW_MATCH_THRESHOLD: "Abaixo do limite de conferência",
+}
+
+export const NfeAuthorizationStatus = {
+  UNVERIFIED: "UNVERIFIED",
+  AUTHORIZED: "AUTHORIZED",
+  NOT_AUTHORIZED: "NOT_AUTHORIZED",
+} as const
+
+export type NfeAuthorizationStatus =
+  (typeof NfeAuthorizationStatus)[keyof typeof NfeAuthorizationStatus]
+
+export const NfeEnvironment = {
+  PRODUCTION: "PRODUCTION",
+  HOMOLOGATION: "HOMOLOGATION",
+} as const
+
+export type NfeEnvironment =
+  (typeof NfeEnvironment)[keyof typeof NfeEnvironment]

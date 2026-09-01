@@ -84,12 +84,6 @@ export const DECISION_TYPE: Record<string, StatusMeta> = {
   APPROVED_WITH_OVERRIDE: meta("Aprovou com exceção", "warning"),
 }
 
-export const URGENCY: Record<string, StatusMeta> = {
-  LOW: meta("Baixa", "neutral"),
-  MEDIUM: meta("Média", "progress"),
-  HIGH: meta("Alta", "danger"),
-}
-
 export function resolveStatus(
   map: Record<string, StatusMeta>,
   value: string,
