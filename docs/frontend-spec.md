@@ -85,8 +85,7 @@ src/
 │   ├── email-approvals/
 │   ├── purchase-orders/
 │   ├── receipts/
-│   ├── invoices/
-│   ├── matching/
+│   ├── conferral/
 │   ├── payables/
 │   ├── notifications/
 │   ├── audit-logs/
@@ -201,7 +200,7 @@ Fluxo obrigatório e sequencial, sem pular etapa — `GET /onboarding` devolve `
 - Lista de requisitos pendentes vindos de `GET /onboarding` (ex: "crie ao menos um Centro de Custo com gestor definido").
 - Cada requisito pendente linka para a tela relevante (Centro de Custo, matriz de alçadas).
 
-**Links de notificação.** `notification-templates.ts` grava o caminho de destino na coluna `link` da notificação, no momento em que ela nasce: o valor é congelado, então mudar a rota depois exige corrigir também as linhas já gravadas. Os caminhos precisam bater com `src/routes/` do front, incluindo os de telas ainda não construídas (`/ordens-de-compra`, `/notas-fiscais`, `/conferencias`, `/contas-a-pagar`).
+**Links de notificação.** `notification-templates.ts` grava o caminho de destino na coluna `link` da notificação, no momento em que ela nasce: o valor é congelado, então mudar a rota depois exige corrigir também as linhas já gravadas. Os caminhos precisam bater com `src/routes/` do front, incluindo os de telas ainda não construídas (`/ordens-de-compra`, `/conferencia/notas`, `/conferencia/resultado`, `/contas-a-pagar`).
 - Botão "concluir configuração" habilitado só quando `canComplete: true` → `POST /onboarding/complete`.
 - Se `POST /onboarding/complete` voltar 409, mostra a lista de pendências do corpo do erro.
 
@@ -218,8 +217,9 @@ Cobre: `GET /companies/me`, `PATCH /companies/me`, `PATCH /companies/me/policy`.
 
 ### 3.2 Tela — Política da empresa (`/empresa/politica`)
 - **Acesso**: `FINANCE_ADMIN`.
-- Form com os campos de configuração que hoje moram em `Company`: `overrunTolerancePercent`, `reminderHours`, `escalationHours`, `dualApprovalThresholdCents`, e os campos novos de procure-to-pay: `priceTolerancePercent`, `quantityTolerancePercent`, `requiresReceiptBeforeInvoice` (toggle), `autoReleaseOnMatch` (toggle), `poNumberPrefix`.
-- Cada campo tem tooltip curto explicando o efeito (ex: "toda divergência de preço acima disto abre uma exceção para revisão").
+- Cinco grupos, cada um com os campos que mudam juntos: **Orçamento** (`overrunTolerancePercent`), **Pedido parado** (`reminderHours`, `escalationHours`), **Dupla assinatura** (`dualApprovalThresholdCents`), **Conferência da nota fiscal** (`priceTolerancePercent`, `quantityTolerancePercent`, `requiresReceiptBeforeInvoice`, `matchRequiredAboveCents`, `autoReleaseOnMatch`) e **Ordens de compra** (`poNumberPrefix`).
+- Em vez de tooltip, cada campo mostra a consequência **calculada ao vivo** abaixo do controle: a tolerância vira "um centro com R$ 10.000 de teto aceita até R$ 10.500", as horas viram "entra → lembra em 1 dia útil → escala em 3 dias úteis", o prefixo vira "a próxima ordem fica OC-2026-0001". Explicação que reage ao valor ensina mais que texto fixo escondido no hover.
+- Os cinco campos de procure-to-pay ficaram um tempo inacessíveis: existiam no banco e na entidade, mas nem `CompanyResponseDto` os expunha nem `UpdateCompanyPolicyDto` os aceitava. Corrigido nos dois DTOs e no `updatePolicy` do repositório.
 - **API**: `PATCH /companies/me/policy`.
 
 ---
@@ -434,7 +434,8 @@ Cobre: `POST /purchase-requests/{id}/purchase-order`, `GET /purchase-orders`, `G
 ### 9.1 Tela — Emitir ordem de compra (`/pedidos/{id}/emitir-ordem`)
 - **Acesso**: `FINANCE_ADMIN`, só a partir de um pedido `APPROVED` sem PO ainda (backend rejeita duplicidade com `PurchaseOrderAlreadyIssuedError` — se já existe, este link nem aparece, vai direto para 9.3).
 - Resumo do pedido (itens, fornecedor, total) — read-only, é o que será copiado.
-- **Form**: prazo de entrega esperado, endereço de entrega, condições de pagamento (pré-preenchido do pedido, editável), observações, prefixo de numeração (pré-preenchido da política da empresa).
+- **Form**: prazo de entrega esperado, endereço de entrega, condições de pagamento (pré-preenchido do pedido, editável), observações, prefixo de numeração (pré-preenchido de `company.poNumberPrefix`, editável).
+- O prefixo só passou a vir da política depois de duas correções no backend: `IssuePurchaseOrderDto` tinha `numberPrefix: string = 'PO'` como default de classe, que sobrescrevia qualquer consulta à empresa, e o use case nunca lia `company.poNumberPrefix`. Hoje o DTO é opcional de verdade e o use case cai na política quando o campo vem vazio.
 - **API**: `POST /purchase-requests/{id}/purchase-order`.
 - Sucesso: redireciona para `/ordens-de-compra/{id}`.
 
@@ -471,26 +472,34 @@ Cobre: `POST /purchase-orders/{id}/receipts`, `GET /purchase-orders/{id}/receipt
 
 ---
 
-## 11. Notas fiscais
+## 11. Notas recebidas
+
+**A nota é insumo da conferência, não um bem que o sistema administra.** O AprovAI nunca emite nota: quem emite é o fornecedor, e o arquivo chega aqui para ser comparado com a ordem e o recebimento. A guarda fiscal de cinco anos continua sendo da contabilidade do cliente — o sistema serve o XML de volta para download, mas não se apresenta como arquivo fiscal.
+
+Por isso esta seção e a 12 vivem sob **uma única entrada de menu, "Conferência"** (`/conferencia`), com duas abas: "Conferências" (resultados) e "Notas recebidas". `features/conferral/` guarda as duas.
+
+**Escopo declarado na tela.** A conferência aceita apenas NF-e de produto, modelo 55. CT-e (frete), NFC-e (cupom) e NFS-e (serviço) são recusados no parser com mensagem que aponta o caminho alternativo, e o componente `<ScopeNote>` diz isso na própria listagem em vez de deixar o usuário descobrir pelo erro.
 
 Cobre: `POST /purchase-orders/{id}/invoices/upload`, `POST /invoices/upload`, `GET /purchase-orders/{id}/invoices`, `GET /invoices/{id}`, `POST /invoices/{id}/link`, `POST /invoices/{id}/reject`.
 
 ### 11.1 Tela/Modal — Enviar nota fiscal
 - **Caminho principal**, a partir de `/ordens-de-compra/{id}` (botão "enviar nota"): `<FileDropzone>` restrito a `.xml`, contexto da ordem já conhecido → `POST /purchase-orders/{id}/invoices/upload`.
-- **Caminho secundário**, tela própria `/notas-fiscais/enviar`: mesmo dropzone, sem ordem pré-selecionada → `POST /invoices/upload`. Usado quando ainda não se sabe a ordem — resultado entra sem vínculo, com aviso "esta nota não está vinculada a nenhuma ordem, vincule manualmente".
-- Erros mostrados diretamente da API: `InvoiceRecipientMismatchError` (CNPJ de destino não bate — provavelmente arquivo errado), `InvoiceAlreadyRegisteredError` (nota duplicada, com link para a nota já existente), `InvoiceParseFailedError` (detalha o que faltou no XML).
+- **Caminho secundário**, a partir de `/conferencia/notas` (botão "enviar nota"): mesmo dropzone, sem ordem pré-selecionada → `POST /invoices/upload`. Usado quando ainda não se sabe a ordem — resultado entra sem vínculo, com aviso "esta nota não está vinculada a nenhuma ordem, vincule manualmente".
+- Erros mostrados diretamente da API: `InvoiceRecipientMismatchError` (CNPJ de destino não bate — provavelmente arquivo errado), `InvoiceAlreadyRegisteredError` (nota duplicada, com link para a nota já existente), `InvoiceParseFailedError` (detalha o que faltou no XML), `UnsupportedDocumentModelError` (o arquivo é CT-e/NFC-e/outro modelo), `InvoiceNotAuthorizedError` (sem protocolo de autorização da SEFAZ, ou rejeitada) e `InvoiceHomologationError` (nota de ambiente de teste, sem valor fiscal).
 
-### 11.2 Tela — Notas fiscais (`/notas-fiscais`)
+### 11.2 Aba — Notas recebidas (`/conferencia/notas`)
 - **Acesso**: `FINANCE_ADMIN`.
 - `<DataTable>`: número, fornecedor emitente, valor, `<StatusBadge>` de `InvoiceStatus`, ordem de compra vinculada (ou "sem vínculo"), data de upload.
-- Linha abre `/notas-fiscais/{id}`.
+- Linha abre `/conferencia/notas/{id}`.
 
-### 11.3 Tela — Detalhe da nota fiscal (`/notas-fiscais/{id}`)
+### 11.3 Tela — Detalhe da nota (`/conferencia/notas/{id}`)
 - Dados extraídos: emitente, chave de acesso, número/série, valores (total, produtos, frete, seguro, desconto), impostos destacados (`TaxKind` por linha).
 - Itens da nota, cada um mostrando se já foi casado com um item de ordem de compra (`purchaseOrderItemId` preenchido ou não).
 - Se `purchaseOrderId` nulo: banner "nota sem ordem vinculada", botão "vincular a uma ordem" abre modal com combobox de ordens em aberto do mesmo fornecedor → `POST /invoices/{id}/link`.
 - Botão "rodar conferência" (se já vinculada e ainda não conferida) → dispara `POST /invoices/{id}/match`, redireciona para o resultado (seção 12.2).
 - Botão "rejeitar nota" (`<ConfirmDialog>` com motivo) → `POST /invoices/{id}/reject`.
+- Botão "baixar XML" → `GET /invoices/{id}/xml`, devolve o arquivo original byte a byte.
+- **Faixa de autorização**: `authorizationStatus`, `protocolNumber` e `protocolReceivedAt` lidos do `protNFe/infProt` do próprio XML, mais `integrityWarnings` (DV da chave, CNPJ/número/série divergentes do corpo). A faixa declara a procedência: o dado vem do arquivo, o sistema não consulta a SEFAZ, e por isso cancelamento posterior à autorização não aparece.
 
 ---
 
@@ -498,12 +507,12 @@ Cobre: `POST /purchase-orders/{id}/invoices/upload`, `POST /invoices/upload`, `G
 
 Cobre: `POST /invoices/{id}/match`, `GET /match-results`, `GET /match-results/{id}`, `POST /match-results/{id}/override`, `GET /payables`, `POST /payables/release-without-invoice`, `POST /payables/{id}/pay`.
 
-### 12.1 Tela — Fila de conferências (`/conferencias`)
+### 12.1 Aba — Fila de conferências (`/conferencia`)
 - **Acesso**: `FINANCE_ADMIN`.
 - `<DataTable>` de `GET /match-results`, filtro padrão em `status=DIVERGENT` (é a fila de trabalho real — o que bateu sozinho não precisa de atenção humana).
 - Colunas: nota, ordem de compra, `<StatusBadge>` de `MatchStatus`, valores comparados (pedido/recebido/faturado lado a lado), data.
 
-### 12.2 Tela — Detalhe da conferência (`/conferencias/{id}`)
+### 12.2 Tela — Detalhe da conferência (`/conferencia/resultado/{id}`)
 - Comparativo visual em três colunas: **Pedido** × **Recebido** × **Faturado**, valores e quantidades por item.
 - Lista de divergências (`MatchDivergenceResponseDto`), cada uma com o tipo traduzido (mapa `DivergenceKind → label pt-BR`, ex: `PRICE_ABOVE_ORDER` → "cobraram mais caro que o combinado"), valor esperado vs. valor real, diferença.
 - Se `status: DIVERGENT`: botão "liberar exceção e aprovar pagamento" abre modal 12.3.
@@ -523,8 +532,9 @@ Cobre: `POST /invoices/{id}/match`, `GET /match-results`, `GET /match-results/{i
 
 ### 12.5 Modal — Liberar pagamento sem nota fiscal
 - **Acesso**: `FINANCE_ADMIN` apenas (o form nem aparece para outros perfis).
-- **Form**: fornecedor (combobox), valor, vencimento, campo de justificativa, `<FileDropzone>` de comprovante (obrigatório — PDF/imagem, aceita qualquer coisa, é anexo livre).
+- **Form**: fornecedor (combobox), valor, vencimento, campo de justificativa, `<FileDropzone>` de comprovante (PDF/imagem, anexo livre).
 - **API**: `POST /payables/release-without-invoice` (multipart).
+- **O comprovante é condicional a `matchRequiredAboveCents`.** Igual ou abaixo do limite, a liberação dispensa anexo e grava `releaseReason: BELOW_MATCH_THRESHOLD`; acima dele o comprovante é obrigatório e o motivo é `NO_INVOICE_REQUIRED`. Com o limite nulo, a política é "conferir sempre" e o comprovante é sempre exigido. A regra mora no use case, não no controller — uma trava anterior no controller exigia o anexo antes da regra rodar e anulava o limite.
 - Contexto explicativo fixo no modal: "use para assinaturas de software, serviços do exterior ou qualquer compra que não gera nota fiscal brasileira conferível".
 
 ---

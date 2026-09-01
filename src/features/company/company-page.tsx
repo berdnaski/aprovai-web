@@ -94,7 +94,7 @@ export function CompanyPage() {
 
   if (companyQuery.isError || !companyQuery.data) {
     return (
-      <div className="flex max-w-3xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
         <PageHeader title="Empresa" />
         <LoadError
           message="Não foi possível carregar os dados da empresa."
@@ -107,7 +107,7 @@ export function CompanyPage() {
   const company = companyQuery.data
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <PageHeader
         breadcrumbs={[{ label: "Empresa" }]}
         title={company.tradeName ?? company.legalName}
@@ -135,7 +135,7 @@ export function CompanyPage() {
 
 function CompanySkeleton() {
   return (
-    <div className="flex max-w-3xl flex-col gap-6" aria-busy aria-live="polite">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6" aria-busy aria-live="polite">
       <span className="sr-only">Carregando dados da empresa</span>
 
       <div>

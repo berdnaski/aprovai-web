@@ -31,7 +31,7 @@ O texto principal nunca é `#000`: preto puro sobre fundo claro gera contraste e
 | `--primary` | `oklch(0.44 0.17 305)` | `#6B3FA0` | roxo de marca, fechado — botão primário, link ativo, foco |
 | `--primary-hover` | `oklch(0.38 0.17 305)` | `#5A3486` | hover do primary — mesmo matiz, ~5% mais escuro |
 | `--primary-foreground` | `oklch(0.99 0 0)` | `#FDFDFD` | texto sobre `--primary` |
-| `--brand-accent` | `oklch(0.62 0.16 155)` | `#00A874` | verde de marca — uso cirúrgico: sucesso, confirmação, badge "aprovado" (nome é `--brand-accent`, não `--accent`; ver 6.2) |
+| `--brand-accent` | `oklch(0.62 0.16 155)` | `#00A874` | verde de marca — uso cirúrgico: sucesso, confirmação, badge "aprovado" (nome é `--brand-accent`, não `--accent`; ver 6.3) |
 | `--brand-accent-foreground` | `oklch(0.99 0 0)` | `#FDFDFD` | texto sobre `--brand-accent` |
 | `--accent` | `#F4F4F5` | `#F4F4F5` | hover neutro do shadcn — cinza, **não** o verde de marca |
 | `--destructive` | `oklch(0.53 0.16 25)` | `#C4432E` | erro, ação destrutiva — terroso, não vermelho-semáforo |
@@ -150,13 +150,20 @@ Mapeamento direto:
 --muted              → 1.2 --muted
 --muted-foreground   → 1.2 --muted-foreground
 --accent             → permanece neutro (hover do shadcn); o verde de marca
-                        vive em --brand-accent, ver 6.2
+                        vive em --brand-accent, ver 6.3
 --destructive        → 1.2 --destructive
 --border / --input   → 1.2 --border
 --ring               → 1.2 --ring
 ```
 
-### 6.1 A escala tipográfica precisa ser declarada no `tailwind-merge`
+### 6.1 Largura de página
+
+Duas larguras, decididas pelo tipo de conteúdo:
+
+- **Listagem com tabela** ocupa os 1200px do `AppLayout` inteiros. Coluna é dado, e cortar largura corta informação.
+- **Formulário, leitura e configuração** ficam em `max-w-3xl` **com `mx-auto`**. Sem o `mx-auto` o bloco encosta à esquerda e sobra um vazio de ~430px à direita, que lê como página inacabada — foi assim que Empresa, Notificações, Recebimentos e Emitir ordem nasceram, e todas precisaram ser corrigidas depois.
+
+### 6.2 A escala tipográfica precisa ser declarada no `tailwind-merge`
 
 Os tokens de `2.2` são `@utility`, não classes nativas do Tailwind — então o `tailwind-merge`, que roda dentro do `cn()`, não os reconhecia e classificava `text-caption` como **cor**. Ao encontrar uma cor de verdade na mesma chamada, ele descartava um dos dois:
 
@@ -168,6 +175,6 @@ O tamanho sumia e o texto caía para o herdado — maior que o previsto, estoura
 
 `src/lib/utils.ts` registra os tokens no grupo `font-size` via `extendTailwindMerge`. **Todo token novo de tamanho adicionado em `2.2` precisa entrar nessa lista também** — caso contrário ele volta a ser tratado como cor, e o sintoma reaparece longe da causa.
 
-### 6.2 Ajuste ao padrão shadcn
+### 6.3 Ajuste ao padrão shadcn
 
 shadcn usa `--accent`/`--accent-foreground` para estado de hover neutro (menu item hover, etc), não para "cor de destaque de marca". Como este projeto reserva verde para significado semântico (sucesso), a tela cria um token adicional `--brand-accent` para o verde, e mantém `--accent` no papel neutro padrão do shadcn (hover discreto, tom de `--muted`). Isso evita reescrever o comportamento interno de componentes shadcn que já assumem `--accent` como neutro.
