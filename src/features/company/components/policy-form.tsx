@@ -36,6 +36,13 @@ interface Draft {
   escalation: string
   dualEnabled: boolean
   dualThreshold: string
+  priceTolerance: string
+  quantityTolerance: string
+  requiresReceipt: boolean
+  autoRelease: boolean
+  matchEnabled: boolean
+  matchThreshold: string
+  poPrefix: string
 }
 
 function toDraft(company: Company): Draft {
@@ -45,6 +52,13 @@ function toDraft(company: Company): Draft {
     escalation: String(company.escalationHours),
     dualEnabled: company.dualApprovalThresholdCents !== null,
     dualThreshold: company.dualApprovalThresholdCents ?? "",
+    priceTolerance: formatPercent(company.priceTolerancePercent),
+    quantityTolerance: formatPercent(company.quantityTolerancePercent),
+    requiresReceipt: company.requiresReceiptBeforeInvoice,
+    autoRelease: company.autoReleaseOnMatch,
+    matchEnabled: company.matchRequiredAboveCents !== null,
+    matchThreshold: company.matchRequiredAboveCents ?? "",
+    poPrefix: company.poNumberPrefix,
   }
 }
 
@@ -95,6 +109,8 @@ export function PolicyForm({ company }: { company: Company }) {
   const overrun = parsePercent(draft.overrun)
   const reminder = parseInteger(draft.reminder)
   const escalation = parseInteger(draft.escalation)
+  const priceTolerance = parsePercent(draft.priceTolerance)
+  const quantityTolerance = parsePercent(draft.quantityTolerance)
 
   const overrunError =
     overrun === null
@@ -120,8 +136,36 @@ export function PolicyForm({ company }: { company: Company }) {
       ? "Informe o valor a partir do qual a segunda assinatura vale."
       : undefined
 
+  const matchError =
+    draft.matchEnabled && Number(draft.matchThreshold || "0") <= 0
+      ? "Informe o valor a partir do qual a conferência passa a ser obrigatória."
+      : undefined
+
+  const priceError =
+    priceTolerance === null || priceTolerance < 0 || priceTolerance > 100
+      ? "Precisa ficar entre 0% e 100%."
+      : undefined
+
+  const quantityError =
+    quantityTolerance === null ||
+    quantityTolerance < 0 ||
+    quantityTolerance > 100
+      ? "Precisa ficar entre 0% e 100%."
+      : undefined
+
+  const prefixError = !/^[A-Z0-9-]{1,8}$/.test(draft.poPrefix.toUpperCase())
+    ? "Até 8 caracteres, só letras, números e hífen."
+    : undefined
+
   const blocked = Boolean(
-    overrunError || reminderError || escalationError || dualError,
+    overrunError ||
+      reminderError ||
+      escalationError ||
+      dualError ||
+      matchError ||
+      priceError ||
+      quantityError ||
+      prefixError,
   )
 
   const numeric: Partial<Record<keyof Draft, (value: string) => number | null>> =
@@ -129,6 +173,8 @@ export function PolicyForm({ company }: { company: Company }) {
       overrun: parsePercent,
       reminder: parseInteger,
       escalation: parseInteger,
+      priceTolerance: parsePercent,
+      quantityTolerance: parsePercent,
     }
 
   const changed = (Object.keys(saved) as (keyof Draft)[]).filter((key) => {
@@ -166,6 +212,32 @@ export function PolicyForm({ company }: { company: Company }) {
       payload.dualApprovalThresholdCents = draft.dualEnabled
         ? draft.dualThreshold
         : null
+    }
+
+    if (changed.includes("priceTolerance") && priceTolerance !== null) {
+      payload.priceTolerancePercent = priceTolerance
+    }
+
+    if (changed.includes("quantityTolerance") && quantityTolerance !== null) {
+      payload.quantityTolerancePercent = quantityTolerance
+    }
+
+    if (changed.includes("requiresReceipt")) {
+      payload.requiresReceiptBeforeInvoice = draft.requiresReceipt
+    }
+
+    if (changed.includes("autoRelease")) {
+      payload.autoReleaseOnMatch = draft.autoRelease
+    }
+
+    if (changed.includes("matchEnabled") || changed.includes("matchThreshold")) {
+      payload.matchRequiredAboveCents = draft.matchEnabled
+        ? draft.matchThreshold
+        : null
+    }
+
+    if (changed.includes("poPrefix")) {
+      payload.poNumberPrefix = draft.poPrefix.toUpperCase()
     }
 
     update.mutate(payload, {
@@ -300,15 +372,7 @@ export function PolicyForm({ company }: { company: Company }) {
 
       <SettingGroup
         title="Dupla assinatura"
-        description="Acima de um valor, cada etapa exige duas pessoas — independente do que a matriz de alçadas disser."
-        footer={
-          <SettingActions
-            dirtyCount={dirtyCount}
-            blocked={blocked}
-            pending={update.isPending}
-            onReset={() => setDraft(toDraft(company))}
-          />
-        }
+        description="Acima de um valor, cada etapa exige duas pessoas, independente do que a matriz de alçadas disser."
       >
         <SettingRow
           label="Exigir a partir de"
@@ -345,6 +409,196 @@ export function PolicyForm({ company }: { company: Company }) {
                 </span>
               )}
             </>
+          }
+        />
+      </SettingGroup>
+
+      <SettingGroup
+        title="Conferência da nota fiscal"
+        description="Quanto a nota do fornecedor pode divergir da ordem antes de virar exceção para revisão."
+      >
+        <SettingRow
+          label="Preço"
+          description="Sobre o valor da ordem"
+          error={priceError}
+          hint={
+            priceTolerance !== null && !priceError ? (
+              priceTolerance === 0 ? (
+                <>Qualquer centavo a mais abre uma exceção.</>
+              ) : (
+                <>
+                  Numa ordem de <MoneyDisplay cents={EXAMPLE_CAP} />, nota até{" "}
+                  <span className="font-medium text-foreground">
+                    {formatCents(applyTolerance(EXAMPLE_CAP, priceTolerance))}
+                  </span>{" "}
+                  passa direto.
+                </>
+              )
+            ) : undefined
+          }
+          control={
+            <>
+              <SuffixInput
+                value={draft.priceTolerance}
+                onChange={(value) => set({ priceTolerance: value })}
+                suffix="%"
+                invalid={Boolean(priceError)}
+                ariaLabel="Tolerância de preço"
+              />
+              <Presets
+                options={OVERRUN_PRESETS}
+                value={priceTolerance}
+                onSelect={(option) =>
+                  set({ priceTolerance: formatPercent(option) })
+                }
+                format={(option) => `${option}%`}
+              />
+            </>
+          }
+        />
+
+        <SettingRow
+          label="Quantidade"
+          description="Sobre o que foi pedido"
+          error={quantityError}
+          hint={
+            quantityTolerance === 0
+              ? "Receber a mais que o pedido abre uma exceção."
+              : undefined
+          }
+          control={
+            <>
+              <SuffixInput
+                value={draft.quantityTolerance}
+                onChange={(value) => set({ quantityTolerance: value })}
+                suffix="%"
+                invalid={Boolean(quantityError)}
+                ariaLabel="Tolerância de quantidade"
+              />
+              <Presets
+                options={OVERRUN_PRESETS}
+                value={quantityTolerance}
+                onSelect={(option) =>
+                  set({ quantityTolerance: formatPercent(option) })
+                }
+                format={(option) => `${option}%`}
+              />
+            </>
+          }
+        />
+
+        <SettingRow
+          label="Recebimento antes da nota"
+          hint={
+            draft.requiresReceipt
+              ? "A nota só é aceita depois que alguém registrar o recebimento."
+              : "A nota pode chegar antes de alguém confirmar o recebimento."
+          }
+          control={
+            <>
+              <Switch
+                checked={draft.requiresReceipt}
+                onCheckedChange={(next) => set({ requiresReceipt: next })}
+                aria-label="Exigir recebimento antes da nota fiscal"
+              />
+              <span className="text-caption text-foreground">
+                {draft.requiresReceipt ? "Exigindo" : "Desligado"}
+              </span>
+            </>
+          }
+        />
+
+        <SettingRow
+          label="Conferir a partir de"
+          error={matchError}
+          hint={
+            draft.matchEnabled
+              ? matchError
+                ? undefined
+                : "Abaixo deste valor o Admin Financeiro libera o pagamento sem anexar comprovante. A conferência continua disponível, só deixa de ser obrigatória."
+              : "Toda nota passa pela conferência de 3 vias, em qualquer valor."
+          }
+          control={
+            <>
+              <Switch
+                checked={draft.matchEnabled}
+                onCheckedChange={(checked) => set({ matchEnabled: checked })}
+                aria-label="Exigir conferência apenas acima de um valor"
+              />
+
+              {draft.matchEnabled ? (
+                <MoneyInput
+                  value={draft.matchThreshold}
+                  onChange={(cents) => set({ matchThreshold: cents })}
+                  invalid={Boolean(matchError)}
+                  ariaLabel="Valor a partir do qual a conferência é obrigatória"
+                  className="w-44"
+                />
+              ) : (
+                <span className="text-caption text-muted-foreground">
+                  Sempre conferir
+                </span>
+              )}
+            </>
+          }
+        />
+
+        <SettingRow
+          label="Liberar pagamento sozinho"
+          hint={
+            draft.autoRelease
+              ? "Conferência sem divergência libera o pagamento sem passar por ninguém."
+              : "Todo pagamento passa por liberação manual, mesmo sem divergência."
+          }
+          control={
+            <>
+              <Switch
+                checked={draft.autoRelease}
+                onCheckedChange={(next) => set({ autoRelease: next })}
+                aria-label="Liberar pagamento quando a conferência bate"
+              />
+              <span className="text-caption text-foreground">
+                {draft.autoRelease ? "Automático" : "Manual"}
+              </span>
+            </>
+          }
+        />
+      </SettingGroup>
+
+      <SettingGroup
+        title="Ordens de compra"
+        description="Como as ordens emitidas para o fornecedor são numeradas."
+        footer={
+          <SettingActions
+            dirtyCount={dirtyCount}
+            blocked={blocked}
+            pending={update.isPending}
+            onReset={() => setDraft(toDraft(company))}
+          />
+        }
+      >
+        <SettingRow
+          label="Prefixo"
+          error={prefixError}
+          hint={
+            !prefixError ? (
+              <>
+                A próxima ordem fica{" "}
+                <span className="font-medium tabular-nums text-foreground">
+                  {draft.poPrefix.toUpperCase()}-{new Date().getFullYear()}-0001
+                </span>
+                . A sequência reinicia a cada ano.
+              </>
+            ) : undefined
+          }
+          control={
+            <input
+              value={draft.poPrefix}
+              onChange={(event) => set({ poPrefix: event.target.value })}
+              aria-label="Prefixo da numeração"
+              maxLength={8}
+              className="h-9 w-28 rounded-lg border border-input bg-card px-3 text-body font-medium uppercase text-foreground focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            />
           }
         />
       </SettingGroup>

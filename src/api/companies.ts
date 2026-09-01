@@ -22,6 +22,12 @@ export interface Company {
   reminderHours: number
   escalationHours: number
   dualApprovalThresholdCents: string | null
+  priceTolerancePercent: number
+  quantityTolerancePercent: number
+  requiresReceiptBeforeInvoice: boolean
+  autoReleaseOnMatch: boolean
+  matchRequiredAboveCents: string | null
+  poNumberPrefix: string
   createdAt: string
 }
 
@@ -69,6 +75,12 @@ export interface UpdateCompanyPolicyPayload {
   reminderHours?: number
   escalationHours?: number
   dualApprovalThresholdCents?: string | null
+  priceTolerancePercent?: number
+  quantityTolerancePercent?: number
+  requiresReceiptBeforeInvoice?: boolean
+  autoReleaseOnMatch?: boolean
+  matchRequiredAboveCents?: string | null
+  poNumberPrefix?: string
 }
 
 export async function updateCompanyPolicy(
