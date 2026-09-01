@@ -414,3 +414,68 @@ export const NfeEnvironment = {
 
 export type NfeEnvironment =
   (typeof NfeEnvironment)[keyof typeof NfeEnvironment]
+
+export const AuditEventType = {
+  CREATED: "CREATED",
+  SUBMITTED: "SUBMITTED",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+  CHANGES_REQUESTED: "CHANGES_REQUESTED",
+  CANCELED: "CANCELED",
+  REASSIGNED: "REASSIGNED",
+  ESCALATED: "ESCALATED",
+  RULES_CHANGED: "RULES_CHANGED",
+  BUDGET_CHANGED: "BUDGET_CHANGED",
+  MEMBER_CHANGED: "MEMBER_CHANGED",
+  PO_ISSUED: "PO_ISSUED",
+  PO_SENT: "PO_SENT",
+  PO_CANCELED: "PO_CANCELED",
+  GOODS_RECEIVED: "GOODS_RECEIVED",
+  INVOICE_UPLOADED: "INVOICE_UPLOADED",
+  INVOICE_REJECTED: "INVOICE_REJECTED",
+  MATCH_COMPLETED: "MATCH_COMPLETED",
+  MATCH_OVERRIDDEN: "MATCH_OVERRIDDEN",
+  PAYABLE_RELEASED: "PAYABLE_RELEASED",
+  PAYABLE_PAID: "PAYABLE_PAID",
+} as const
+
+export type AuditEventType =
+  (typeof AuditEventType)[keyof typeof AuditEventType]
+
+export const AUDIT_EVENT_LABELS: Record<AuditEventType, string> = {
+  CREATED: "Criou",
+  SUBMITTED: "Enviou para aprovação",
+  APPROVED: "Aprovou",
+  REJECTED: "Recusou",
+  CHANGES_REQUESTED: "Pediu ajustes",
+  CANCELED: "Cancelou",
+  REASSIGNED: "Transferiu a aprovação",
+  ESCALATED: "Escalou por prazo",
+  RULES_CHANGED: "Alterou a matriz de alçadas",
+  BUDGET_CHANGED: "Alterou o orçamento",
+  MEMBER_CHANGED: "Alterou a equipe",
+  PO_ISSUED: "Emitiu a ordem",
+  PO_SENT: "Enviou a ordem ao fornecedor",
+  PO_CANCELED: "Cancelou a ordem",
+  GOODS_RECEIVED: "Registrou o recebimento",
+  INVOICE_UPLOADED: "Enviou a nota",
+  INVOICE_REJECTED: "Rejeitou a nota",
+  MATCH_COMPLETED: "Rodou a conferência",
+  MATCH_OVERRIDDEN: "Liberou exceção na conferência",
+  PAYABLE_RELEASED: "Liberou o pagamento",
+  PAYABLE_PAID: "Marcou como pago",
+}
+
+export const AUDIT_ENTITY_LABELS: Record<string, string> = {
+  purchase_request: "Pedido",
+  purchase_order: "Ordem de compra",
+  receipt: "Recebimento",
+  invoice: "Nota fiscal",
+  match_result: "Conferência",
+  payable: "Conta a pagar",
+  approval_rule: "Matriz de alçadas",
+  budget: "Orçamento",
+  company_member: "Membro",
+  company: "Empresa",
+}
+

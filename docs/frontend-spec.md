@@ -586,8 +586,10 @@ Cobre: `GET /audit-logs`.
 - **Acesso**: `FINANCE_ADMIN` apenas.
 - `<DataTable>` de `GET /audit-logs`: data/hora, ator (nome ou "sistema" se `actorId: null`), tipo de evento (`AuditEventType`, traduzido), entidade afetada (tipo + link se aplicável), IP.
 - Filtros: tipo de evento, ator, tipo de entidade, id de entidade, intervalo de datas.
-- Linha expande para mostrar `oldData`/`newData` em formato legível (diff simples chave-valor, não JSON cru).
-- É a única tela do sistema inteiramente somente-leitura — reforçar visualmente (sem nenhum botão de ação).
+- Linha **abre um diálogo** com `oldData`/`newData` em três colunas (campo, antes, depois), o valor alterado em destaque e o anterior riscado. Uma versão anterior deste spec previa expandir a linha na própria tabela; o `<DataTable>` não tem expansão, e acrescentá-la mexeria num componente usado por ~15 telas para servir uma só. O diálogo entrega o mesmo dado com risco menor, e o `onRowClick` já existia.
+- Os nomes de campo são traduzidos por um mapa próprio da tela (`amountCents` → "Valor", `divergenceCount` → "Divergências"). O mapa cobre as 25 chaves que os 21 use cases realmente gravam; chave desconhecida cai no próprio nome em vez de sumir.
+- O ator vem de `actorId`, que aponta para `users.id` e é resolvido via `GET /members`. `actorId: null` é ação do agendador e aparece como "Sistema".
+- É a única tela do sistema inteiramente somente-leitura — nenhum botão de ação, e o backend não expõe rota de alteração ou remoção (RN45).
 
 ---
 

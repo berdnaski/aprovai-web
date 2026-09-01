@@ -10,6 +10,7 @@ import { CompanyPage } from "@/features/company/company-page"
 import { CostCenterDetailPage } from "@/features/cost-centers/cost-center-detail-page"
 import { CostCentersPage } from "@/features/cost-centers/cost-centers-page"
 import { HomePage } from "@/features/home/home-page"
+import { AuditLogsPage } from "@/features/audit-logs/audit-logs-page"
 import { InvoiceDetailPage } from "@/features/conferral/invoice-detail-page"
 import { InvoicesPage } from "@/features/conferral/invoices-page"
 import { MatchDetailPage } from "@/features/conferral/match-detail-page"
@@ -68,6 +69,10 @@ export function appRoutes() {
         <Route path="/conferencia/notas" element={<InvoicesPage />} />
         <Route path="/conferencia/notas/:id" element={<InvoiceDetailPage />} />
         <Route path="/conferencia/resultado/:id" element={<MatchDetailPage />} />
+      </Route>
+
+      <Route element={<RoleGuard area="audit-logs" />}>
+        <Route path="/auditoria" element={<AuditLogsPage />} />
       </Route>
 
       <Route element={<RoleGuard area="payables" />}>
