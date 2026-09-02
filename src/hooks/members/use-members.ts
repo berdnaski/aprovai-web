@@ -26,10 +26,11 @@ export const memberKeys = {
   invites: ["invites"] as const,
 }
 
-export function useMembers() {
+export function useMembers(enabled = true) {
   return useQuery({
     queryKey: memberKeys.all,
     queryFn: listMembers,
+    enabled,
   })
 }
 

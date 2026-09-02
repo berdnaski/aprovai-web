@@ -54,8 +54,8 @@ export const NOTIFICATION_TONES: Record<NotificationEvent, NotificationTone> = {
 
 export const NOTIFICATION_TONE_CLASS: Record<NotificationTone, string> = {
   neutral: "border-border bg-muted text-muted-foreground",
-  brand: "border-primary/20 bg-primary/8 text-primary",
-  success: "border-brand-accent/25 bg-brand-accent/10 text-brand-accent-strong",
+  brand: "border-border bg-muted text-muted-foreground",
+  success: "border-border bg-muted text-muted-foreground",
   warning: "border-warning/25 bg-warning/10 text-warning-strong",
   danger: "border-destructive/25 bg-destructive/8 text-destructive",
 }

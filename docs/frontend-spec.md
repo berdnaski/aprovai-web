@@ -168,10 +168,11 @@ Autenticação é por cookie `httpOnly` (`access_token`, `refresh_token`) — o 
 - **API**: `POST /auth/reset-password`.
 - **Sucesso**: redireciona ao login com toast de confirmação.
 
-### 1.7 Tela — Alterar senha (`/conta/senha`)
-- **Form**: senha atual, nova senha, confirmação.
+### 1.7 Modal — Alterar senha (dentro de `/perfil`)
+- **Form**: senha atual, nova senha, confirmação. A nova senha mostra as duas regras ao vivo (8 caracteres, diferente da atual) em vez de só reprovar no envio.
 - **API**: `POST /auth/change-password` (dispara e-mail de confirmação) → usuário confirma clicando no link do e-mail → `/confirm-password-change`, que chama `POST /auth/confirm-password-change`.
-- É tela própria, não modal dentro do perfil: a confirmação passa por e-mail, então o fluxo não cabe num modal que se fecha.
+- **É modal, não tela própria.** Uma versão anterior deste spec pedia tela em `/conta/senha`, argumentando que a confirmação por e-mail não caberia num modal que fecha. Na prática cabe: o modal troca para um estado de confirmação — “mandamos um link para seu@email, a senha só muda quando você clicar, e sua senha atual continua valendo” — que informa mais do que um toast e não tira a pessoa do perfil. O §19.1 já previa modal, então este item era também uma contradição interna do spec.
+- `/conta/senha` permanece como redirecionamento para `/perfil`, para links antigos. Nenhum e-mail aponta para ela.
 
 ### 1.8 Ação — Logout
 - Botão no menu do usuário (topbar). `POST /auth/logout`, limpa cache do TanStack Query, redireciona para `/entrar`.
@@ -645,9 +646,11 @@ Cobre: `GET /users/me`, `PATCH /users/me`, `GET /users`, `GET /users/{id}`, `DEL
 
 ### 19.1 Tela — Meu perfil (`/perfil`)
 - **Acesso**: qualquer usuário logado.
-- Form: nome, telefone, avatar (upload — mesmo `<FileDropzone>`, aceita imagem) → `PATCH /users/me`.
+- Form: nome e telefone → `PATCH /users/me`. O telefone é formatado enquanto se digita e enviado só com dígitos; vazio vira `null`.
+- **Sem upload de avatar.** O backend expõe `avatarUrl` como string e não tem endpoint de upload, então a tela mostra as iniciais. Versão anterior deste spec previa `<FileDropzone>` — não havia para onde enviar o arquivo.
+- O cartão de ausência e substituto é o mesmo componente da tela de Equipe, e só aparece para `APPROVER` e `FINANCE_ADMIN`: `GET /members` responde 403 ao `REQUESTER`, e quem não aprova não tem o que delegar.
 - E-mail mostrado como read-only (mudança de e-mail não está no escopo de rotas atual).
-- Seção "segurança": botão "alterar senha" abre modal 1.7.
+- Seção "Acesso e segurança": e-mail somente leitura com selo de confirmado, botão "alterar senha" que abre o modal 1.7, atalho para as preferências de notificação (14.3) e a data de entrada na equipe.
 - Seção "ausência e substituto": abre modal 4.4 (é sobre o próprio membro).
 - Seção "preferências de notificação": link para 14.3.
 - Rodapé perigoso, isolado visualmente: "excluir minha conta" → `<ConfirmDialog>` reforçado (exige digitar "excluir" ou senha para confirmar, dado que é LGPD/irreversível) → `DELETE /users/me`.

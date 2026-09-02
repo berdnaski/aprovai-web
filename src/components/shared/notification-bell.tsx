@@ -1,4 +1,4 @@
-import { Bell, Checks, Gear } from "@phosphor-icons/react"
+import { ArrowRight, Bell, Checks, Gear } from "@phosphor-icons/react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
@@ -84,23 +84,28 @@ export function NotificationBell() {
       </PopoverTrigger>
 
       <PopoverContent align="end" className="w-96 gap-0 overflow-hidden p-0">
-        <header className="flex items-center gap-2 px-4 pt-3.5">
-          <h2 className="text-label text-foreground">Notificações</h2>
+        <header className="flex items-center gap-1 px-4 pt-3.5">
+          <h2 className="mr-auto text-label text-foreground">Notificações</h2>
 
-          <div className="ml-auto flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             {count > 0 ? (
-              <button
-                type="button"
-                onClick={() => markAllRead.mutate()}
-                disabled={markAllRead.isPending}
-                className="flex items-center gap-1.5 rounded-md px-1.5 py-1 text-caption text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-              >
-                <Checks size={14} aria-hidden />
-                Marcar todas como lidas
-              </button>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <button
+                      type="button"
+                      aria-label="Marcar todas como lidas"
+                      onClick={() => markAllRead.mutate()}
+                      disabled={markAllRead.isPending}
+                      className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    />
+                  }
+                >
+                  <Checks size={15} aria-hidden />
+                </TooltipTrigger>
+                <TooltipContent>Marcar todas como lidas</TooltipContent>
+              </Tooltip>
             ) : null}
-
-            <span aria-hidden className="h-4 w-px bg-border" />
 
             <Tooltip>
               <TooltipTrigger
@@ -197,16 +202,17 @@ export function NotificationBell() {
           )}
         </div>
 
-        <footer className="border-t border-border bg-muted/25 px-4 py-2">
+        <footer className="border-t border-border px-2 py-1.5">
           <button
             type="button"
             onClick={() => {
               setOpen(false)
               navigate("/notificacoes")
             }}
-            className="w-full rounded-md py-1 text-caption text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="flex w-full items-center justify-center gap-1.5 rounded-md py-1.5 text-caption text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             Ver todas
+            <ArrowRight size={13} aria-hidden />
           </button>
         </footer>
       </PopoverContent>

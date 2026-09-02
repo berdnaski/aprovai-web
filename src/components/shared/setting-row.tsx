@@ -76,16 +76,16 @@ export function SettingRow({
   hint?: React.ReactNode
   error?: string
 }) {
-  const stacked = Boolean(description || hint || error)
+  const stacked = Boolean(hint || error)
 
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 px-5 py-3 sm:flex-row sm:gap-6",
+        "flex flex-col gap-2 px-5 py-3.5 sm:flex-row sm:gap-6",
         stacked ? "sm:items-start" : "sm:items-center",
       )}
     >
-      <div className={cn("sm:w-40 sm:shrink-0", stacked && "sm:pt-2")}>
+      <div className={cn("sm:w-52 sm:shrink-0", stacked && "sm:pt-1.5")}>
         <p className="text-caption text-muted-foreground">{label}</p>
         {description ? (
           <p className="mt-0.5 text-caption leading-relaxed text-muted-foreground/70">

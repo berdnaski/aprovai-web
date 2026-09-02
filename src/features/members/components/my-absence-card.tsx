@@ -1,4 +1,4 @@
-import { AirplaneTilt, X } from "@phosphor-icons/react"
+import { Airplane, X } from "@phosphor-icons/react"
 import { useState } from "react"
 import { toast } from "sonner"
 
@@ -109,17 +109,17 @@ export function MyAbsenceCard({
         substitute ? "border-warning/25 bg-warning/6" : "border-border bg-card",
       )}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         <span
           aria-hidden
           className={cn(
-            "flex size-8 shrink-0 items-center justify-center rounded-full",
+            "flex size-9 shrink-0 items-center justify-center rounded-lg border",
             substitute
-              ? "bg-warning/12 text-warning-strong"
-              : "bg-muted text-muted-foreground",
+              ? "border-warning/20 bg-warning/10 text-warning-strong"
+              : "border-border bg-muted text-muted-foreground",
           )}
         >
-          <AirplaneTilt size={15} />
+          <Airplane size={16} />
         </span>
 
         <div className="min-w-0">

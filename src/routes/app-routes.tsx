@@ -1,8 +1,7 @@
-import { Route } from "react-router-dom"
+import { Navigate, Route } from "react-router-dom"
 
 import { AppLayout } from "@/components/layout/app-layout"
 import { RoleGuard } from "@/components/layout/role-guard"
-import { ChangePasswordPage } from "@/features/account/change-password-page"
 import { ApprovalRulesPage } from "@/features/approval-rules/approval-rules-page"
 import { BudgetDetailPage } from "@/features/budgets/budget-detail-page"
 import { CategoriesPage } from "@/features/categories/categories-page"
@@ -11,6 +10,7 @@ import { CostCenterDetailPage } from "@/features/cost-centers/cost-center-detail
 import { CostCentersPage } from "@/features/cost-centers/cost-centers-page"
 import { HomePage } from "@/features/home/home-page"
 import { AuditLogsPage } from "@/features/audit-logs/audit-logs-page"
+import { ProfilePage } from "@/features/profile/profile-page"
 import { InvoiceDetailPage } from "@/features/conferral/invoice-detail-page"
 import { InvoicesPage } from "@/features/conferral/invoices-page"
 import { MatchDetailPage } from "@/features/conferral/match-detail-page"
@@ -36,7 +36,7 @@ export function appRoutes() {
   return (
     <Route element={<AppLayout />}>
       <Route path="/" element={<HomePage />} />
-      <Route path="/conta/senha" element={<ChangePasswordPage />} />
+      <Route path="/conta/senha" element={<Navigate to="/perfil" replace />} />
       <Route path="/notificacoes" element={<NotificationsPage />} />
       <Route
         path="/notificacoes/preferencias"
@@ -70,6 +70,8 @@ export function appRoutes() {
         <Route path="/conferencia/notas/:id" element={<InvoiceDetailPage />} />
         <Route path="/conferencia/resultado/:id" element={<MatchDetailPage />} />
       </Route>
+
+      <Route path="/perfil" element={<ProfilePage />} />
 
       <Route element={<RoleGuard area="audit-logs" />}>
         <Route path="/auditoria" element={<AuditLogsPage />} />
