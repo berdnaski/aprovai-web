@@ -3,13 +3,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   getReceipt,
   listOrderReceipts,
+  listReceipts,
   registerReceipt,
+  type ListReceiptsQuery,
   type RegisterReceiptPayload,
 } from "@/api/receipts"
 
 export const receiptKeys = {
   all: ["receipts"] as const,
   byOrder: (orderId: string) => ["receipts", "order", orderId] as const,
+  list: (query: ListReceiptsQuery) => ["receipts", "list", query] as const,
   detail: (id: string) => ["receipts", id] as const,
 }
 
@@ -39,5 +42,13 @@ export function useRegisterReceipt(orderId: string) {
       void queryClient.invalidateQueries({ queryKey: receiptKeys.all })
       void queryClient.invalidateQueries({ queryKey: ["purchase-orders"] })
     },
+  })
+}
+
+export function useReceipts(query: ListReceiptsQuery = {}) {
+  return useQuery({
+    queryKey: receiptKeys.list(query),
+    queryFn: () => listReceipts(query),
+    placeholderData: (previous) => previous,
   })
 }

@@ -4,11 +4,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { useSession } from "@/hooks/auth/use-session"
+import { useCompanyName } from "@/hooks/companies/use-company-name"
 
 export function WorkspaceBadge() {
-  const { membership } = useSession()
-  const name = membership?.companyName ?? "AprovAI"
+  const name = useCompanyName() ?? "AprovAI"
 
   return (
     <SidebarMenu>

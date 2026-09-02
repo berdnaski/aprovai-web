@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "@/hooks/auth/use-session"
 import { useMembers } from "@/hooks/members/use-members"
+import { useCompanyName } from "@/hooks/companies/use-company-name"
 import { useMe } from "@/hooks/users/use-users"
 import { CompanyMemberRole, ROLE_LABELS } from "@/types/enums"
 
@@ -41,6 +42,7 @@ export function ProfilePage() {
     membership?.role === CompanyMemberRole.APPROVER ||
     membership?.role === CompanyMemberRole.FINANCE_ADMIN
 
+  const companyName = useCompanyName()
   const meQuery = useMe()
   const membersQuery = useMembers(decides)
 
@@ -89,7 +91,8 @@ export function ProfilePage() {
                   ·
                 </span>
                 <span className="text-subhead text-muted-foreground">
-                  {ROLE_LABELS[membership.role]} na {membership.companyName}
+                  {ROLE_LABELS[membership.role]}
+                  {companyName ? ` na ${companyName}` : ""}
                 </span>
               </>
             ) : null}

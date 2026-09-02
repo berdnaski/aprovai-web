@@ -9,6 +9,9 @@ import { CompanyPage } from "@/features/company/company-page"
 import { CostCenterDetailPage } from "@/features/cost-centers/cost-center-detail-page"
 import { CostCentersPage } from "@/features/cost-centers/cost-centers-page"
 import { HomePage } from "@/features/home/home-page"
+import { AnalyticsPage } from "@/features/analytics/analytics-page"
+import { BillingPage } from "@/features/billing/billing-page"
+import { ReceiptsPage } from "@/features/receipts/receipts-page"
 import { AuditLogsPage } from "@/features/audit-logs/audit-logs-page"
 import { ProfilePage } from "@/features/profile/profile-page"
 import { InvoiceDetailPage } from "@/features/conferral/invoice-detail-page"
@@ -61,6 +64,7 @@ export function appRoutes() {
           path="/ordens-de-compra/:id/receber"
           element={<RegisterReceiptPage />}
         />
+        <Route path="/recebimentos" element={<ReceiptsPage />} />
         <Route path="/recebimentos/:id" element={<ReceiptDetailPage />} />
       </Route>
 
@@ -72,6 +76,14 @@ export function appRoutes() {
       </Route>
 
       <Route path="/perfil" element={<ProfilePage />} />
+
+      <Route element={<RoleGuard area="billing" />}>
+        <Route path="/plano" element={<BillingPage />} />
+      </Route>
+
+      <Route element={<RoleGuard area="analytics" />}>
+        <Route path="/analytics" element={<AnalyticsPage />} />
+      </Route>
 
       <Route element={<RoleGuard area="audit-logs" />}>
         <Route path="/auditoria" element={<AuditLogsPage />} />

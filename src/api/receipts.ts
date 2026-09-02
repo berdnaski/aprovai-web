@@ -1,4 +1,5 @@
 import { apiClient } from "@/api/client"
+import type { Paginated } from "@/api/pagination"
 import type { ReceiptStatus } from "@/types/enums"
 
 export interface ReceiptItem {
@@ -19,6 +20,16 @@ export interface Receipt {
   hasDivergence: boolean
   notes: string | null
   items?: ReceiptItem[]
+  purchaseOrderNumber?: string
+  receivedByName?: string
+}
+
+export interface ListReceiptsQuery {
+  purchaseOrderId?: string
+  divergentOnly?: boolean
+  search?: string
+  page?: number
+  perPage?: number
 }
 
 export interface RegisterReceiptItem {
@@ -56,5 +67,14 @@ export async function registerReceipt(
 
 export async function getReceipt(id: string): Promise<Receipt> {
   const { data } = await apiClient.get<Receipt>(`/receipts/${id}`)
+  return data
+}
+
+export async function listReceipts(
+  query: ListReceiptsQuery = {},
+): Promise<Paginated<Receipt>> {
+  const { data } = await apiClient.get<Paginated<Receipt>>("/receipts", {
+    params: query,
+  })
   return data
 }

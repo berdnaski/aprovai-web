@@ -15,6 +15,10 @@ function FullScreenLoader() {
   )
 }
 
+function landingWithoutCompany(user: { isSuperAdmin?: boolean } | null) {
+  return user?.isSuperAdmin ? "/plataforma" : "/onboarding/empresa"
+}
+
 export function RequireAuth() {
   const location = useLocation()
   const { isAuthenticated, isLoading } = useSession()
@@ -32,10 +36,10 @@ export function RequireAuth() {
 }
 
 export function RequireCompany() {
-  const { membership } = useSession()
+  const { user, membership } = useSession()
 
   if (!membership) {
-    return <Navigate to="/onboarding/empresa" replace />
+    return <Navigate to={landingWithoutCompany(user)} replace />
   }
 
   return <Outlet />
@@ -66,14 +70,16 @@ export function RequireOnboarding() {
 }
 
 export function RedirectIfAuthenticated() {
-  const { isAuthenticated, membership, isLoading } = useSession()
+  const { isAuthenticated, membership, user, isLoading } = useSession()
 
   if (isLoading) {
     return <FullScreenLoader />
   }
 
   if (isAuthenticated) {
-    return <Navigate to={membership ? "/" : "/onboarding/empresa"} replace />
+    return (
+      <Navigate to={membership ? "/" : landingWithoutCompany(user)} replace />
+    )
   }
 
   return <Outlet />

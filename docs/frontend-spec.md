@@ -598,17 +598,25 @@ Cobre: `GET /audit-logs`.
 
 Cobre: `GET /analytics/dashboard`, `GET /analytics/exports/requests`.
 
-### 16.1 Tela — Dashboard (`/` para `FINANCE_ADMIN`, ou `/analytics`)
+### 16.1 Tela — Dashboard (`/analytics`)
 - **Acesso**: `FINANCE_ADMIN` apenas (backend retorna 403 para os demais).
-- Cards de totais (`totals`), gráfico/barra de consumo por Centro de Custo (`consumption`), tabela de performance por aprovador (`approvers` — tempo médio de decisão), gargalos (`bottlenecks`), pedidos repetidos/possíveis duplicatas não confirmadas (`repeated`).
-- Filtro de período no topo, afeta todos os blocos.
-- Botão "exportar" abre modal com escolha de formato (CSV/XLSX) → `GET /analytics/exports/requests?format=`, dispara download direto do arquivo (não abre em nova aba, força save).
+- **Quatro indicadores no topo**, na ordem da pergunta que o Admin Financeiro faz: esperando decisão (com há quanto tempo o mais antigo espera), aprovado no período, tempo médio de decisão e centros com orçamento (quantos estouraram). Indicador é número, não gráfico — a skill de visualização é explícita que às vezes a resposta não é um gráfico.
+- **Série diária "abertos x decididos"**, área com duas linhas sobre o mesmo eixo. Nunca dois eixos y: as duas séries são contagem de pedidos, mesma unidade.
+- Consumo por Centro de Custo (`consumption`) em barras horizontais com limiar de cor; gargalos (`bottlenecks`); tempo por aprovador (`approvers`); possíveis repetidos (`repeated`), que só aparecem quando existem.
+- Filtro de período no topo (30, 90 ou 180 dias) afeta todos os blocos.
+- Botão "exportar" baixa direto em XLSX via `GET /analytics/exports/requests?format=`, usando `responseType: "blob"` e âncora com `download` — sem abrir aba.
+- **`GET /analytics/dashboard` ganhou o campo `daily`**, que não existia: o backend só devolvia agregados sem dimensão de tempo, e não havia como montar tendência. A query usa `generate_series` para não deixar buraco em dia sem movimento — dia vazio vira zero, não some do eixo.
+- Decisões de cor, anatomia de marca e o resultado da validação de paleta estão em `docs/design-spec.md` §6.4.
 
 ---
 
 ## 17. Plano e assinatura
 
 Cobre: `GET /billing/subscription`, `GET /billing/plans`.
+
+**O eixo de cobrança é volume de pedidos, não assentos.** Aprovador usa o sistema poucos minutos por semana, e cobrar por cabeça faz o cliente economizar compartilhando login — o que destrói a trilha de auditoria, que é o maior diferencial do produto. Por isso `maxMembers` é nulo nos três planos e `maxRequestsMonth` é o que os separa. A tela lidera com pedidos do mês; pessoas aparece depois, como "ilimitado".
+
+O limite de pedidos **não era aplicado**: `maxRequestsMonth` existia no schema, era mapeado em `Entitlements` e exposto na API, e nenhum use case o consumia — o quinto campo morto encontrado no projeto. Hoje `EntitlementsService.assertRequestQuota()` roda no `submit` do pedido, não na criação do rascunho: rascunho não é pedido, e cobrar por rascunho puniria quem escreve com cuidado. A contagem é por mês corrente sobre `submitted_at`.
 
 ### 17.1 Tela — Plano e assinatura (`/plano`)
 - **Acesso**: `FINANCE_ADMIN`.
@@ -693,7 +701,8 @@ Cobre: `GET /users/me`, `PATCH /users/me`, `GET /users`, `GET /users/{id}`, `DEL
 ### 20.3 Redirecionamentos globais
 
 - Sem sessão válida → `/login`, preservando `?redirect=` para voltar após autenticar.
-- Sessão válida sem `companyId` → `/onboarding/empresa`.
+- Sessão válida sem `companyId` → `/onboarding/empresa`, **exceto SuperAdmin**, que vai para `/plataforma`. Quem administra a plataforma não tem empresa própria a configurar, e forçá-lo pelo onboarding de CNPJ era um beco sem saída: o fluxo terminaria criando uma empresa que ele não usa. A regra vive em `landingWithoutCompany()` em `routes/guards.tsx`, consumida por `RequireCompany` e por `RedirectIfAuthenticated`, para não haver duas fontes da mesma decisão.
+- No `PlatformLayout`, o atalho "voltar para a empresa" **só aparece quando existe vínculo**. Sem ele o botão devolveria o SuperAdmin ao mesmo redirecionamento, num laço. Sem empresa, o cabeçalho oferece apenas sair.
 - Sessão válida, empresa criada, onboarding não `DONE` → força `/onboarding` até completar (bloqueia navegação para outras rotas, exceto perfil e logout).
 - Rota fora do perfil do usuário → redireciona para `/` com toast "você não tem acesso a esta área".
 - `isSuperAdmin: true` → item extra no menu do usuário "ir para plataforma" (`/plataforma`), sem sair automaticamente do contexto de empresa (a pessoa pode ter os dois papéis).

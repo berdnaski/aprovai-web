@@ -175,6 +175,33 @@ O tamanho sumia e o texto caía para o herdado — maior que o previsto, estoura
 
 `src/lib/utils.ts` registra os tokens no grupo `font-size` via `extendTailwindMerge`. **Todo token novo de tamanho adicionado em `2.2` precisa entrar nessa lista também** — caso contrário ele volta a ser tratado como cor, e o sintoma reaparece longe da causa.
 
+### 6.4 Visualização de dados
+
+Recharts, já instalado. Nenhuma biblioteca de gráfico nova foi adicionada — o que faltava era método, não ferramenta.
+
+**A paleta de gráfico é verificada, não escolhida no olho.** Os tokens `--chart-1..5` existiam desde o começo. Rodados contra um validador de acessibilidade (banda de luminosidade, piso de croma, separação para daltonismo e contraste com a superfície), eles **reprovam como paleta categórica**:
+
+| verificação | resultado |
+|---|---|
+| Piso de croma | falha em `--chart-5` (`#71717A`) — é neutro, lê como cinza |
+| Separação normal | falha em `--chart-4` ↔ `--chart-3` (terracota ↔ âmbar), ΔE 14,7 — abaixo de 15, difícil distinguir mesmo com visão normal |
+| Contraste | aviso em `--chart-2` (verde), 2,98:1 — exige rótulo visível |
+
+Consequências que valem como regra:
+
+- **Terracota e âmbar nunca aparecem no mesmo gráfico.** O par é indistinguível o bastante para enganar quem tem visão normal, e rótulo não resolve esse caso específico.
+- **Não existe gráfico de pizza ou rosca de status no produto.** Cinco status seriam cinco cores que a paleta não sustenta. Distribuição de status é mostrada com rótulo escrito ao lado, cor como reforço.
+- **Verde só entra acompanhado de legenda ou rótulo**, por causa do contraste.
+- O par validado e aprovado é **`--chart-1` (roxo) + `--chart-2` (verde)**, ΔE 32,8 normal e 24,0 no pior caso de daltonismo. É o que a série "abertos x decididos" usa.
+
+**Anatomia dos gráficos:**
+
+- Linha de 2px, área com gradiente de 18% a 1%, ponto ativo de 4px com anel de 2px na cor do card.
+- Grade só horizontal, em `--border` a 70%. Eixos sem linha e sem tick.
+- Toda série tem camada de hover: cursor vertical mais tooltip em card, com o valor de cada série.
+- Barra de progresso de consumo muda de cor por limiar: `--chart-1` abaixo de 85%, `--warning` de 85 a 99%, `--destructive` de 100% em diante. O número em porcentagem sempre aparece ao lado — a cor nunca é o único indicador.
+- `isAnimationActive` respeita `prefers-reduced-motion`, pelo hook `usePrefersReducedMotion`.
+
 ### 6.3 Ajuste ao padrão shadcn
 
 shadcn usa `--accent`/`--accent-foreground` para estado de hover neutro (menu item hover, etc), não para "cor de destaque de marca". Como este projeto reserva verde para significado semântico (sucesso), a tela cria um token adicional `--brand-accent` para o verde, e mantém `--accent` no papel neutro padrão do shadcn (hover discreto, tom de `--muted`). Isso evita reescrever o comportamento interno de componentes shadcn que já assumem `--accent` como neutro.

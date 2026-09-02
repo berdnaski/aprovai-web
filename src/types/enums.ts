@@ -479,3 +479,26 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   company: "Empresa",
 }
 
+export const SubscriptionStatus = {
+  ACTIVE: "ACTIVE",
+  TRIALING: "TRIALING",
+  CANCELED: "CANCELED",
+  EXPIRED: "EXPIRED",
+} as const
+
+export type SubscriptionStatus =
+  (typeof SubscriptionStatus)[keyof typeof SubscriptionStatus]
+
+export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
+  ACTIVE: "Ativa",
+  TRIALING: "Em teste",
+  CANCELED: "Cancelada",
+  EXPIRED: "Expirada",
+}
+
+export const PLAN_TIER_LABELS: Record<string, string> = {
+  BASIC: "Básico",
+  PROFESSIONAL: "Profissional",
+  ENTERPRISE: "Enterprise",
+}
+

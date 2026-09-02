@@ -5,6 +5,7 @@ import { setUnauthorizedHandler } from "@/api/client"
 import { Toaster } from "@/components/ui/sonner"
 import { authKeys } from "@/hooks/auth/use-session"
 import { appRoutes } from "@/routes/app-routes"
+import { platformRoutes } from "@/routes/platform-routes"
 import {
   RequireAuth,
   RequireCompany,
@@ -35,6 +36,7 @@ function App() {
           {guestRoutes()}
 
           <Route element={<RequireAuth />}>
+            {platformRoutes()}
             {createCompanyRoutes()}
 
             <Route element={<RequireCompany />}>
