@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom"
 
 import { useMyCompany } from "@/hooks/companies/use-companies"
+import { APP_HOME } from "@/routes/destinations"
 import { useSession } from "@/hooks/auth/use-session"
 
 function FullScreenLoader() {
@@ -78,7 +79,7 @@ export function RedirectIfAuthenticated() {
 
   if (isAuthenticated) {
     return (
-      <Navigate to={membership ? "/" : landingWithoutCompany(user)} replace />
+      <Navigate to={membership ? APP_HOME : landingWithoutCompany(user)} replace />
     )
   }
 

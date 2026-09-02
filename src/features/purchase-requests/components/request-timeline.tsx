@@ -3,15 +3,17 @@ import {
   Check,
   Clock,
   Envelope,
+  FileText,
+  PaperPlaneTilt,
   Prohibit,
   X,
 } from "@phosphor-icons/react"
 import type { Icon } from "@phosphor-icons/react"
 
 import type { RequestTimeline, TimelineStep } from "@/api/purchase-requests"
-import { StatusPill } from "@/components/ui/data-table"
+import { initialsOf } from "@/lib/people"
+import { DECISION_TYPE } from "@/lib/status-labels"
 import { cn } from "@/lib/utils"
-import { DECISION_TYPE, STEP_STATUS } from "@/lib/status-labels"
 import { DecisionChannel, StepStatus } from "@/types/enums"
 
 const STEP_ICON: Record<StepStatus, Icon> = {
@@ -23,10 +25,10 @@ const STEP_ICON: Record<StepStatus, Icon> = {
 }
 
 const NODE_TONE: Record<StepStatus, string> = {
-  WAITING: "border-primary bg-card text-primary",
-  APPROVED: "border-brand-accent bg-brand-accent text-brand-accent-foreground",
-  REJECTED: "border-destructive bg-destructive text-destructive-foreground",
-  ESCALATED: "border-warning bg-warning text-primary-foreground",
+  WAITING: "border-primary/40 bg-primary/8 text-primary",
+  APPROVED: "border-brand-accent bg-brand-accent text-white",
+  REJECTED: "border-destructive bg-destructive text-white",
+  ESCALATED: "border-warning bg-warning text-white",
   CANCELED: "border-border bg-muted text-muted-foreground",
 }
 
@@ -43,93 +45,134 @@ function when(value: string | null): string {
   })
 }
 
-function Step({ step, last }: { step: TimelineStep; last: boolean }) {
-  const StepIcon = STEP_ICON[step.status]
+function Rail({ last }: { last: boolean }) {
+  if (last) {
+    return null
+  }
 
   return (
+    <span
+      aria-hidden
+      className="absolute top-8 bottom-0 left-4 w-px -translate-x-1/2 bg-border"
+    />
+  )
+}
+
+function Marker({
+  icon: MarkerIcon,
+  label,
+  at,
+  last = false,
+}: {
+  icon: Icon
+  label: string
+  at: string | null
+  last?: boolean
+}) {
+  return (
     <li className="relative flex gap-3 pb-5 last:pb-0">
-      {!last ? (
-        <span
-          aria-hidden
-          className="absolute top-7 bottom-0 left-3.5 w-px -translate-x-1/2 bg-border"
-        />
-      ) : null}
+      <Rail last={last} />
 
       <span
         aria-hidden
-        className={cn(
-          "relative z-10 flex size-7 shrink-0 items-center justify-center rounded-full border",
-          NODE_TONE[step.status],
-        )}
+        className="relative z-10 flex size-8 shrink-0 self-start items-center justify-center rounded-lg border border-border bg-background text-muted-foreground"
       >
-        <StepIcon size={13} weight="bold" />
+        <MarkerIcon size={14} />
       </span>
 
-      <div className="min-w-0 flex-1 pt-0.5">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 pt-1.5">
+        <span className="text-caption text-muted-foreground">{label}</span>
+        <span className="text-micro tabular-nums text-muted-foreground/70">
+          {when(at)}
+        </span>
+      </div>
+    </li>
+  )
+}
+
+function Step({ step, last }: { step: TimelineStep; last: boolean }) {
+  const StepIcon = STEP_ICON[step.status]
+  const nome = step.expectedApproverName
+
+  return (
+    <li className="relative flex gap-3 pb-5 last:pb-0">
+      <Rail last={last} />
+
+      <span className="relative z-10 size-8 shrink-0 self-start">
+        <span
+          aria-hidden
+          className="flex size-8 items-center justify-center rounded-lg border border-border bg-muted text-[11px] leading-none font-semibold text-muted-foreground"
+        >
+          {initialsOf(nome)}
+        </span>
+
+        <span
+          aria-hidden
+          className={cn(
+            "absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full border-2 border-card",
+            NODE_TONE[step.status],
+          )}
+        >
+          <StepIcon size={8} weight="bold" />
+        </span>
+      </span>
+
+      <div className="min-w-0 flex-1 pt-1">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
           <span className="text-caption font-medium text-foreground">
-            {step.expectedApproverName}
+            {nome}
           </span>
 
-          <StatusPill
-            tone={
-              step.status === StepStatus.APPROVED
-                ? "success"
-                : step.status === StepStatus.REJECTED
-                  ? "danger"
-                  : step.status === StepStatus.ESCALATED
-                    ? "warning"
-                    : step.status === StepStatus.WAITING
-                      ? "brand"
-                      : "neutral"
-            }
-          >
-            {STEP_STATUS[step.status].label}
-          </StatusPill>
-
-          {step.requiresDualApproval ? (
-            <StatusPill tone="brand">2 assinaturas</StatusPill>
+          {step.isCurrent ? (
+            <span className="rounded bg-primary/10 px-1.5 text-micro font-medium text-primary">
+              decide agora
+            </span>
           ) : null}
 
-          {step.isCurrent ? (
-            <span className="text-micro text-primary">etapa atual</span>
+          {step.requiresDualApproval ? (
+            <span className="rounded bg-muted px-1.5 text-micro text-muted-foreground">
+              2 assinaturas
+            </span>
           ) : null}
         </div>
 
         {step.escalatedFromName ? (
-          <p className="mt-1 text-caption text-warning-strong">
-            Escalou de {step.escalatedFromName} em {when(step.escalatedAt)}
+          <p className="mt-0.5 text-micro text-warning-strong">
+            escalou de {step.escalatedFromName} · {when(step.escalatedAt)}
           </p>
         ) : null}
 
         {step.decisions.length > 0 ? (
-          <ul className="mt-2 flex flex-col gap-2">
+          <ul className="mt-2 flex flex-col gap-1.5">
             {step.decisions.map((decision) => (
-              <li
-                key={decision.id}
-                className="rounded-md border border-border/70 bg-muted/30 px-3 py-2"
-              >
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span className="text-caption font-medium text-foreground">
+              <li key={decision.id} className="flex flex-col gap-1">
+                <p className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                  <span
+                    className={cn(
+                      "text-caption font-medium",
+                      step.status === StepStatus.REJECTED
+                        ? "text-destructive"
+                        : "text-brand-accent-strong",
+                    )}
+                  >
                     {DECISION_TYPE[decision.type].label}
                   </span>
-                  <span className="text-caption text-muted-foreground">
-                    por {decision.actor}
-                  </span>
+
                   {decision.channel === DecisionChannel.EMAIL ? (
                     <Envelope
-                      size={12}
+                      size={11}
                       aria-label="Decidido por e-mail"
                       className="text-muted-foreground"
                     />
                   ) : null}
-                  <span className="ml-auto text-micro tabular-nums text-muted-foreground/70">
+
+                  <span className="text-micro tabular-nums text-muted-foreground/70">
                     {when(decision.decidedAt)}
                   </span>
-                </div>
+                </p>
 
                 {decision.justification ? (
-                  <p className="mt-1 text-caption leading-relaxed text-muted-foreground">
+                  <p className="border-l-2 border-border pl-3 text-caption leading-relaxed text-muted-foreground">
                     {decision.justification}
                   </p>
                 ) : null}
@@ -137,8 +180,8 @@ function Step({ step, last }: { step: TimelineStep; last: boolean }) {
             ))}
           </ul>
         ) : step.startedAt ? (
-          <p className="mt-1 text-micro tabular-nums text-muted-foreground/70">
-            Aguardando desde {when(step.startedAt)}
+          <p className="mt-0.5 text-micro tabular-nums text-muted-foreground/70">
+            aguardando desde {when(step.startedAt)}
           </p>
         ) : null}
       </div>
@@ -159,41 +202,71 @@ export function RequestTimelineView({
       )
     : timeline.steps
 
+  if (compact) {
+    return (
+      <ol className="flex flex-col">
+        {steps.map((step, index) => (
+          <Step
+            key={step.order}
+            step={step}
+            last={index === steps.length - 1}
+          />
+        ))}
+      </ol>
+    )
+  }
+
+  const hasSteps = steps.length > 0
+
   return (
     <div className="flex flex-col gap-4">
-      {!compact ? (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-caption text-muted-foreground">
-          <span>Criado em {when(timeline.createdAt)}</span>
-          {timeline.submittedAt ? (
-            <span>Enviado em {when(timeline.submittedAt)}</span>
-          ) : null}
-          {timeline.finalizedAt ? (
-            <span>Finalizado em {when(timeline.finalizedAt)}</span>
-          ) : null}
-        </div>
+      <ol className="flex flex-col">
+        <Marker
+          icon={FileText}
+          label="Pedido criado"
+          at={timeline.createdAt}
+          last={!timeline.submittedAt && !hasSteps}
+        />
+
+        {timeline.submittedAt ? (
+          <Marker
+            icon={PaperPlaneTilt}
+            label="Enviado para aprovação"
+            at={timeline.submittedAt}
+            last={!hasSteps}
+          />
+        ) : null}
+
+        {steps.map((step, index) => (
+          <Step
+            key={step.order}
+            step={step}
+            last={index === steps.length - 1 && !timeline.finalizedAt}
+          />
+        ))}
+
+        {timeline.finalizedAt ? (
+          <Marker
+            icon={Check}
+            label="Finalizado"
+            at={timeline.finalizedAt}
+            last
+          />
+        ) : null}
+      </ol>
+
+      {!hasSteps ? (
+        <p className="rounded-lg border border-dashed border-border px-4 py-3 text-caption leading-relaxed text-muted-foreground">
+          A rota de aprovação é montada quando o pedido for enviado.
+        </p>
       ) : null}
 
-      {steps.length === 0 ? (
-        <p className="text-caption leading-relaxed text-muted-foreground">
-          A rota de aprovação só é montada quando o pedido é enviado.
-        </p>
-      ) : (
-        <ol className="flex flex-col">
-          {steps.map((step, index) => (
-            <Step
-              key={step.order}
-              step={step}
-              last={index === steps.length - 1}
-            />
-          ))}
-        </ol>
-      )}
-
       {timeline.cancelReason ? (
-        <p className="rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-caption leading-relaxed text-muted-foreground">
-          <span className="font-medium text-foreground">
-            Motivo do cancelamento:
-          </span>{" "}
+        <p className="rounded-lg border border-destructive/25 bg-destructive/4 px-4 py-3 text-caption leading-relaxed text-muted-foreground">
+          <span className="font-medium text-destructive">
+            Motivo do cancelamento
+          </span>
+          <br />
           {timeline.cancelReason}
         </p>
       ) : null}

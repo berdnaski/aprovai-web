@@ -20,6 +20,11 @@
     --color-chart-3: var(--chart-3);
     --color-chart-2: var(--chart-2);
     --color-chart-1: var(--chart-1);
+    --color-ink: var(--ink);
+    --color-ink-2: var(--ink-2);
+    --color-ink-foreground: var(--ink-foreground);
+    --color-ink-muted: var(--ink-muted);
+    --color-ink-border: var(--ink-border);
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
@@ -96,6 +101,12 @@
     --chart-5: #71717a;
 
     --radius: 10px;
+
+    --ink: oklch(0.19 0.008 75);
+    --ink-2: oklch(0.25 0.008 75);
+    --ink-foreground: oklch(0.96 0.004 75);
+    --ink-muted: oklch(0.72 0.006 75);
+    --ink-border: oklch(0.30 0.008 75);
 
     --sidebar: oklch(0.985 0.004 75);
     --sidebar-foreground: #202020;

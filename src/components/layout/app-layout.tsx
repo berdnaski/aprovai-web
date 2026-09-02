@@ -14,9 +14,15 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip"
 
 function isMac() {
-  return (
-    typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform)
-  )
+  if (typeof navigator === "undefined") {
+    return false
+  }
+
+  const modern = (
+    navigator as Navigator & { userAgentData?: { platform?: string } }
+  ).userAgentData?.platform
+
+  return /mac|iphone|ipad|ipod/i.test(modern || navigator.userAgent)
 }
 
 export function AppLayout() {
@@ -39,15 +45,13 @@ export function AppLayout() {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <header className="sticky top-0 z-20 grid h-14 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-border bg-background px-4 lg:px-6">
-            <div className="flex min-w-0 items-center">
-              <SidebarTrigger className="-ml-1 text-muted-foreground" />
-            </div>
+          <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4 lg:px-6">
+            <SidebarTrigger className="-ml-1 shrink-0 text-muted-foreground" />
 
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              className="flex h-8 w-full items-center gap-2 rounded-md border border-border bg-card px-2.5 text-caption text-muted-foreground transition-colors hover:border-muted-foreground/30 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:w-80 lg:w-96"
+              className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-card px-2.5 text-caption text-muted-foreground transition-colors hover:border-muted-foreground/30 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:w-80 sm:flex-none lg:w-96"
             >
               <MagnifyingGlass size={14} aria-hidden className="shrink-0" />
               <span className="truncate">Buscar</span>
@@ -56,7 +60,7 @@ export function AppLayout() {
               </kbd>
             </button>
 
-            <div className="flex min-w-0 items-center justify-end gap-1.5">
+            <div className="ml-auto flex shrink-0 items-center gap-1.5">
               <NotificationBell />
 
               <Button

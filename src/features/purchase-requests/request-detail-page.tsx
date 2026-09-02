@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   CopySimple,
   Gavel,
   PencilSimple,
@@ -8,15 +9,16 @@ import {
   UserSwitch,
 } from "@phosphor-icons/react"
 import { useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/api/client"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
+import { PageHeader } from "@/components/shared/page-header"
 import { LoadError } from "@/components/shared/load-error"
 import { MoneyDisplay } from "@/components/shared/money-display"
-import { PageHeader } from "@/components/shared/page-header"
-import { SettingGroup, SettingRow } from "@/components/shared/setting-row"
+import { ItemsSummary } from "./components/items-summary"
+import { RequestFacts } from "./components/request-facts"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -37,7 +39,6 @@ import { RequestStatus, URGENCY_LABELS } from "@/types/enums"
 
 import { CancelDialog } from "./components/cancel-dialog"
 import { DecideDialog } from "./components/decide-dialog"
-import { ItemsTable } from "./components/items-table"
 import { FilesPanel } from "./components/files-panel"
 import { ReassignDialog } from "./components/reassign-dialog"
 import { RequestTimelineView } from "./components/request-timeline"
@@ -195,86 +196,92 @@ export function RequestDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        breadcrumbs={[
-          { label: "Pedidos", to: "/pedidos" },
-          { label: request.number },
-        ]}
-        title={request.title}
-        description={
-          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <StatusBadge map={REQUEST_STATUS} value={request.status} />
+      <div className="flex flex-col gap-5 rounded-lg border border-border bg-card px-7 py-6 shadow-xs">
+        <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <Link
+              to="/pedidos"
+              className="inline-flex w-fit items-center gap-1.5 rounded-md text-caption text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <ArrowLeft size={13} aria-hidden />
+              Pedidos
+            </Link>
+
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <span className="text-caption tabular-nums text-muted-foreground">
+                {request.number}
+              </span>
+              <StatusBadge map={REQUEST_STATUS} value={request.status} />
+              <span className="text-caption text-muted-foreground">
+                urgência {URGENCY_LABELS[request.urgency].toLowerCase()}
+              </span>
+            </div>
+
+            <h1 className="text-display text-balance text-foreground">
+              {request.title}
+            </h1>
+          </div>
+
+          <div className="flex shrink-0 flex-col items-start gap-1 sm:items-end">
+            <span className="text-overline text-muted-foreground/70">
+              Valor total
+            </span>
             <MoneyDisplay
               cents={request.totalAmountCents}
               emphasis
-              className="text-subhead"
+              className="text-[clamp(1.75rem,4vw,2.25rem)] leading-none font-bold tracking-[-0.03em]"
             />
-            <span className="text-subhead text-muted-foreground">
-              urgência {URGENCY_LABELS[request.urgency].toLowerCase()}
-            </span>
-          </span>
-        }
-        action={actions}
-      />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-5">
+          {actions}
+        </div>
+      </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex min-w-0 flex-col gap-4">
-          <SettingGroup title="Dados do pedido">
-            <SettingRow
-              label="Centro de Custo"
-              control={
-                <span className="text-caption text-foreground">
-                  {costCenter?.name ?? "—"}
-                </span>
-              }
-            />
-            <SettingRow
-              label="Categoria"
-              control={
-                <span className="text-caption text-foreground">
-                  {category?.name ?? "Sem categoria"}
-                </span>
-              }
-            />
-            <SettingRow
-              label="Condições"
-              control={
-                <span className="text-caption text-foreground">
-                  {request.paymentTerms ?? "Não informadas"}
-                </span>
-              }
-            />
-            {request.description ? (
-              <SettingRow
-                label="Descrição"
-                control={
-                  <p className="text-caption leading-relaxed text-foreground">
-                    {request.description}
-                  </p>
-                }
-              />
-            ) : null}
-          </SettingGroup>
-
-          <ItemsTable
-            requestId={request.id}
-            items={items}
-            totalCents={request.totalAmountCents}
-            readOnly
+          <RequestFacts
+            description={request.description}
+            facts={[
+              { label: "Centro de custo", value: costCenter?.name ?? "—" },
+              {
+                label: "Categoria",
+                value: category?.name ?? "Sem categoria",
+                ...(category ? {} : { tone: "muted" as const }),
+              },
+              {
+                label: "Condições",
+                value: request.paymentTerms ?? "Não informadas",
+                ...(request.paymentTerms ? {} : { tone: "muted" as const }),
+              },
+              {
+                label: "Urgência",
+                value: URGENCY_LABELS[request.urgency],
+              },
+            ]}
           />
+
+          <ItemsSummary items={items} totalCents={request.totalAmountCents} />
 
           <FilesPanel requestId={request.id} files={files} readOnly />
         </div>
 
-        <SettingGroup title="Trilha de aprovação" className="h-fit">
-          <div className="px-5 py-4">
+        <section className="flex h-fit flex-col overflow-hidden rounded-lg border border-border bg-card shadow-xs">
+          <header className="flex min-h-12 items-center border-b border-border px-5">
+            <h2 className="text-caption font-medium text-foreground">
+              Trilha de aprovação
+            </h2>
+          </header>
+
+          <div className="px-5 py-5">
             {timeline ? (
               <RequestTimelineView timeline={timeline} />
             ) : (
               <Skeleton className="h-40 w-full" />
             )}
           </div>
-        </SettingGroup>
+        </section>
       </div>
 
       <DecideDialog

@@ -1,4 +1,5 @@
 import { useEffect } from "react"
+import { APP_HOME } from "@/routes/destinations"
 import { Navigate, Outlet } from "react-router-dom"
 import { toast } from "sonner"
 
@@ -29,7 +30,7 @@ export function RoleGuard({
   }
 
   if (denied) {
-    return <Navigate to="/" replace />
+    return <Navigate to={APP_HOME} replace />
   }
 
   return <Outlet />

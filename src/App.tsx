@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { authKeys } from "@/hooks/auth/use-session"
 import { appRoutes } from "@/routes/app-routes"
 import { platformRoutes } from "@/routes/platform-routes"
+import { RootRoute } from "@/routes/root-route"
 import {
   RequireAuth,
   RequireCompany,
@@ -32,6 +33,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<RootRoute />} />
+
           {tokenRoutes()}
           {guestRoutes()}
 

@@ -8,7 +8,6 @@ import { CategoriesPage } from "@/features/categories/categories-page"
 import { CompanyPage } from "@/features/company/company-page"
 import { CostCenterDetailPage } from "@/features/cost-centers/cost-center-detail-page"
 import { CostCentersPage } from "@/features/cost-centers/cost-centers-page"
-import { HomePage } from "@/features/home/home-page"
 import { AnalyticsPage } from "@/features/analytics/analytics-page"
 import { BillingPage } from "@/features/billing/billing-page"
 import { ReceiptsPage } from "@/features/receipts/receipts-page"
@@ -38,7 +37,6 @@ import { SuppliersPage } from "@/features/suppliers/suppliers-page"
 export function appRoutes() {
   return (
     <Route element={<AppLayout />}>
-      <Route path="/" element={<HomePage />} />
       <Route path="/conta/senha" element={<Navigate to="/perfil" replace />} />
       <Route path="/notificacoes" element={<NotificationsPage />} />
       <Route

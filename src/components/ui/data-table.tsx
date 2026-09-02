@@ -168,13 +168,71 @@ export function DataTable<T>({
     )
   }
 
+  const cards = (
+    <ul className="flex flex-col divide-y divide-border/40 sm:hidden">
+      {rows.map((row) => {
+        const id = rowKey(row)
+        const accent = rowAccent?.(row)
+        const [first, ...rest] = columns
+
+        return (
+          <li key={id}>
+            <button
+              type="button"
+              disabled={!onRowClick}
+              onClick={onRowClick ? () => onRowClick(row) : undefined}
+              className={cn(
+                "relative flex w-full flex-col gap-3 px-5 py-4 text-left transition-colors",
+                onRowClick && "hover:bg-muted/40",
+                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:-outline-offset-2",
+              )}
+            >
+              {accent ? (
+                <span
+                  aria-hidden
+                  className={cn(
+                    "absolute inset-y-0 left-0 w-0.5",
+                    accent === "danger" ? "bg-destructive" : "bg-warning",
+                  )}
+                />
+              ) : null}
+
+              <div className="min-w-0 text-label text-foreground">
+                {first ? first.cell(row) : null}
+              </div>
+
+              <dl className="flex flex-col gap-1.5">
+                {rest.map((column) => (
+                  <div
+                    key={column.id}
+                    className="flex items-baseline justify-between gap-4"
+                  >
+                    <dt className="shrink-0 text-caption text-muted-foreground">
+                      {column.header}
+                    </dt>
+                    <dd className="min-w-0 text-caption text-foreground">
+                      {column.cell(row)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </button>
+          </li>
+        )
+      })}
+    </ul>
+  )
+
   return (
-    <div className="w-full overflow-x-auto">
+    <>
+      {cards}
+
+      <div className="hidden w-full overflow-x-auto sm:block">
       <table className="w-full border-collapse text-left">
         <thead className="sticky top-0 z-10">
-          <tr className="border-b border-border bg-muted/35 backdrop-blur-sm">
+          <tr className="border-b border-border bg-card/95 backdrop-blur-sm">
             {selectable ? (
-              <th scope="col" className="w-9 pl-4">
+              <th scope="col" className="w-10 pl-5">
                 <Checkbox
                   checked={allSelected}
                   indeterminate={someSelected}
@@ -260,7 +318,7 @@ export function DataTable<T>({
                     <td
                       key={column.id}
                       className={cn(
-                        "h-11 px-3 first:pl-4 last:pr-4",
+                        "h-14 px-3.5 first:pl-5 last:pr-5",
                         column.hideBelow && HIDE_CLASS[column.hideBelow],
                       )}
                     >
@@ -281,7 +339,7 @@ export function DataTable<T>({
                     key={id}
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
                     className={cn(
-                      "group/row relative border-b border-border/40 text-caption transition-colors last:border-0",
+                      "group/row relative border-b border-border/40 transition-colors duration-150 last:border-0",
                       checked
                         ? "border-l-2 border-l-primary bg-primary/4"
                         : "hover:bg-muted/40",
@@ -305,7 +363,7 @@ export function DataTable<T>({
                       <td
                         key={column.id}
                         className={cn(
-                          "relative h-11 px-3 align-middle text-caption text-foreground first:pl-4 last:pr-4",
+                          "relative h-14 px-3.5 align-middle text-label font-normal text-foreground first:pl-5 last:pr-5",
                           column.align === "end" && "text-right",
                           column.hideBelow && HIDE_CLASS[column.hideBelow],
                         )}
@@ -340,7 +398,8 @@ export function DataTable<T>({
               })}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   )
 }
 

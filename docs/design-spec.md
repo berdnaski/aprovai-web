@@ -101,17 +101,28 @@ As listagens são o lugar onde o produto é usado o dia inteiro, e onde a escala
 
 | elemento | valor |
 |---|---|
-| altura da linha do corpo | 44px (`h-11`) |
-| altura do cabeçalho | 36px (`h-9`) |
-| altura do header do card | 48px (`min-h-12`) |
-| texto de célula e de cabeçalho | `text-caption` (12,5px) |
+| altura da linha do corpo | 56px (`h-14`) |
+| altura do cabeçalho | 56px (`h-14`) |
+| altura do header do card | 44px (`min-h-11`) |
+| texto de célula | `text-label` (13px) em peso normal |
+| texto de cabeçalho | `text-overline` (11,5px) |
 | pill de status | `text-micro` (11px) |
-| gutter da primeira/última coluna | 16px (`first:pl-4 last:pr-4`) |
-| fundo do cabeçalho | `bg-muted/35`, sticky com `backdrop-blur-sm` |
+| gutter da primeira/última coluna | 20px (`first:pl-5 last:pr-5`) |
+| fundo do cabeçalho | `bg-card/95`, sticky com `backdrop-blur-sm` |
 | divisor entre linhas | `border-border/40` |
 | linha selecionada | `bg-primary/4` + `border-l-2 border-l-primary` |
 
-O contraste de hierarquia dentro da linha vem do **peso** (nome em `font-medium`, e-mail em `text-muted-foreground`), não do tamanho — é o que mantém a linha em 44px sem achatar a leitura.
+O contraste de hierarquia dentro da linha vem do **peso** (nome em `font-medium`, e-mail em `text-muted-foreground`), não do tamanho.
+
+**A linha era 44px e o texto 12,5px.** A densidade original mirava o operador que passa o dia na listagem, mas apertava demais: com duas informações empilhadas na célula (nome mais CNPJ, número mais fornecedor), 44px comprime o entrelinhamento e o texto de 12,5px fica pequeno em tela de notebook. 56px e 13px continuam densos — cabem 12 linhas numa dobra de 1080px — sem parecer planilha.
+
+**O cabeçalho perdeu o preenchimento cinza.** `bg-muted/35` sob texto já esmaecido criava uma faixa que pesava mais que as próprias linhas. Agora o cabeçalho é a mesma superfície do card, separado só pela borda.
+
+### 3.2 Tabela vira cartão no celular
+
+Abaixo de `sm`, `<DataTable>` deixa de renderizar `<table>` e passa a renderizar uma lista de cartões: a primeira coluna vira o título do cartão, as demais viram pares rótulo-valor empilhados. As colunas com `hideBelow` continuam valendo no modo tabela.
+
+Antes disso, a tabela apenas rolava na horizontal no celular, o que esconde justamente a coluna de valor — a que mais importa — atrás de um gesto que ninguém descobre. O `rowAccent` e o clique da linha funcionam igual nos dois modos.
 
 ---
 

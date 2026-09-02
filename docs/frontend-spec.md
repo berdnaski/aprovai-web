@@ -118,7 +118,7 @@ src/
 | `<RoleGuard>` | em torno de rotas/blocos de UI | recebe `allow: CompanyMemberRole[]`, esconde/redireciona se o perfil do usuário não estiver na lista |
 | `<FileDropzone>` | upload de anexos e XML | `components/shared/file-dropzone.tsx`. Recebe `onSelect(file)`, `accept?` (lista de extensões), `isUploading`, `label`, `hint`. Faz drag-and-drop e seleção manual, mostra o estado de envio e recusa a extensão errada antes de chamar a API, com a mensagem no próprio componente |
 
-**Densidade e anatomia da linha.** A listagem é onde o produto é usado o dia inteiro, então a linha é densa: 44px de altura, célula em `text-caption`, cabeçalho de 36px em `text-overline` sobre `bg-muted/35`. A hierarquia dentro da linha vem do **peso**, não do tamanho — nome em `font-medium`, identificador secundário (CNPJ, e-mail, descrição) em `text-micro` cinza logo abaixo. Detalhes de implementação em `docs/design-spec.md` §3.1.
+**Densidade e anatomia da linha.** A linha tem 56px de altura, célula em `text-label` e cabeçalho sobre a mesma superfície do card — sem faixa cinza, separado só pela borda. Abaixo de `sm` a tabela deixa de ser tabela e vira lista de cartões (primeira coluna vira título, as demais viram pares rótulo-valor), porque rolagem horizontal no celular esconde justamente a coluna de valor. A hierarquia dentro da linha vem do **peso**, não do tamanho — nome em `font-medium`, identificador secundário (CNPJ, e-mail, descrição) em `text-micro` cinza logo abaixo. Detalhes de implementação em `docs/design-spec.md` §3.1.
 
 **Ações de linha têm coluna própria.** `rowActions` reserva uma coluna no fim da tabela, tanto no cabeçalho quanto nas linhas. As ações aparecem no hover/foco, mas o espaço existe sempre — posicionar por cima de outra coluna (`absolute`) faz o ícone cobrir o dado, e foi assim que a primeira versão desta tela quebrou.
 
@@ -675,6 +675,10 @@ Cobre: `GET /users/me`, `PATCH /users/me`, `GET /users`, `GET /users/{id}`, `DEL
 | `EmailApprovalLayout` | `/aprovacoes/{token}` | standalone, mobile-first, sem elementos do app |
 | `AppLayout` | tudo autenticado de empresa | sidebar (menu por perfil), topbar (sino de notificação, menu do usuário), breadcrumb |
 | `PlatformLayout` | `/plataforma/*` | sidebar própria, sem referência a Centro de Custo/pedidos |
+
+**A busca do topo é ancorada à esquerda, não centralizada.** Ela fica logo depois do botão de recolher a sidebar; o sino e "Novo pedido" vão para a direita com `ml-auto`. Centralizar era o comportamento anterior e estava errado por um motivo estrutural: o cabeçalho começa depois da sidebar, então "centro do cabeçalho" e "centro da tela" são pontos diferentes — e a distância entre eles muda conforme a sidebar abre. O resultado era uma busca que parecia deslocada com a sidebar aberta e correta com ela fechada. Ancorada, a busca não se move em nenhum dos dois estados.
+
+**O atalho da busca aceita ⌘K e Ctrl+K.** O handler testa `metaKey || ctrlKey`, e o rótulo dentro do campo troca conforme o sistema. A detecção usa `navigator.userAgentData.platform` com fallback para o `userAgent` — `navigator.platform` é depreciada e, onde já foi esvaziada, faria um Mac exibir "Ctrl K".
 
 ### 20.2 Menu lateral por perfil (dentro de `AppLayout`)
 

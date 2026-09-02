@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { APP_HOME } from "@/routes/destinations"
 import { Navigate, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
@@ -27,7 +28,7 @@ export function OnboardingPage() {
   const [stepIndex, setStepIndex] = useState(0)
 
   if (statusQuery.data?.step === OnboardingStep.DONE) {
-    return <Navigate to="/" replace />
+    return <Navigate to={APP_HOME} replace />
   }
 
   const currentStep: StepKey = STEPS[stepIndex]
