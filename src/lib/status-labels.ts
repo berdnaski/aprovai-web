@@ -90,3 +90,16 @@ export function resolveStatus(
 ): StatusMeta {
   return map[value] ?? meta(value, "neutral")
 }
+
+export const FEEDBACK_STATUS: Record<string, StatusMeta> = {
+  NEW: meta("Novo", "progress"),
+  TRIAGED: meta("Em análise", "warning"),
+  RESOLVED: meta("Resolvido", "success"),
+  DISCARDED: meta("Descartado", "neutral"),
+}
+
+export type PillTone = "neutral" | "brand" | "success" | "warning" | "danger"
+
+export function pillTone(tone: StatusTone): PillTone {
+  return tone === "progress" ? "brand" : tone
+}

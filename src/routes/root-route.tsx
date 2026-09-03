@@ -1,6 +1,5 @@
 import { Navigate } from "react-router-dom"
 
-import { LandingPage } from "@/features/marketing/landing-page"
 import { useSession } from "@/hooks/auth/use-session"
 import { APP_HOME } from "@/routes/destinations"
 
@@ -19,9 +18,5 @@ export function RootRoute() {
     )
   }
 
-  if (isAuthenticated) {
-    return <Navigate to={APP_HOME} replace />
-  }
-
-  return <LandingPage />
+  return <Navigate to={isAuthenticated ? APP_HOME : "/entrar"} replace />
 }

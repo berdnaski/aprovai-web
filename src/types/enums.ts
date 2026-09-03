@@ -502,3 +502,33 @@ export const PLAN_TIER_LABELS: Record<string, string> = {
   ENTERPRISE: "Enterprise",
 }
 
+
+export const FeedbackKind = {
+  SUGGESTION: "SUGGESTION",
+  BUG: "BUG",
+  OTHER: "OTHER",
+} as const
+
+export type FeedbackKind = (typeof FeedbackKind)[keyof typeof FeedbackKind]
+
+export const FEEDBACK_KIND_LABELS: Record<FeedbackKind, string> = {
+  SUGGESTION: "Sugestão",
+  BUG: "Problema",
+  OTHER: "Outro",
+}
+
+export const FEEDBACK_KIND_DESCRIPTIONS: Record<FeedbackKind, string> = {
+  SUGGESTION: "Algo que poderia funcionar melhor ou faltou no produto.",
+  BUG: "Alguma coisa quebrou ou não fez o que era esperado.",
+  OTHER: "Dúvida, elogio ou qualquer outro recado.",
+}
+
+export const FeedbackStatus = {
+  NEW: "NEW",
+  TRIAGED: "TRIAGED",
+  RESOLVED: "RESOLVED",
+  DISCARDED: "DISCARDED",
+} as const
+
+export type FeedbackStatus =
+  (typeof FeedbackStatus)[keyof typeof FeedbackStatus]

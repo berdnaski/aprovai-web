@@ -1,4 +1,10 @@
-import { ArrowLeft, Buildings, Stack } from "@phosphor-icons/react"
+import {
+  ArrowLeft,
+  Buildings,
+  ChatCircleDots,
+  Envelope,
+  Stack,
+} from "@phosphor-icons/react"
 import { APP_HOME } from "@/routes/destinations"
 import { useEffect } from "react"
 import { Link, NavLink, Navigate, Outlet } from "react-router-dom"
@@ -11,6 +17,8 @@ import { cn } from "@/lib/utils"
 const SECTIONS = [
   { to: "/plataforma/organizacoes", label: "Organizações", icon: Buildings },
   { to: "/plataforma/planos", label: "Planos comerciais", icon: Stack },
+  { to: "/plataforma/feedbacks", label: "Feedback", icon: ChatCircleDots },
+  { to: "/plataforma/lista-de-espera", label: "Lista de espera", icon: Envelope },
 ] as const
 
 export function PlatformLayout() {

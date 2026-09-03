@@ -1,4 +1,6 @@
 import { Lifebuoy, PaperPlaneTilt } from "@phosphor-icons/react"
+import { useState } from "react"
+
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -6,32 +8,44 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-
-const items = [
-  { label: "Suporte", href: "#", icon: <Lifebuoy /> },
-  { label: "Enviar feedback", href: "#", icon: <PaperPlaneTilt /> },
-]
+import { FeedbackDialog } from "@/features/feedback/feedback-dialog"
 
 export function NavSupport() {
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
+
   return (
-    <SidebarGroup className="mt-auto">
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.label}>
+    <>
+      <SidebarGroup className="mt-auto">
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
               <SidebarMenuButton
                 size="sm"
-                tooltip={item.label}
-                render={<a href={item.href} />}
+                tooltip="Suporte"
+                render={<a href="#" />}
                 className="text-label text-muted-foreground [&>svg]:size-4 [&>svg]:shrink-0"
               >
-                {item.icon}
-                <span>{item.label}</span>
+                <Lifebuoy />
+                <span>Suporte</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                size="sm"
+                tooltip="Enviar feedback"
+                onClick={() => setFeedbackOpen(true)}
+                className="text-label text-muted-foreground [&>svg]:size-4 [&>svg]:shrink-0"
+              >
+                <PaperPlaneTilt />
+                <span>Enviar feedback</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+
+      <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
+    </>
   )
 }

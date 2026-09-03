@@ -644,6 +644,39 @@ Cobre: `GET /platform/organizations`, `GET /platform/plans`, `POST /platform/org
 ### 18.3 Tela — Planos comerciais (`/plataforma/planos`)
 - Listagem somente leitura de `GET /platform/plans` (criação/edição de plano não está no escopo de rotas atual — se não existe endpoint de escrita, não existe tela de escrita).
 
+### 18.4 Tela — Feedback (`/plataforma/feedbacks`)
+
+Cobre `GET /platform/feedbacks`, `GET /platform/feedbacks/counters`, `PATCH /platform/feedbacks/{id}`.
+
+- `<TableSegments>` por situação (Todos / Novo / Em análise / Resolvido / Descartado) alimentado por `counters`, com busca no texto à direita.
+- `<DataTable>`: mensagem (com autor e a tela de origem embaixo), organização, tipo, situação, data.
+- Filete vermelho na linha (`rowAccent`) quando é **Problema ainda Novo** — é o único recorte que exige ação imediata.
+- Ícone de imagem na linha quando há print anexado.
+- Clique na linha abre o diálogo de triagem: o print (se houver), mensagem inteira, contexto capturado (tela, e-mail, navegador), troca de situação e nota interna.
+- **O print nunca é servido pelo `storageKey`.** `GET /platform/feedbacks/{id}/screenshot` devolve URL assinada com validade — o bucket pode mudar sem quebrar o cliente.
+
+**A nota interna nunca volta para o tenant.** Ela existe para a plataforma registrar decisão de roadmap; o usuário final só vê a situação.
+
+### 18.5 Tela — Lista de espera (`/plataforma/lista-de-espera`)
+
+Cobre `GET /platform/waitlist`. Quem deixou e-mail no site, com origem (`hero` ou `secao-lista`) para saber qual parte da página converte.
+
+---
+
+## 18-A. Site público (`/`)
+
+Rotas públicas: `GET /public/plans` e `POST /public/waitlist`, ambas com `@IsPublic()`.
+
+**Os preços não são escritos à mão.** A seção de planos lê `GET /public/plans`, que usa o mesmo `ListPlansUseCase` da tela do SuperAdmin — mudou o preço em `/plataforma/planos`, muda no site. O array `PLANS` do arquivo continua existindo só como conteúdo de reserva quando a API não responde; sem isso a página quebraria para um visitante caso a API caísse, o que é o pior momento possível.
+
+**Simulador de economia.** Três controles (pedidos/mês, ticket médio, minutos gastos cobrando aprovação) que estimam horas devolvidas e cobrança a mais barrada, e cruzam o volume com o plano real para mostrar ganho **líquido**. As premissas ficam impressas embaixo do simulador — hora a R$ 60, corte de 70% na cobrança, 4% de notas divergentes, 6% cobrado a mais. É estimativa declarada, nunca promessa: número inventado sem premissa visível vira objeção na primeira reunião.
+
+**Lista de espera é idempotente.** Reenviar o mesmo e-mail devolve `alreadyOnList: true` com a posição, em vez de erro. O e-mail é normalizado no DTO (`trim` + minúsculas) antes do `@unique`, senão `Compras@X.com` e `compras@x.com` viram duas linhas.
+
+**Animação sem biblioteca.** `useReveal` usa `IntersectionObserver` e devolve o estado já resolvido na inicialização quando o visitante pede movimento reduzido — não há `setState` dentro de efeito. Nenhuma dependência foi adicionada.
+
+**Os mockups são componentes, não imagens.** `DeviceShowcase` monta desktop e celular em HTML com os tokens do design system. Custa mais que exportar um PNG do Figma, mas fica nítido em qualquer tela, acompanha mudança de marca sem reexportar e pesa menos que a imagem equivalente.
+
 ---
 
 ## 19. Perfil do usuário
@@ -662,6 +695,18 @@ Cobre: `GET /users/me`, `PATCH /users/me`, `GET /users`, `GET /users/{id}`, `DEL
 - Seção "ausência e substituto": abre modal 4.4 (é sobre o próprio membro).
 - Seção "preferências de notificação": link para 14.3.
 - Rodapé perigoso, isolado visualmente: "excluir minha conta" → `<ConfirmDialog>` reforçado (exige digitar "excluir" ou senha para confirmar, dado que é LGPD/irreversível) → `DELETE /users/me`.
+
+### 19.1 Enviar feedback (diálogo do menu lateral)
+
+Cobre `POST /feedbacks` e `GET /feedbacks/mine`.
+
+- Aberto pelo item "Enviar feedback" no rodapé da sidebar. Não é rota própria: feedback é interrupção de uma tarefa, e mandar o usuário para outra página perde o contexto que ele queria relatar.
+- **Duas abas: "Escrever" e "Seus envios".** O histórico não pode morar embaixo do formulário — com 20 envios a lista empurraria o botão de enviar para fora da tela. Em aba própria ele rola dentro de `max-h-72` e o formulário fica sempre do mesmo tamanho.
+- Tipo (Sugestão / Problema / Outro) é um **segmentado compacto**, não três cartões com descrição. Cartão grande com título e parágrafo é peso visual demais para um campo que o usuário responde em meio segundo, e a descrição só repete o rótulo.
+- O texto é o herói: a caixa engloba textarea, anexo, contexto e o botão numa moldura só, que acende junto no foco (`focus-within`). Isso substitui a pilha rótulo/campo/ajuda, que era o que dava cara de formulário genérico.
+- **Print opcional** (PNG/JPEG/WEBP, até 5 MB), com miniatura e remoção. O tipo é validado pela assinatura do arquivo no servidor, não pela extensão — um PDF renomeado é recusado.
+- **A tela atual continua sendo capturada sozinha** via `useLocation`, exibida como chip ao lado do anexo; o navegador vem do `User-Agent` no servidor. O print é complemento, não substituto: a rota chega sempre, mesmo quando o usuário não anexa nada.
+- O formulário vive num componente montado só enquanto o diálogo está aberto, então o estado zera por desmontagem em vez de `useEffect` — o padrão antigo dispara `react-hooks/set-state-in-effect`. Pelo mesmo motivo, a URL da miniatura sai de `useMemo` e o efeito só revoga.
 
 ---
 
