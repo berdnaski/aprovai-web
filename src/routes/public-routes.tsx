@@ -1,6 +1,8 @@
 import { Route } from "react-router-dom"
 
 import { EmailApprovalPage } from "@/features/email-approvals/email-approval-page"
+import { PrivacyPage } from "@/features/legal/privacy-page"
+import { TermsPage } from "@/features/legal/terms-page"
 import { AcceptInvitePage } from "@/features/invites/accept-invite-page"
 import { ConfirmPasswordChangePage } from "@/features/auth/confirm-password-change-page"
 import { ForgotPasswordPage } from "@/features/auth/forgot-password-page"
@@ -22,6 +24,15 @@ export function tokenRoutes() {
         path="/confirm-password-change"
         element={<ConfirmPasswordChangePage />}
       />
+    </>
+  )
+}
+
+export function legalRoutes() {
+  return (
+    <>
+      <Route path="/privacidade" element={<PrivacyPage />} />
+      <Route path="/termos" element={<TermsPage />} />
     </>
   )
 }

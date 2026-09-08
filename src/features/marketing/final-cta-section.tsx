@@ -7,8 +7,8 @@ const GRAIN =
 
 const REASSURANCE = [
   "Sem cartão e sem compromisso",
-  "Avisamos assim que abrir",
-  "Um e-mail só, nada de newsletter",
+  "Chamamos por e-mail ou telefone",
+  "Um aviso só, nada de newsletter",
 ]
 
 export function FinalCtaSection() {
@@ -48,7 +48,7 @@ export function FinalCtaSection() {
             data-reveal
             className="max-w-[620px] text-center text-[clamp(1.75rem,3.4vw,2.75rem)] leading-[1.06] font-semibold tracking-[-0.02em] text-balance text-ink-foreground"
           >
-            Entre na lista e seja dos primeiros a comprar assim.
+            O AprovAI abre em breve. Garanta o seu lugar na fila.
           </h2>
 
           <p

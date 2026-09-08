@@ -16,7 +16,7 @@ import {
   createCompanyRoutes,
   onboardingRoutes,
 } from "@/routes/onboarding-routes"
-import { guestRoutes, tokenRoutes } from "@/routes/public-routes"
+import { guestRoutes, legalRoutes, tokenRoutes } from "@/routes/public-routes"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,6 +36,7 @@ function App() {
           <Route path="/" element={<RootRoute />} />
 
           {tokenRoutes()}
+          {legalRoutes()}
           {guestRoutes()}
 
           <Route element={<RequireAuth />}>

@@ -25,6 +25,7 @@ import { MyAbsenceCard } from "@/features/members/components/my-absence-card"
 import { AvatarPicker } from "./components/avatar-picker"
 import { ChangePasswordDialog } from "./components/change-password-dialog"
 import { DangerZone } from "./components/danger-zone"
+import { PrivacySection } from "./components/privacy-section"
 import { IdentityForm } from "./components/identity-form"
 
 function joinedAt(value: string): string {
@@ -202,6 +203,8 @@ export function ProfilePage() {
           </Button>
         </section>
       ) : null}
+
+      <PrivacySection />
 
       <DangerZone />
 

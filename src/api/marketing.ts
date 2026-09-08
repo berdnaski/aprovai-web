@@ -12,13 +12,13 @@ export interface PublicPlan {
 }
 
 export interface WaitlistJoined {
-  position: number
   alreadyOnList: boolean
 }
 
 export interface JoinWaitlistPayload {
   email: string
   name?: string
+  phone?: string
   company?: string
   source?: string
 }
@@ -42,6 +42,7 @@ export interface WaitlistEntry {
   id: string
   email: string
   name: string | null
+  phone: string | null
   company: string | null
   source: string | null
   invitedAt: string | null

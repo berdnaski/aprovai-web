@@ -17,6 +17,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { useWaitlist } from "@/hooks/marketing/use-marketing"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { formatPhone } from "@/lib/people"
 
 function when(value: string): string {
   return new Date(value).toLocaleDateString("pt-BR", {
@@ -55,6 +56,22 @@ export function WaitlistPage() {
           ) : null}
         </span>
       ),
+    },
+    {
+      id: "phone",
+      header: "Telefone",
+      width: "170px",
+      cell: (item) =>
+        item.phone ? (
+          <a
+            href={`tel:${item.phone.replace(/[^\d+]/g, "")}`}
+            className="truncate text-caption tabular text-foreground underline-offset-2 hover:underline"
+          >
+            {formatPhone(item.phone)}
+          </a>
+        ) : (
+          <span className="text-caption text-muted-foreground/60">Sem telefone</span>
+        ),
     },
     {
       id: "company",

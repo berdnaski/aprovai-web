@@ -82,9 +82,23 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-14 flex items-center justify-between gap-4 border-t border-border pt-6 max-sm:flex-col max-sm:items-start max-sm:gap-3">
-          <p className="text-[13px] leading-5 text-muted-foreground">
-            © {new Date().getFullYear()} AprovAI. Feito no Brasil.
-          </p>
+          <div className="flex items-center gap-4 max-sm:flex-wrap">
+            <p className="text-[13px] leading-5 text-muted-foreground">
+              © {new Date().getFullYear()} AprovAI. Feito no Brasil.
+            </p>
+            <Link
+              to="/privacidade"
+              className="rounded-sm text-[13px] leading-5 text-muted-foreground transition-colors duration-150 ease-out outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              Privacidade
+            </Link>
+            <Link
+              to="/termos"
+              className="rounded-sm text-[13px] leading-5 text-muted-foreground transition-colors duration-150 ease-out outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              Termos
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

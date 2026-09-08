@@ -149,19 +149,21 @@ export function RegisterPage() {
                     />
                     <span>
                       Li e aceito os{" "}
-                      <a
-                        href="/termos"
+                      <Link
+                        to="/termos"
+                        target="_blank"
                         className="text-foreground underline underline-offset-2 hover:text-primary"
                       >
                         Termos de Uso
-                      </a>{" "}
+                      </Link>{" "}
                       e a{" "}
-                      <a
-                        href="/privacidade"
+                      <Link
+                        to="/privacidade"
+                        target="_blank"
                         className="text-foreground underline underline-offset-2 hover:text-primary"
                       >
                         Política de Privacidade
-                      </a>
+                      </Link>
                     </span>
                   </label>
                 </FormControl>

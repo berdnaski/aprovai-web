@@ -43,6 +43,13 @@ export async function deleteMe(): Promise<void> {
   await apiClient.delete("/users/me")
 }
 
+export async function exportMyData(): Promise<Blob> {
+  const { data } = await apiClient.get<Blob>("/users/me/data-export", {
+    responseType: "blob",
+  })
+  return data
+}
+
 export async function uploadAvatar(file: File): Promise<CurrentUser> {
   const form = new FormData()
   form.append("avatar", file)

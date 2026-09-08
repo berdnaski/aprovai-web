@@ -10,6 +10,7 @@ import {
 } from "@/components/shared/setting-row"
 import { Input } from "@/components/ui/input"
 import { useUpdateMe } from "@/hooks/users/use-users"
+import { formatPhone } from "@/lib/people"
 
 interface Draft {
   name: string
@@ -18,22 +19,6 @@ interface Draft {
 
 function toDraft(user: CurrentUser): Draft {
   return { name: user.name, phone: user.phone ?? "" }
-}
-
-function formatPhone(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 11)
-
-  if (digits.length <= 2) {
-    return digits
-  }
-
-  if (digits.length <= 6) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
-  }
-
-  const split = digits.length === 11 ? 7 : 6
-
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, split)}-${digits.slice(split)}`
 }
 
 export function IdentityForm({ user }: { user: CurrentUser }) {
