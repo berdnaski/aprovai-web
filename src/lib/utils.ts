@@ -8,6 +8,8 @@ const twMerge = extendTailwindMerge({
         {
           text: [
             "display",
+            "hero",
+            "hero-sub",
             "heading",
             "subhead",
             "body",

@@ -216,3 +216,243 @@ Consequências que valem como regra:
 ### 6.3 Ajuste ao padrão shadcn
 
 shadcn usa `--accent`/`--accent-foreground` para estado de hover neutro (menu item hover, etc), não para "cor de destaque de marca". Como este projeto reserva verde para significado semântico (sucesso), a tela cria um token adicional `--brand-accent` para o verde, e mantém `--accent` no papel neutro padrão do shadcn (hover discreto, tom de `--muted`). Isso evita reescrever o comportamento interno de componentes shadcn que já assumem `--accent` como neutro.
+
+---
+
+## 7. Superfícies de marketing (landing)
+
+A landing (`/`, `features/marketing/`) é a única tela que **não** segue as regras de 1.3 ao pé da letra, e a exceção é deliberada — o §1.1 já a antecipa: "a logo pode ser vibrante porque aparece uma vez no topo; o botão que a pessoa vê 200 vezes por dia não pode". A landing é vista uma vez. O produto é visto o dia inteiro.
+
+O que muda, e só aqui:
+
+| token | valor | papel |
+|---|---|---|
+| `--brand-purple` | `#7409F4` | roxo cru da logo. Aparece **apenas** como lavagem de fundo e halo, nunca em texto, botão ou borda |
+| `--brand-green` | `#08DA81` | verde cru da logo. Uso pontual (ponto de status no pôster do vídeo) |
+
+`--primary` continua sendo o roxo fechado do produto em todo elemento acionável da landing — botão, foco, barra de progresso. O roxo cru é atmosfera; o roxo do produto é ação. Misturar os dois num mesmo botão é o que faria a landing e o app parecerem produtos diferentes.
+
+**Um matiz por fundo.** A primeira versão da lavagem usava roxo e verde juntos: o verde entrava pela direita como cinza-menta e brigava com o roxo. O fundo é roxo; o verde vive onde significa aprovação.
+
+**A lavagem é da página, não da seção** (`page-backdrop.tsx`, montada em `landing-page.tsx`). Enquanto ela pertencia ao hero, terminava na borda daquela seção e a faixa de funcionalidades começava sobre o off-white cru: a emenda aparecia como uma linha horizontal atravessando a página, porque o desvio de matiz entre lavanda e o off-white morno do `--background` é visível mesmo a 5%. Toda seção nova da landing entra sem fundo próprio e herda essa superfície.
+
+### 7.1 Escala tipográfica da landing
+
+A escala de 2.2 vai até 30px (`text-display`), que é título de tela de produto. Título de landing é outra função — precisa ser lido a três metros da tela. Os dois tokens abaixo existem em `index.css` e estão registrados no `tailwind-merge` (ver 6.2):
+
+| token | tamanho / altura | peso | tracking |
+|---|---|---|---|
+| `text-hero` | `clamp(2.5rem, 5.6vw, 4.5rem)` / 1.03 | 700 | `-0.035em` |
+| `text-hero-sub` | `clamp(1rem, 0.78vw + 0.82rem, 1.1875rem)` / 1.55 | 400 | `-0.005em` |
+
+Nota: o hero atual usa 56px em peso 600 direto no `className`, não `text-hero`. Os dois tokens ficam para os títulos das seções seguintes; se o hero se estabilizar em 56/600, é esse valor que vira token e o `text-hero` é corrigido — não o contrário.
+
+### 7.2 Raio na landing
+
+O produto usa 10px em card/botão (§3). A landing acrescenta duas medidas maiores, para peças que o produto não tem:
+
+| peça | raio |
+|---|---|
+| botão, link de navegação | 10px — igual ao produto |
+| campo de captura de e-mail | 16px |
+| ilha flutuante de navegação | 20px |
+| moldura do vídeo | 20px externo / 15px interno |
+| pílula de módulo | `rounded-full` |
+
+`rounded-full` continua proibido em botão dentro do produto (§3). Na landing ele é usado só nas pílulas de módulo, que são rótulos, não ações.
+
+### 7.3 Sombra
+
+Vale a regra do §3: sombra neutra, nunca colorida. A landing usa três degraus, todos em `oklch(0.2 0 0 / α)`:
+
+- `0 2px 4px /0.04` — botão, pílula, campo;
+- `0 2px 22px /0.06` — ilha flutuante de navegação;
+- `0 2px 4px /0.04, 0 18px 44px -16px /0.14, 0 48px 88px -40px /0.24` — moldura do vídeo, a única peça que precisa de sombra em camadas.
+
+O halo roxo atrás da moldura do vídeo **não é sombra**: é um gradiente radial desfocado atrás do card, sem opacidade sobre a borda. É a diferença entre iluminar o fundo e tingir a sombra.
+
+### 7.4 Duas barras de navegação
+
+No topo da página vale uma barra estática, larga, sem fundo. A partir de 24px de rolagem ela dá lugar a uma ilha flutuante branca centralizada (`fixed top-2`, raio 20px), que entra por `translate-y` + `opacity` em 300ms.
+
+Uma barra só, trocando de fundo no scroll, resolveria a navegação — e é o que toda landing faz. A troca por ilha custa uma classe de transform e é o que dá a leitura de interface viva. O wrapper da ilha é `pointer-events-none` para não capturar cliques do hero enquanto ela está escondida.
+
+### 7.5 Faixa infinita de funcionalidades
+
+Abaixo do vídeo, uma faixa que desliza sem parar com os módulos do produto (`features/marketing/feature-marquee.tsx`). Anatomia:
+
+| elemento | valor |
+|---|---|
+| item | 124×94px (`104px` abaixo de `sm`), gap de 16px, sem fundo e sem raio |
+| ícone | 24px, `--muted-foreground` a 55% |
+| rótulo | 14px/20 peso 500, `--muted-foreground` a 70% |
+| caixa do rótulo | altura fixa de 40px (duas linhas), alinhada ao topo |
+| máscara | `linear-gradient(to right, transparent, #000 10%, #000 90%, transparent)` |
+| animação | `translateX(0 → -50%)`, 20s linear infinita (~180px/s) |
+
+Três coisas fazem a faixa parecer contínua, e nenhuma é opcional:
+
+- **A lista é duplicada e o deslocamento é exatamente `-50%`.** Ao reiniciar, a segunda cópia está no pixel onde a primeira começou. Qualquer outro valor produz o salto que denuncia o truque.
+- **A caixa do rótulo reserva duas linhas sempre.** Sem a reserva, "Anexos" (uma linha) sobe e "Aprovação por e-mail" (duas) desce, e a fileira de ícones perde a régua. Foi o defeito da primeira versão.
+- **A máscara nas duas pontas.** Sem ela os itens entram e saem com corte reto, e a faixa lê como conteúdo cortado em vez de conteúdo que continua.
+
+A cópia duplicada é `aria-hidden` — leitor de tela lê a lista uma vez.
+
+**A faixa não reage ao ponteiro.** Sem fundo de hover e sem pausa. Ela é ambiente, não menu: destacar um item sugere que há algo para clicar, e parar no hover interrompe a leitura de fluxo contínuo exatamente quando a pessoa está olhando. Uma versão anterior fazia as duas coisas.
+
+**Em `prefers-reduced-motion` ela desacelera, não congela.** É a exceção às outras duas animações da landing (`rise-in`, `drift-y`), que somem. Parada, a faixa deixa de comunicar que a lista continua e vira uma fileira aparentemente cortada nas duas pontas — o movimento *é* a informação aqui. A 60s em vez de 20s, o deslocamento sai do campo do estímulo periférico e vira deriva lenta.
+
+**O contraste do rótulo é baixo de propósito e isso tem limite.** `--muted-foreground` a 70% sobre `--background` fica abaixo de 4.5:1: é decoração ambiente, não informação. Qualquer item que precise ser lido para a pessoa decidir algo não entra nesta faixa — vai para uma seção com contraste de texto normal.
+
+### 7.6 Seções de conteúdo da landing
+
+A partir do hero, toda seção segue a mesma pauta (`audience-section.tsx` é a referência):
+
+| elemento | valor |
+|---|---|
+| seção | `pt-24 pb-16`, laterais `px-20 / 40 / 24 / 16` por breakpoint |
+| bloco de cabeçalho | coluna centralizada, `gap-6` |
+| etiqueta | 12px/600, `rounded-lg`, `bg-primary/8` + `text-primary` |
+| título | 40px máx. (`clamp`), peso 600, tracking `-0.01em`, `max-w-[600px]` |
+| subtítulo | 18px/24, `--muted-foreground`, `max-w-[525px]` |
+| grade | `mt-16`, `grid-cols-3` com `gap-6` (uma coluna abaixo de `md`) |
+| cartão | `rounded-[24px]`, borda, `px-7 pt-10 pb-11`, `gap-8` |
+| mockup | 280×264, sem borda; só uma luz radial de marca ao fundo |
+| título do cartão | 19px/24 peso 600, `--foreground` |
+| descrição | 16px/28, `--muted-foreground`, sem `max-w` e sem `text-balance` |
+
+**Cartões soltos, não um bloco fatiado.** Uma versão anterior usava o truque do vão de 1px sobre fundo `--border`: economiza tinta e é o que a referência faz, mas na tela os três cartões leem como um bloco único, e a moldura em volta vira um retângulo reto atravessando a página. A regra passou a ser vão de verdade (`gap-6`), cada cartão com sua borda, seu raio de 24px e sua sombra.
+
+**A medida da linha é a largura útil do cartão.** Nada de `max-w-[333px]` num cartão de 411px: a faixa vazia de cada lado é o que faz o texto parecer espremido. E nada de `text-balance` na descrição — ele iguala o comprimento das linhas *encolhendo* a medida, que é exatamente o efeito a evitar. No título e no subtítulo da seção ele continua valendo, porque ali o objetivo é justamente equilibrar duas linhas curtas.
+
+**As três descrições ocupam o mesmo número de linhas.** Não é detalhe de copy: com 4, 4 e 3 linhas, o rodapé dos cartões desanda. Texto novo nessa grade é escrito para fechar em quatro linhas a 16px na largura útil do cartão.
+
+**O gradiente do título muda de ângulo conforme o número de linhas.** O hero usa 347° (diagonal) porque tem duas linhas longas; as seções usam 91° (quase horizontal) porque com linhas curtas a diagonal clarearia a segunda linha inteira. Mesmo recurso, mesma paleta (`--foreground` → `--foreground` a 44% sobre branco).
+
+**Os mockups são UI desenhada, não screenshot.** Um print encolhido para caber ali vira borrão, e amarra a landing à versão do produto que estava no ar naquele dia. Desenhados, mostram só o gesto que interessa em cada perfil, em tipografia legível à distância de leitura.
+
+**A folga entre as peças é o que faz cada peça ser lida.** A primeira versão punha cartões de 212px numa moldura de 280×231: eles encostavam uns nos outros e no selo, e o conjunto lia como aperto. Regra: moldura de 280×264, nenhuma peça acima de 224px, e nada colado na aresta.
+
+**O fundo do mockup não é uma caixa.** A tentativa anterior — malha de linhas em toda a área — desenhava o retângulo de 280px em vez de sugerir superfície, e o mockup virava um card dentro do card. Agora é só uma luz radial de `--brand-purple` a 7%.
+
+**Relação entre peças se desenha, não se subentende.** No mockup de "quem pede", o traço tracejado que liga o documento aos campos com o selo de extração no meio é o que transforma dois cartões soltos numa sequência. Sem ele o selo vira enfeite entre duas caixas.
+
+### 7.7 Entrada por scroll
+
+Toda seção abaixo do hero entra quando chega à viewport, pelo hook `useReveal` (`hooks/use-reveal.ts` — `IntersectionObserver` com `threshold` e `rootMargin` de -60px). O contêiner recebe `data-shown`, e os filhos marcados com `data-reveal` sobem 14px e aparecem em 620ms com `cubic-bezier(0.16, 1, 0.3, 1)`.
+
+- **É transição, não `@keyframes`.** Com animação e `animation-fill-mode: backwards`, o conteúdo fica invisível para sempre se o observer nunca disparar. Com transição, o estado de repouso é o visível.
+- **O escalonamento é aditivo.** A coluna declara `--col-delay`, a peça declara o seu, e o atraso final é `calc(var(--col-delay) + Xms)`. É isso que faz as três colunas entrarem em cascata *e* cada mockup manter a ordem de leitura interna (o documento, a extração, os campos preenchidos).
+- **Não aninhe dois `data-reveal`.** Envolver o mockup inteiro num, além dos internos, faz a moldura subir junto com o conteúdo dela e o movimento acumula.
+- Em `prefers-reduced-motion` o hook já devolve `shown` verdadeiro na primeira renderização e a CSS zera a transição.
+
+A única peça cujo *valor* anima é a barra de orçamento (0 → 62%, com atraso, atrelada ao `group/col`). É o único número que muda no conjunto, e o preenchimento diz isso sem legenda.
+
+### 7.8 Painel de abas
+
+A terceira seção (`solution-section.tsx`) troca duas telas do produto num painel único.
+
+| elemento | valor |
+|---|---|
+| painel | `rounded-[24px]`, borda, `bg-muted/80`, `pt-[68px]` para abrir espaço ao entalhe |
+| entalhe | faixa de 392×68 em `--background`, `rounded-b-[20px]`, sobreposta ao topo do painel |
+| esquinas do entalhe | 20×20 com `mask: radial-gradient(20px at 0 100%, #0000 98%, #000)` (espelhada à direita) |
+| seletor | trilho de 360×40, `rounded-xl`, pílula ativa deslizando por `translateX` em 300ms |
+| painel de conteúdo | grade `340px + 1fr`, card branco à esquerda, janela do app sangrando à direita |
+
+**O entalhe é uma peça vazada, não dois retângulos.** A faixa branca sozinha encosta no painel em ângulo reto e a junção denuncia a sobreposição. As duas esquinas mascaradas devolvem o raio ao cinza dos dois lados, e é isso que faz o conjunto ler como um recorte.
+
+**A pílula do seletor desliza, não troca de cor.** Duas pílulas acendendo e apagando fazem a troca parecer recarregamento; uma que se move diz que os dois painéis são o mesmo lugar visto de dois ângulos.
+
+**Os dois painéis ficam montados, empilhados no mesmo lugar.** O inativo sai do fluxo (`absolute inset-0`), perde o ponteiro e desliza 12px. Desmontar o inativo faz a altura do bloco pular no meio da transição.
+
+**No celular o entalhe some e as abas sobem para cima do painel.** O entalhe pressupõe um painel mais estreito que a viewport; em tela cheia ele não tem o que recortar. A troca é `max-md:static` mais **`max-md:order-first`** — sem o `order`, o bloco cai depois do painel, porque no DOM ele vem depois. Foi assim que a primeira versão saiu, com as abas escondidas embaixo de tudo.
+
+**As janelas de app sangram pela direita e têm rodapé.** O corte sugere que a tela continua; o rodapé (`WindowFooter`) existe porque a janela estica até a altura do card da esquerda, e sem ele sobra um vazio do tamanho da diferença.
+
+### 7.9 Seção de encaixe (com ou sem ERP)
+
+A quarta seção (`erp-fit-section.tsx` + `fit-diagrams.tsx`) apresenta dois cenários lado a lado, em dois cartões da largura da página. É a seção com menos texto da landing: chip, mockup, uma frase de título e três marcadores de três palavras. **Quem explica é o desenho.**
+
+| elemento | valor |
+|---|---|
+| container | `max-w-[1430px]` — o mesmo das seções 7.6 e 7.8 |
+| grade | `grid-cols-2 gap-6` (uma coluna abaixo de `md`) |
+| cartão | `rounded-[24px]`, borda, `p-8`, chip de cenário no topo |
+| mockup | altura fixa `md:h-[320px]`, livre no celular |
+| marcadores | fileira que quebra sozinha, `gap-x-5`, sem parágrafo antes |
+
+**Largura de container é propriedade da página, não da seção.** Uma versão desta seção foi construída em `max-w-[720px]`: numa página que trabalha em 1430px, isso lê como uma fita fina entre dois vazios, a seção parece de outro site e todo texto dentro dela fica com medida curta. Se um conteúdo parece pedir menos largura, o que ele precisa é de mais conteúdo por linha, não de um container menor.
+
+**Sem parágrafo.** Uma versão anterior tinha quatro linhas de prosa por cartão. Numa seção cujo argumento é visual, o parágrafo é justamente o que ninguém lê — e ele empurrava o mockup pra cima, roubando o espaço de quem estava fazendo o trabalho.
+
+**Os mockups são telas de produto, não diagramas de caixinha.** Fila de pedidos com avatar, valor tabular e pílula de status; faixa de indicadores; botão de ação. Uma versão anterior usava ícone mais rótulo ligados por linha, e lia como fluxograma de apresentação: informa a estrutura, mas não vende o produto. Com quase nenhum texto em volta, o mockup precisa ter densidade de tela real.
+
+**A estrutura de cada mockup é o argumento:**
+
+- `StandaloneApp` (sem ERP): uma janela cheia, com fila, valores e decisão. Mostra que o AprovAI *é* o sistema, não um acessório.
+- `ErpHandoff` (com ERP): janela do AprovAI em cima, arquivo de conciliação no meio, janela do ERP embaixo **em cinza, com barras neutras**. O cinza é intencional: o ERP continua fazendo o que fazia, sem cor e sem novidade.
+
+**Selo flutuante encaixa por margem negativa, não por `absolute`.** `-mt-3 -mr-3 ml-auto` sobrepõe exatamente os 12px de respiro que a última linha tem embaixo. Com `absolute`, a sobreposição passava a depender da altura do conteúdo acima, e o selo cobria a pílula de status da última linha — foi o defeito da primeira versão desta peça.
+
+**A altura fixa do mockup só vale a partir de `md`.** É ela que mantém título e marcadores dos dois cartões alinhados quando estão lado a lado. Empilhados no celular não há o que alinhar.
+
+**Nunca prometer "integração automática" ou "sincroniza com seu ERP".** Integração direta com ERP está fora de escopo desta versão (`docs/procure-to-pay.md` §10: "Integração com ERP — exportação de arquivo resolve o MVP"). O contato é sempre nomeado como exportação para conciliação, e o mockup mostra literalmente o arquivo (`conciliacao-set.csv`).
+
+**Os pontos de venda são qualitativos, não números inventados.** Nenhum chip do tipo "R$ 0 de economia" ou "3x mais rápido": esses números não existem e seriam o tique de landing gerada às pressas que o projeto evita.
+
+### 7.10 Segurança (grade bento)
+
+Grade de 4 colunas com duas células largas (`col-span-2`) e quatro estreitas. É a única grade assimétrica da landing, e a assimetria tem função: a trilha de auditoria e o limite da IA são os dois argumentos que fecham venda técnica, e o resto é checklist.
+
+**Todo número e toda garantia sai de um RNF de `aprovia-api/docs/requirements.md`.** Segurança é a seção onde uma frase bonita inventada custa mais caro: o comprador técnico confere. Se a garantia não estiver escrita num requisito, ela não entra na célula.
+
+**A célula "A IA sugere, quem decide é gente" não é opcional.** Num produto chamado AprovAI, é a primeira pergunta de quem avalia risco (RNF16: nenhum valor sugerido por IA é submetido sem confirmação humana; RNF15: a rota é determinística). Esconder isso não evita a pergunta, só faz ela aparecer na reunião.
+
+### 7.11 FAQ
+
+Acordeão em **duas colunas independentes**, não numa grade de duas colunas.
+
+**Numa grade, os dois itens de uma mesma linha compartilham altura:** abrir o da esquerda estica a linha e deixa um buraco visível embaixo do da direita. Com duas pilhas `flex-col` separadas, cada coluna cresce sozinha. A ordem de leitura passa a ser coluna a coluna, o que num FAQ é aceitável.
+
+**A altura anima por `grid-template-rows: 0fr → 1fr`**, com `min-h-0` no filho. Não precisa medir conteúdo em JavaScript e funciona com texto de qualquer tamanho.
+
+### 7.12 CTA final e rodapé
+
+O CTA de fechamento é o **único bloco escuro da página** fora do pôster do vídeo. Depois de sete seções em off-white, a inversão de tom marca o fim da leitura e devolve o olho pro campo de e-mail, que é deliberadamente a mesma peça do hero: quem rolou a página inteira reencontra o mesmo gesto, não um formulário novo pra decifrar.
+
+**O rodapé só linka o que existe.** Nenhum link para termos, privacidade ou contato até que essas páginas existam: link morto em rodapé é o primeiro lugar onde alguém percebe que o site foi entregue pela metade.
+
+**Item de menu só entra depois da seção.** O `NAV_ITEMS` do cabeçalho e as âncoras da página são verificados juntos — hoje as cinco âncoras (`#produto`, `#alcadas`, `#seguranca`, `#precos`, `#faq`) resolvem para seções montadas.
+
+### 7.13 Planos
+
+Três cartões, o do meio em destaque por **borda e sombra**, não por bloco de cor: uma lavagem forte atrás do cartão aperta o contraste do texto que está por cima dela.
+
+**Nenhum preço ou limite numérico aparece.** Os três níveis existem no produto (`PLAN_TIER_LABELS` em `types/enums.ts`), mas `priceCents`, `maxMembers` e `maxRequestsMonth` moram no banco e são definidos pelo SuperAdmin. Valor inventado numa landing é descoberto na primeira conversa de venda. A seção se apoia no teste grátis, que existe (`SubscriptionStatus.TRIALING`), e o layout já comporta uma linha de preço acima da lista quando a tabela comercial for definida.
+
+### 7.14 O roxo decorativo saiu da landing
+
+A landing acumulou, ao longo da construção, oito gradientes de `--brand-purple` (lavagem de fundo cobrindo 1900px, halo atrás do vídeo, luz atrás de cada mockup, lavagem no cartão de plano em destaque, dois radiais no painel escuro de fechamento) e seis pílulas `bg-primary/8 text-primary` abrindo as seções. **Todos foram removidos.**
+
+**Isso nunca foi permitido.** O §1.3 já dizia: `--primary` é ação, e aparece em botão, link, item de menu ativo e borda de foco. Nunca em fundo de seção. A landing violava a própria regra do produto, e o resultado é a assinatura visual mais reconhecível de página gerada por IA: roxo difuso por toda parte porque a logo é roxa.
+
+**O que dá relevo à página agora é estrutura, não atmosfera:**
+
+| antes | agora |
+|---|---|
+| lavagem roxa no fundo do hero | `--background` liso com grão |
+| halo roxo atrás do vídeo e dos mockups | nada; a sombra em camadas do próprio cartão |
+| roxo nas superfícies escuras | luz branca a 10% no alto e vinheta preta embaixo |
+| pílula roxa abrindo cada seção | `SectionLabel`: versalete entre dois fios de 24px |
+| lavagem no cartão de plano em destaque | borda e sombra |
+
+**O roxo que ficou é o roxo que faz alguma coisa:** botão primário, anel de foco, pílula que desliza no seletor de abas, item ativo de menu lateral nos mockups, barra de progresso de orçamento, borda do plano em destaque, estado aberto do acordeão, e os selos de status `brand` dentro das telas desenhadas. Sobre off-white liso, esse roxo bate muito mais forte do que batia competindo com um fundo já roxo.
+
+**Auditoria de regressão:** `grep -rn "brand-purple" src/features/marketing/` deve devolver zero, e nenhum elemento de mais de 40.000px² dentro de `main`/`footer` pode ter fundo ou gradiente na faixa do primary.
+
+### 7.15 Lista de espera
+
+Todo CTA da página aponta para a lista de espera, não para cadastro imediato: cabeçalho, campo do hero, cartões de plano, painel de fechamento e rodapé dizem **"Entrar na lista"**. Nada de "grátis" ou "teste" aparece no texto renderizado.
+
+O destino ainda é `/registrar`, porque não existe endpoint de lista de espera no backend. Quando existir, o `onSubmit` do hero e do fechamento troca de rota num lugar só cada.
