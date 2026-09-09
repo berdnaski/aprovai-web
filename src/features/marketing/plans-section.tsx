@@ -1,44 +1,54 @@
-import type { PublicPlan } from "@/api/marketing"
 import { ApprovalMark } from "@/components/shared/approval-mark"
-import { Skeleton } from "@/components/ui/skeleton"
 import { SectionLabel } from "@/features/marketing/section-label"
-import { usePublicPlans } from "@/hooks/marketing/use-marketing"
 import { useReveal } from "@/hooks/use-reveal"
 import { cn } from "@/lib/utils"
 
 const TITLE_GRADIENT =
   "linear-gradient(91deg, var(--foreground) 43%, color-mix(in oklab, var(--foreground) 44%, oklch(1 0 0)) 100%)"
 
-const SHOW_LIVE_PLANS = true
-
-const TIER_PITCH: Record<string, string> = {
-  BASIC: "Pra quem está saindo do WhatsApp",
-  PROFESSIONAL: "Pra operação que já roda todo mês",
-  ENTERPRISE: "Pra quem tem várias frentes de compra",
+// Os valores ainda não estão fechados. Enquanto isso, os planos vivem
+// direto aqui na LP (sem depender da API), mostrando nome, limites e
+// recursos de cada um, mas nunca o preço.
+type Plan = {
+  id: string
+  name: string
+  pitch: string
+  featured?: boolean
+  limits: string[]
+  features: string[]
 }
 
-const FEATURE_LABELS: Record<string, string> = {
-  "ai-extraction": "Extração assistida por IA",
-  "email-approval": "Aprovação por e-mail",
-  "advanced-reports": "Relatórios avançados",
-}
-
-function limitLabel(
-  value: number | null,
-  counted: string,
-  unlimited: string,
-): string {
-  return value === null
-    ? unlimited
-    : `${new Intl.NumberFormat("pt-BR").format(value)} ${counted}`
-}
+const PLANS: Plan[] = [
+  {
+    id: "essencial",
+    name: "Essencial",
+    pitch: "Pra quem está saindo do WhatsApp",
+    limits: ["100 pedidos por mês", "10 pessoas na equipe"],
+    features: [],
+  },
+  {
+    id: "profissional",
+    name: "Profissional",
+    pitch: "Pra operação que já roda todo mês",
+    featured: true,
+    limits: ["1.000 pedidos por mês", "50 pessoas na equipe"],
+    features: ["Extração assistida por IA", "Aprovação por e-mail"],
+  },
+  {
+    id: "corporativo",
+    name: "Corporativo",
+    pitch: "Pra quem tem várias frentes de compra",
+    limits: ["Pedidos sem limite", "Equipe sem limite"],
+    features: [
+      "Extração assistida por IA",
+      "Aprovação por e-mail",
+      "Relatórios avançados",
+    ],
+  },
+]
 
 export function PlansSection() {
   const { ref, shown } = useReveal<HTMLDivElement>(0.12)
-  const plans = usePublicPlans(SHOW_LIVE_PLANS)
-
-  const items = SHOW_LIVE_PLANS ? (plans.data ?? []) : []
-  const isPending = SHOW_LIVE_PLANS && plans.isPending
 
   return (
     <section
@@ -77,76 +87,23 @@ export function PlansSection() {
           </p>
         </div>
 
-        <div className="mt-14 max-lg:mt-10">
-          {isPending ? <PlansSkeleton /> : null}
-
-          {!isPending && items.length > 0 ? (
-            <div className="grid grid-cols-3 gap-6 max-lg:grid-cols-1 max-lg:gap-5">
-              {items.map((plan, index) => (
-                <PlanCard key={plan.id} index={index} plan={plan} />
-              ))}
-            </div>
-          ) : null}
-
-          {!isPending && items.length === 0 ? <PlansFallback /> : null}
+        <div className="mt-14 grid grid-cols-3 gap-6 max-lg:mt-10 max-lg:grid-cols-1 max-lg:gap-5">
+          {PLANS.map((plan, index) => (
+            <PlanCard key={plan.id} index={index} plan={plan} />
+          ))}
         </div>
       </div>
     </section>
   )
 }
 
-function PlansSkeleton() {
-  return (
-    <div className="grid grid-cols-3 gap-6 max-lg:grid-cols-1 max-lg:gap-5">
-      {[0, 1, 2].map((key) => (
-        <div
-          key={key}
-          className="flex flex-col rounded-[24px] border border-border bg-card p-8 max-md:p-6"
-        >
-          <Skeleton className="h-6 w-28" />
-          <Skeleton className="mt-3 h-5 w-48" />
-          <Skeleton className="mt-6 h-9 w-40" />
-          <div className="mt-7 flex flex-col gap-3 border-t border-border/70 pt-6">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-4/5" />
-            <Skeleton className="h-4 w-3/5" />
-          </div>
-          <Skeleton className="mt-8 h-11 w-full rounded-[12px]" />
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function PlansFallback() {
-  return (
-    <div className="mx-auto flex max-w-[560px] flex-col items-center rounded-[24px] border border-border bg-card p-10 text-center shadow-[0_1px_2px_oklch(0.2_0_0/0.04),0_16px_40px_-24px_oklch(0.2_0_0/0.14)] max-md:p-8">
-      <h3 className="text-[19px] leading-6 font-semibold text-foreground">
-        A tabela de planos sai junto com a abertura
-      </h3>
-      <p className="mt-3 text-[15px] leading-6 text-muted-foreground">
-        Estamos fechando os limites de cada plano com as primeiras empresas da
-        lista. Entre nela e você recebe os valores antes de todo mundo.
-      </p>
-      <a
-        href="#lista"
-        className="mt-7 inline-flex h-11 items-center justify-center rounded-[12px] bg-primary px-5 text-[14px] leading-5 font-semibold text-primary-foreground shadow-[inset_0_1px_0_0_oklch(1_0_0/0.16),0_2px_4px_oklch(0.2_0_0/0.12)] transition-colors duration-150 ease-out outline-none hover:bg-primary-hover focus-visible:ring-3 focus-visible:ring-ring/50"
-      >
-        Entrar na lista
-      </a>
-    </div>
-  )
-}
-
-function PlanCard({ index, plan }: { index: number; plan: PublicPlan }) {
-  const featured = plan.tier === "PROFESSIONAL"
-
+function PlanCard({ index, plan }: { index: number; plan: Plan }) {
   return (
     <article
       data-reveal
       className={cn(
         "flex flex-col rounded-[24px] border bg-card p-8 max-md:p-6",
-        featured
+        plan.featured
           ? "border-primary/25 shadow-[0_1px_2px_oklch(0.2_0_0/0.04),0_20px_48px_-24px_oklch(0.2_0_0/0.22)]"
           : "border-border shadow-[0_1px_2px_oklch(0.2_0_0/0.04),0_16px_40px_-24px_oklch(0.2_0_0/0.14)]",
       )}
@@ -156,7 +113,7 @@ function PlanCard({ index, plan }: { index: number; plan: PublicPlan }) {
         <h3 className="text-[19px] leading-6 font-semibold text-foreground">
           {plan.name}
         </h3>
-        {featured ? (
+        {plan.featured ? (
           <span className="rounded-lg bg-primary/8 px-2 py-1 text-[11px] leading-4 font-semibold whitespace-nowrap text-primary">
             Mais escolhido
           </span>
@@ -164,7 +121,7 @@ function PlanCard({ index, plan }: { index: number; plan: PublicPlan }) {
       </div>
 
       <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
-        {TIER_PITCH[plan.tier] ?? "Pra quem quer tirar a compra do improviso"}
+        {plan.pitch}
       </p>
 
       <p className="mt-6 flex items-center gap-2">
@@ -177,16 +134,11 @@ function PlanCard({ index, plan }: { index: number; plan: PublicPlan }) {
       </p>
 
       <ul className="mt-7 flex flex-1 flex-col gap-3 border-t border-border/70 pt-6">
-        <PlanItem>
-          {limitLabel(plan.maxRequestsMonth, "pedidos por mês", "Pedidos sem limite")}
-        </PlanItem>
-        <PlanItem>
-          {limitLabel(plan.maxMembers, "pessoas na equipe", "Equipe sem limite")}
-        </PlanItem>
+        {plan.limits.map((limit) => (
+          <PlanItem key={limit}>{limit}</PlanItem>
+        ))}
         {plan.features.map((feature) => (
-          <PlanItem key={feature}>
-            {FEATURE_LABELS[feature] ?? feature}
-          </PlanItem>
+          <PlanItem key={feature}>{feature}</PlanItem>
         ))}
       </ul>
 
@@ -194,7 +146,7 @@ function PlanCard({ index, plan }: { index: number; plan: PublicPlan }) {
         href="#lista"
         className={cn(
           "mt-8 flex h-11 items-center justify-center rounded-[12px] text-[14px] leading-5 font-semibold transition-colors duration-150 ease-out outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-          featured
+          plan.featured
             ? "bg-primary text-primary-foreground shadow-[inset_0_1px_0_0_oklch(1_0_0/0.16),0_2px_4px_oklch(0.2_0_0/0.12)] hover:bg-primary-hover"
             : "border border-border bg-card text-foreground shadow-[0_2px_4px_oklch(0.2_0_0/0.04)] hover:bg-muted",
         )}
