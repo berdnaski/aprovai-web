@@ -7,12 +7,13 @@ import {
   type JoinWaitlistPayload,
 } from "@/api/marketing"
 
-export function usePublicPlans() {
+export function usePublicPlans(enabled = true) {
   return useQuery({
     queryKey: ["public", "plans"] as const,
     queryFn: listPublicPlans,
     staleTime: 5 * 60_000,
     retry: false,
+    enabled,
   })
 }
 

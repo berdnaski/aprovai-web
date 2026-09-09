@@ -1,6 +1,5 @@
 import type { PublicPlan } from "@/api/marketing"
 import { ApprovalMark } from "@/components/shared/approval-mark"
-import { MoneyDisplay } from "@/components/shared/money-display"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SectionLabel } from "@/features/marketing/section-label"
 import { usePublicPlans } from "@/hooks/marketing/use-marketing"
@@ -9,6 +8,8 @@ import { cn } from "@/lib/utils"
 
 const TITLE_GRADIENT =
   "linear-gradient(91deg, var(--foreground) 43%, color-mix(in oklab, var(--foreground) 44%, oklch(1 0 0)) 100%)"
+
+const SHOW_LIVE_PLANS = true
 
 const TIER_PITCH: Record<string, string> = {
   BASIC: "Pra quem está saindo do WhatsApp",
@@ -34,9 +35,10 @@ function limitLabel(
 
 export function PlansSection() {
   const { ref, shown } = useReveal<HTMLDivElement>(0.12)
-  const plans = usePublicPlans()
+  const plans = usePublicPlans(SHOW_LIVE_PLANS)
 
-  const items = plans.data ?? []
+  const items = SHOW_LIVE_PLANS ? (plans.data ?? []) : []
+  const isPending = SHOW_LIVE_PLANS && plans.isPending
 
   return (
     <section
@@ -76,9 +78,9 @@ export function PlansSection() {
         </div>
 
         <div className="mt-14 max-lg:mt-10">
-          {plans.isPending ? <PlansSkeleton /> : null}
+          {isPending ? <PlansSkeleton /> : null}
 
-          {!plans.isPending && items.length > 0 ? (
+          {!isPending && items.length > 0 ? (
             <div className="grid grid-cols-3 gap-6 max-lg:grid-cols-1 max-lg:gap-5">
               {items.map((plan, index) => (
                 <PlanCard key={plan.id} index={index} plan={plan} />
@@ -86,7 +88,7 @@ export function PlansSection() {
             </div>
           ) : null}
 
-          {!plans.isPending && items.length === 0 ? <PlansFallback /> : null}
+          {!isPending && items.length === 0 ? <PlansFallback /> : null}
         </div>
       </div>
     </section>
@@ -165,14 +167,12 @@ function PlanCard({ index, plan }: { index: number; plan: PublicPlan }) {
         {TIER_PITCH[plan.tier] ?? "Pra quem quer tirar a compra do improviso"}
       </p>
 
-      <p className="mt-6 flex items-baseline gap-1.5">
-        <MoneyDisplay
-          cents={plan.priceCents}
-          emphasis
-          className="text-[32px] leading-9 tracking-[-0.02em]"
-        />
-        <span className="text-[14px] leading-5 text-muted-foreground">
-          por mês
+      <p className="mt-6 flex items-center gap-2">
+        <span className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-foreground/40">
+          R$ ···
+        </span>
+        <span className="rounded-md bg-muted px-2 py-1 text-[11.5px] leading-4 font-semibold whitespace-nowrap text-muted-foreground">
+          valor sai com a abertura
         </span>
       </p>
 
