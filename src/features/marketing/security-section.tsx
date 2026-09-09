@@ -115,19 +115,19 @@ function AuditCell() {
         {AUDIT_LOG.map((entry) => (
           <div
             key={entry.at}
-            className="flex items-center gap-2.5 rounded-xl bg-card px-3 py-2.5"
+            className="flex items-center gap-2.5 rounded-xl bg-card px-3 py-2.5 max-sm:items-start"
           >
-            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-[9px] font-semibold text-primary">
+            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-[9px] font-semibold text-primary max-sm:mt-0.5">
               {entry.who}
             </span>
-            <span className="min-w-0 flex-1 truncate text-[11.5px] leading-4 text-foreground/80">
+            <span className="min-w-0 flex-1 truncate text-[11.5px] leading-4 text-foreground/80 max-sm:whitespace-normal max-sm:overflow-visible max-sm:text-clip">
               <span className="font-medium text-foreground">{entry.name}</span>{" "}
               {entry.action}
             </span>
-            <span className="tabular shrink-0 text-[10.5px] leading-4 text-muted-foreground">
+            <span className="tabular shrink-0 text-[10.5px] leading-4 text-muted-foreground max-sm:mt-0.5">
               {entry.at}
             </span>
-            <LockKey size={11} className="shrink-0 text-muted-foreground/60" />
+            <LockKey size={11} className="shrink-0 text-muted-foreground/60 max-sm:mt-1" />
           </div>
         ))}
       </div>

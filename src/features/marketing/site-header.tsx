@@ -129,13 +129,6 @@ function Actions({
 }) {
   return (
     <div className={cn("items-center gap-2 sm:flex", className)}>
-      <Link
-        to="/entrar"
-        onClick={onNavigate}
-        className="inline-flex h-10 items-center justify-center rounded-[10px] border border-border bg-card px-3.5 text-[14px] leading-5 font-semibold text-foreground shadow-[0_2px_4px_oklch(0.2_0_0/0.04)] transition-colors duration-150 ease-out outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
-      >
-        Entrar
-      </Link>
       <a
         href="#lista"
         onClick={onNavigate}

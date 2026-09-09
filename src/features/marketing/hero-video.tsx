@@ -23,7 +23,6 @@ export function HeroVideo({
   duration = "01:26",
 }: HeroVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const shellRef = useRef<HTMLDivElement>(null)
   const [playing, setPlaying] = useState(false)
   const [started, setStarted] = useState(false)
   const [muted, setMuted] = useState(true)
@@ -83,24 +82,6 @@ export function HeroVideo({
     return () => document.removeEventListener("pointerdown", wake)
   }, [src, muted])
 
-  useEffect(() => {
-    const video = videoRef.current
-    const shell = shellRef.current
-    if (!video || !shell || !src) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!started) return
-        if (entry.isIntersecting) void video.play()
-        else video.pause()
-      },
-      { threshold: 0.25 }
-    )
-
-    observer.observe(shell)
-    return () => observer.disconnect()
-  }, [src, started])
-
   function toggleSound() {
     const video = videoRef.current
     if (!video) return
@@ -122,10 +103,7 @@ export function HeroVideo({
 
   return (
     <div className="relative mx-auto w-full max-w-[1148px]">
-      <div
-        ref={shellRef}
-        className="rounded-[20px] border border-border bg-card p-1.5 shadow-[0_2px_4px_oklch(0.2_0_0/0.04),0_18px_44px_-16px_oklch(0.2_0_0/0.14),0_48px_88px_-40px_oklch(0.2_0_0/0.24)]"
-      >
+      <div className="rounded-[20px] border border-border bg-card p-1.5 shadow-[0_2px_4px_oklch(0.2_0_0/0.04),0_18px_44px_-16px_oklch(0.2_0_0/0.14),0_48px_88px_-40px_oklch(0.2_0_0/0.24)]">
         <div className="group/player relative aspect-video overflow-hidden rounded-[15px] bg-card ring-1 ring-ink/10 ring-inset">
           {src ? (
             <video

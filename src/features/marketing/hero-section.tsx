@@ -37,11 +37,11 @@ export function HeroSection() {
         <div className="mt-10 flex w-full flex-col items-center gap-8 max-md:mt-8">
           <WaitlistForm source="landing-hero" inputId="hero-email" />
 
-          <ul className="flex max-w-[700px] flex-wrap justify-center gap-2.5">
+          <ul className="flex max-w-[700px] flex-wrap justify-center gap-2.5 max-sm:gap-1.5">
             {CAPABILITIES.map((capability, index) => (
               <li
                 key={capability}
-                className="rise-in rounded-full border border-border bg-card px-4 py-2.5 text-[14px] leading-5 font-semibold text-foreground/85 shadow-[0_2px_4px_oklch(0.2_0_0/0.04)] transition-[transform,border-color] duration-150 ease-out hover:-translate-y-px hover:border-muted-foreground/25"
+                className="rise-in rounded-full border border-border bg-card px-4 py-2.5 text-[14px] leading-5 font-semibold text-foreground/85 shadow-[0_2px_4px_oklch(0.2_0_0/0.04)] transition-[transform,border-color] duration-150 ease-out hover:-translate-y-px hover:border-muted-foreground/25 max-sm:px-2.5 max-sm:py-1.5 max-sm:text-[12.5px]"
                 style={{ animationDelay: `${80 + index * 40}ms` }}
               >
                 {capability}

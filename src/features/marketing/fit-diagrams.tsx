@@ -33,7 +33,7 @@ function Pill({ children }: { children: React.ReactNode }) {
 
 export function StandaloneApp() {
   return (
-    <div className={cn(FRAME, "flex justify-center overflow-hidden")}>
+    <div className="relative flex h-[280px] w-full justify-center overflow-hidden md:h-[470px]">
       <div className="relative w-[330px] overflow-hidden rounded-[18px] border border-border bg-card shadow-[0_1px_2px_oklch(0.2_0_0/0.04),0_18px_44px_-24px_oklch(0.2_0_0/0.2)]">
         <img
           src={sidebar}

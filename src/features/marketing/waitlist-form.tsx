@@ -1,6 +1,5 @@
 import { useState } from "react"
 import { ArrowRight, EnvelopeSimple } from "@phosphor-icons/react"
-import { Link } from "react-router-dom"
 import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/api/client"
@@ -142,7 +141,7 @@ export function WaitlistForm({
       <form
         onSubmit={openDetails}
         className={cn(
-          "flex w-full items-center gap-2.5 rounded-[16px] border p-2 pl-4 transition-shadow duration-150 ease-out focus-within:ring-3 max-sm:flex-col max-sm:items-stretch max-sm:gap-2 max-sm:p-2",
+          "flex w-full items-center gap-1.5 rounded-[16px] border p-1.5 pl-3.5 transition-shadow duration-150 ease-out focus-within:ring-3 sm:gap-2.5 sm:p-2 sm:pl-4",
           SHELL[tone],
         )}
       >
@@ -151,7 +150,7 @@ export function WaitlistForm({
         </label>
         <EnvelopeSimple
           size={18}
-          className={cn("shrink-0 max-sm:hidden", ICON[tone])}
+          className={cn("hidden shrink-0 min-[380px]:block", ICON[tone])}
         />
         <input
           id={inputId}
@@ -163,44 +162,22 @@ export function WaitlistForm({
           onChange={(event) => setEmail(event.target.value)}
           placeholder="Seu e-mail de trabalho"
           className={cn(
-            "h-[50px] min-w-0 flex-1 self-stretch bg-transparent text-[14px] leading-5 outline-none max-sm:px-2",
+            "h-11 min-w-0 flex-1 self-stretch bg-transparent text-[14px] leading-5 outline-none sm:h-[50px]",
             INPUT[tone],
           )}
         />
         <button
           type="submit"
-          className="group flex h-[50px] shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[10px] bg-primary px-5 text-[14px] leading-5 font-semibold text-primary-foreground shadow-[inset_0_1px_0_0_oklch(1_0_0/0.16)] transition-colors duration-150 ease-out outline-none hover:bg-primary-hover focus-visible:ring-3 focus-visible:ring-ring/50 max-sm:w-full"
+          className="group flex h-11 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-[10px] bg-primary px-3 text-[14px] leading-5 font-semibold whitespace-nowrap text-primary-foreground shadow-[inset_0_1px_0_0_oklch(1_0_0/0.16)] transition-colors duration-150 ease-out outline-none hover:bg-primary-hover focus-visible:ring-3 focus-visible:ring-ring/50 sm:h-[50px] sm:gap-1.5 sm:px-5"
         >
           Entrar na lista
           <ArrowRight
             size={14}
             weight="bold"
-            className="transition-transform duration-200 ease-out group-hover:translate-x-0.5"
+            className="hidden transition-transform duration-200 ease-out group-hover:translate-x-0.5 min-[380px]:block"
           />
         </button>
       </form>
-
-      <p
-        className={cn(
-          "px-1 text-[12px] leading-[18px]",
-          tone === "dark" ? "text-ink-muted" : "text-muted-foreground",
-        )}
-      >
-        Guardamos seu contato só para avisar quando o AprovAI abrir. Nada de
-        disparo em massa, e você sai da lista quando quiser. Veja a{" "}
-        <Link
-          to="/privacidade"
-          className={cn(
-            "underline underline-offset-2 transition-colors duration-150",
-            tone === "dark"
-              ? "text-ink-foreground/85 hover:text-ink-foreground"
-              : "text-foreground/85 hover:text-foreground",
-          )}
-        >
-          Política de Privacidade
-        </Link>
-        .
-      </p>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[420px]">
