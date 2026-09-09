@@ -92,10 +92,13 @@ export function resolveExtraction(
   const category = resolveCategory(fields, categories)
 
   const found = [
+    Boolean(fields.title),
+    Boolean(fields.description),
     supplier.state !== "absent",
     category.state !== "absent",
     Boolean(fields.totalAmountCents),
     Boolean(fields.paymentTerms),
+    fields.items.length > 0,
   ].filter(Boolean).length
 
   return {
@@ -108,6 +111,12 @@ export function resolveExtraction(
 }
 
 export function titleFrom(fields: ExtractedFields, fallback: string): string {
+  const title = fields.title?.trim()
+
+  if (title) {
+    return title.slice(0, 200)
+  }
+
   const name = fields.supplierName?.trim()
 
   if (!name) {

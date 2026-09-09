@@ -1,6 +1,8 @@
 import {
   ArrowLeft,
   ArrowUp,
+  FilePdf,
+  ImageSquare,
   Paperclip,
   PencilSimpleLine,
   Stack,
@@ -61,12 +63,13 @@ export function RequestStartPage() {
         title: PLACEHOLDER_TITLE,
       })
 
-      if (file) {
-        await uploadFile(draft.id, file)
-      }
+      const uploaded = file ? await uploadFile(draft.id, file) : null
 
-      if (withExtraction && hasText) {
-        await requestExtraction(draft.id, { text: text.trim() })
+      if (withExtraction && (hasText || uploaded)) {
+        await requestExtraction(
+          draft.id,
+          hasText ? { text: text.trim() } : { fileId: uploaded!.id },
+        )
         navigate(`/pedidos/${draft.id}/editar?lendo=1`, { replace: true })
         return
       }
@@ -78,13 +81,17 @@ export function RequestStartPage() {
     }
   }
 
+  const isPdf = file?.type === "application/pdf"
+
   const hint = !ready
     ? "Escolha o Centro de Custo"
-    : !hasText && !file
-      ? "Cole o texto do documento"
-      : hasText
-        ? "Enter para enviar"
-        : "O anexo vai junto do pedido"
+    : hasText
+      ? "Enter para enviar"
+      : isPdf
+        ? "Vou ler o PDF e preencher o rascunho"
+        : file
+          ? "Imagem não é lida, cole o texto"
+          : "Cole o texto ou anexe um PDF"
 
   return (
     <div className="flex min-h-[calc(100svh-13rem)] flex-col">
@@ -133,26 +140,7 @@ export function RequestStartPage() {
             )}
           />
 
-          {file ? (
-            <div className="mx-3 mb-1 flex items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1.5">
-              <Paperclip
-                size={13}
-                aria-hidden
-                className="shrink-0 text-muted-foreground"
-              />
-              <span className="min-w-0 flex-1 truncate text-caption text-foreground">
-                {file.name}
-              </span>
-              <button
-                type="button"
-                onClick={() => setFile(null)}
-                aria-label="Remover anexo"
-                className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-              >
-                <X size={11} aria-hidden />
-              </button>
-            </div>
-          ) : null}
+          {file ? <FileChip file={file} onRemove={() => setFile(null)} /> : null}
 
           <div className="flex items-center gap-1.5 px-3 pb-3">
             <button
@@ -244,8 +232,8 @@ export function RequestStartPage() {
 
         <div className="flex flex-col items-center gap-3">
           <p className="max-w-md text-center text-caption leading-relaxed text-muted-foreground/70">
-            A leitura é feita sobre o texto colado. O anexo (PDF, JPG ou PNG)
-            fica guardado no pedido para quem vai aprovar.
+            A leitura funciona com o texto colado ou com um anexo em PDF.
+            Imagem fica guardada no pedido, mas não é lida automaticamente.
           </p>
 
           <button
@@ -266,6 +254,57 @@ export function RequestStartPage() {
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`
+  }
+
+  const kb = bytes / 1024
+
+  return kb < 1024 ? `${Math.round(kb)} KB` : `${(kb / 1024).toFixed(1)} MB`
+}
+
+function FileChip({ file, onRemove }: { file: File; onRemove: () => void }) {
+  const isPdf = file.type === "application/pdf"
+
+  return (
+    <div className="mx-3 mb-2 flex w-fit max-w-[calc(100%-1.5rem)] items-center gap-2.5 rounded-xl border border-border bg-muted/40 py-1.5 pr-1.5 pl-2">
+      <span
+        className={cn(
+          "grid size-7 shrink-0 place-items-center rounded-lg",
+          isPdf
+            ? "bg-destructive/8 text-destructive"
+            : "bg-primary/8 text-primary",
+        )}
+      >
+        {isPdf ? (
+          <FilePdf size={15} weight="fill" aria-hidden />
+        ) : (
+          <ImageSquare size={15} weight="fill" aria-hidden />
+        )}
+      </span>
+
+      <span className="flex min-w-0 flex-col">
+        <span className="truncate text-caption text-foreground">
+          {file.name}
+        </span>
+        <span className="text-micro text-muted-foreground">
+          {formatSize(file.size)}
+        </span>
+      </span>
+
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Remover anexo"
+        className="grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      >
+        <X size={11} weight="bold" aria-hidden />
+      </button>
     </div>
   )
 }

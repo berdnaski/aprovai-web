@@ -292,12 +292,22 @@ export async function deleteFile(id: string, fileId: string): Promise<void> {
   await apiClient.delete(`/purchase-requests/${id}/files/${fileId}`)
 }
 
+export interface ExtractedItem {
+  description: string
+  quantity: string
+  unit: string
+  unitPriceCents: string
+}
+
 export interface ExtractedFields {
+  title: string | null
+  description: string | null
   supplierCnpj: string | null
   supplierName: string | null
   totalAmountCents: string | null
   categoryName: string | null
   paymentTerms: string | null
+  items: ExtractedItem[]
 }
 
 export interface Extraction {

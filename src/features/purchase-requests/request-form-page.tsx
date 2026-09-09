@@ -102,6 +102,7 @@ export function RequestFormPage() {
   const [dismissed, setDismissed] = useState(false)
   const [applied, setApplied] = useState(false)
   const [touched, setTouched] = useState(false)
+  const [supplierUnknown, setSupplierUnknown] = useState(false)
 
   const requestQuery = usePurchaseRequest(id)
   const { data: items = [] } = useRequestItems(id)
@@ -198,13 +199,32 @@ export function RequestFormPage() {
         : {}),
       ...(resolved.paymentTerms ? { paymentTerms: resolved.paymentTerms } : {}),
       ...(draft.title.trim() ? {} : { title: titleFrom(fields, "") }),
+      ...(draft.description?.trim() || !fields.description
+        ? {}
+        : { description: fields.description }),
     }
 
     setDraft(next)
     setApplied(true)
     save(next)
 
-    if (resolved.totalAmountCents && items.length === 0) {
+    if (items.length > 0) {
+      return
+    }
+
+    if (fields.items.length > 0) {
+      for (const item of fields.items) {
+        addItem.mutate({
+          description: item.description,
+          quantity: item.quantity,
+          unit: item.unit,
+          unitPriceCents: item.unitPriceCents,
+        })
+      }
+      return
+    }
+
+    if (resolved.totalAmountCents) {
       addItem.mutate({
         description: fields.supplierName
           ? `Conforme documento de ${fields.supplierName}`
@@ -249,8 +269,8 @@ export function RequestFormPage() {
     },
     {
       label: "Fornecedor",
-      done: Boolean(draft.supplierId),
-      missing: "O CNPJ é conferido na aprovação.",
+      done: Boolean(draft.supplierId) || supplierUnknown,
+      missing: "Escolha o fornecedor ou marque que ainda não sabe.",
     },
     {
       label: "Itens",
@@ -332,28 +352,37 @@ export function RequestFormPage() {
 
             <SettingRow
               label="Fornecedor"
-              description="Obrigatório para enviar"
+              description={
+                supplierUnknown && !draft.supplierId
+                  ? "Quem aprovar vai pedir antes de liberar"
+                  : "O CNPJ é conferido na aprovação"
+              }
               control={
                 <Select
                   value={draft.supplierId}
-                  onValueChange={(next) =>
+                  onValueChange={(next) => {
+                    setSupplierUnknown(next === null)
                     set({ supplierId: (next ?? null) as string | null }, true)
-                  }
+                  }}
                 >
                   <SelectTrigger
                     className="h-9 w-64 bg-card px-3"
                     aria-label="Fornecedor"
                   >
                     <SelectValue>
-                      {(value: string | null) =>
-                        value
-                          ? (suppliers.find((item) => item.id === value)
-                              ?.tradeName ??
-                            suppliers.find((item) => item.id === value)
-                              ?.legalName ??
-                            "Fornecedor")
-                          : "Escolher"
-                      }
+                      {(value: string | null) => {
+                        if (!value) {
+                          return supplierUnknown ? "Ainda não sei" : "Escolher"
+                        }
+
+                        const picked = suppliers.find(
+                          (item) => item.id === value,
+                        )
+
+                        return (
+                          picked?.tradeName ?? picked?.legalName ?? "Fornecedor"
+                        )
+                      }}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
