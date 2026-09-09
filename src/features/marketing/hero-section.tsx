@@ -51,7 +51,10 @@ export function HeroSection() {
         </div>
 
         <div className="mt-[84px] w-full max-md:mt-14">
-          <HeroVideo />
+          <HeroVideo
+            src="/video/aprovai.mp4"
+            poster="/video/aprovai-poster.jpg"
+          />
         </div>
       </div>
     </section>

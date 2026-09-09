@@ -180,6 +180,28 @@ export function WaitlistForm({
         </button>
       </form>
 
+      <p
+        className={cn(
+          "px-1 text-[12px] leading-[18px]",
+          tone === "dark" ? "text-ink-muted" : "text-muted-foreground",
+        )}
+      >
+        Guardamos seu contato só para avisar quando o AprovAI abrir. Nada de
+        disparo em massa, e você sai da lista quando quiser. Veja a{" "}
+        <Link
+          to="/privacidade"
+          className={cn(
+            "underline underline-offset-2 transition-colors duration-150",
+            tone === "dark"
+              ? "text-ink-foreground/85 hover:text-ink-foreground"
+              : "text-foreground/85 hover:text-foreground",
+          )}
+        >
+          Política de Privacidade
+        </Link>
+        .
+      </p>
+
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[420px]">
           <form onSubmit={submit}>
