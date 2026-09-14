@@ -1,8 +1,9 @@
-import { ArrowLeft, Check, SealCheck, WarningCircle } from "@phosphor-icons/react"
+import { Check, SealCheck, WarningCircle } from "@phosphor-icons/react"
 import { useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
 
+import { PageBreadcrumbs } from "@/components/shared/page-breadcrumbs"
 import { getApiErrorMessage } from "@/api/client"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { LoadError } from "@/components/shared/load-error"
@@ -56,13 +57,12 @@ export function MatchDetailPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-      <Link
-        to="/conferencia"
-        className="inline-flex w-fit items-center gap-1.5 rounded-md text-caption text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        <ArrowLeft size={13} aria-hidden />
-        Conferências
-      </Link>
+      <PageBreadcrumbs
+        items={[
+        { label: "Conferência", to: "/conferencia" },
+        { label: invoice.data?.number ? `Nota ${invoice.data.number}` : "Resultado" },
+        ]}
+      />
 
       <PageHeader
         title={`Conferência da nota ${invoice.data?.number ?? ""}`}

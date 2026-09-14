@@ -1,5 +1,4 @@
 import {
-  ArrowLeft,
   DownloadSimple,
   LinkSimple,
   Prohibit,
@@ -11,6 +10,7 @@ import { useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 
+import { PageBreadcrumbs } from "@/components/shared/page-breadcrumbs"
 import { getApiErrorMessage } from "@/api/client"
 import { invoiceXmlUrl } from "@/api/invoices"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
@@ -93,13 +93,13 @@ export function InvoiceDetailPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <Link
-        to="/conferencia/notas"
-        className="inline-flex w-fit items-center gap-1.5 rounded-md text-caption text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        <ArrowLeft size={13} aria-hidden />
-        Notas recebidas
-      </Link>
+      <PageBreadcrumbs
+        items={[
+        { label: "Conferência", to: "/conferencia" },
+        { label: "Notas recebidas", to: "/conferencia/notas" },
+        { label: `Nota ${invoice.number}` },
+        ]}
+      />
 
       <PageHeader
         title={`Nota ${invoice.number}${invoice.series ? `-${invoice.series}` : ""}`}

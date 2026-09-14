@@ -1,8 +1,9 @@
-import { ArrowLeft, DownloadSimple, Receipt } from "@phosphor-icons/react"
+import { DownloadSimple, Receipt } from "@phosphor-icons/react"
 import { useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 
+import { PageBreadcrumbs } from "@/components/shared/page-breadcrumbs"
 import type { BudgetEntry } from "@/api/budgets"
 import { getApiErrorMessage } from "@/api/client"
 import { EmptyState } from "@/components/shared/empty-state"
@@ -149,19 +150,13 @@ export function BudgetDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Você está em">
-        <Link
-          to={`/centros-de-custo/${budget.costCenterId}`}
-          className="group inline-flex items-center gap-1.5 text-caption text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft
-            size={13}
-            className="transition-transform duration-150 group-hover:-translate-x-0.5"
-            aria-hidden
-          />
-          {costCenterQuery.data?.name ?? "Centro de Custo"}
-        </Link>
-      </nav>
+      <PageBreadcrumbs
+        items={[
+        { label: "Centros de Custo", to: "/centros-de-custo" },
+        { label: costCenterQuery.data?.name ?? "Centro de Custo", to: `/centros-de-custo/${budget.costCenterId}` },
+        { label: formatPeriodLabel(budget) },
+        ]}
+      />
 
       <div className="flex flex-col gap-5 rounded-lg border border-border bg-card px-5 py-4 shadow-xs lg:flex-row lg:items-center lg:justify-between lg:gap-10">
         <div className="min-w-0">

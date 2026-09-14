@@ -1,7 +1,8 @@
-import { ArrowLeft, Sliders, ArrowsLeftRight } from "@phosphor-icons/react"
+import { Sliders, ArrowsLeftRight } from "@phosphor-icons/react"
 import { useState } from "react"
-import { Link, useParams } from "react-router-dom"
+import { useParams } from "react-router-dom"
 
+import { PageBreadcrumbs } from "@/components/shared/page-breadcrumbs"
 import { getApiErrorMessage } from "@/api/client"
 import { LoadError } from "@/components/shared/load-error"
 import { MoneyDisplay } from "@/components/shared/money-display"
@@ -63,13 +64,12 @@ export function OrganizationDetailPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <Link
-        to="/plataforma/organizacoes"
-        className="inline-flex w-fit items-center gap-1.5 rounded-md text-caption text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        <ArrowLeft size={13} aria-hidden />
-        Organizações
-      </Link>
+      <PageBreadcrumbs
+        items={[
+        { label: "Organizações", to: "/plataforma/organizacoes" },
+        { label: item.tradeName ?? item.legalName },
+        ]}
+      />
 
       <PageHeader
         title={item.tradeName ?? item.legalName}

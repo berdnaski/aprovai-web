@@ -1,8 +1,9 @@
-import { ArrowLeft, PaperPlaneTilt, Prohibit, Truck } from "@phosphor-icons/react"
+import { PaperPlaneTilt, Prohibit, Truck } from "@phosphor-icons/react"
 import { useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 
+import { PageBreadcrumbs } from "@/components/shared/page-breadcrumbs"
 import { getApiErrorMessage } from "@/api/client"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { LoadError } from "@/components/shared/load-error"
@@ -85,13 +86,12 @@ export function OrderDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link
-        to="/ordens-de-compra"
-        className="inline-flex w-fit items-center gap-1.5 rounded-md text-caption text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        <ArrowLeft size={13} aria-hidden />
-        Ordens de compra
-      </Link>
+      <PageBreadcrumbs
+        items={[
+        { label: "Ordens de compra", to: "/ordens-de-compra" },
+        { label: order.number },
+        ]}
+      />
 
       <PageHeader
         title={order.number}

@@ -1,5 +1,4 @@
 import {
-  ArrowLeft,
   CopySimple,
   Gavel,
   PencilSimple,
@@ -9,9 +8,10 @@ import {
   UserSwitch,
 } from "@phosphor-icons/react"
 import { useState } from "react"
-import { Link, useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 
+import { PageBreadcrumbs } from "@/components/shared/page-breadcrumbs"
 import { getApiErrorMessage } from "@/api/client"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { PageHeader } from "@/components/shared/page-header"
@@ -196,16 +196,17 @@ export function RequestDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <PageBreadcrumbs
+        items={[
+        { label: "Pedidos", to: "/pedidos" },
+        { label: request.number },
+        ]}
+      />
+
       <div className="flex flex-col gap-5 rounded-lg border border-border bg-card px-7 py-6 shadow-xs">
         <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
           <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <Link
-              to="/pedidos"
-              className="inline-flex w-fit items-center gap-1.5 rounded-md text-caption text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            >
-              <ArrowLeft size={13} aria-hidden />
-              Pedidos
-            </Link>
+            
 
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
               <span className="text-caption tabular-nums text-muted-foreground">

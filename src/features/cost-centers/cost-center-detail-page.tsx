@@ -1,7 +1,8 @@
-import { ArrowLeft, DotsThree, Warning } from "@phosphor-icons/react"
+import { DotsThree, Warning } from "@phosphor-icons/react"
 import { useMemo, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 
+import { PageBreadcrumbs } from "@/components/shared/page-breadcrumbs"
 import { getApiErrorMessage } from "@/api/client"
 import type { CostCenterSummary } from "@/api/cost-centers"
 import { MoneyDisplay } from "@/components/shared/money-display"
@@ -195,19 +196,13 @@ function DetailHeader({
 
   return (
     <header className="flex flex-col gap-5">
-      <nav aria-label="Você está em">
-        <Link
-          to="/centros-de-custo"
-          className="group inline-flex items-center gap-1.5 text-caption text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft
-            size={13}
-            className="transition-transform duration-150 group-hover:-translate-x-0.5"
-            aria-hidden
-          />
-          Centros de Custo
-        </Link>
-      </nav>
+      <PageBreadcrumbs
+        items={[
+        { label: "Centros de Custo", to: "/centros-de-custo" },
+        ...(parent ? [{ label: parent.name, to: `/centros-de-custo/${parent.id}` }] : []),
+        { label: node.name },
+        ]}
+      />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">

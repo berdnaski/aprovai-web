@@ -1,13 +1,13 @@
 import {
   ArrowClockwise,
-  ArrowLeft,
   Prohibit,
   Warning,
 } from "@phosphor-icons/react"
 import { useEffect, useState } from "react"
-import { Link, useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 
+import { PageBreadcrumbs } from "@/components/shared/page-breadcrumbs"
 import { getApiErrorMessage } from "@/api/client"
 import type { Supplier } from "@/api/suppliers"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
@@ -65,19 +65,12 @@ export function SupplierDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Você está em">
-        <Link
-          to="/fornecedores"
-          className="group inline-flex items-center gap-1.5 text-caption text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft
-            size={13}
-            className="transition-transform duration-150 group-hover:-translate-x-0.5"
-            aria-hidden
-          />
-          Fornecedores
-        </Link>
-      </nav>
+      <PageBreadcrumbs
+        items={[
+        { label: "Fornecedores", to: "/fornecedores" },
+        { label: supplier.tradeName ?? supplier.legalName },
+        ]}
+      />
 
       <SupplierHeader supplier={supplier} canEdit={canEdit} />
 

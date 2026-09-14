@@ -1,8 +1,9 @@
-import { ArrowLeft, Truck, WarningCircle } from "@phosphor-icons/react"
+import { Truck, WarningCircle } from "@phosphor-icons/react"
 import { useState } from "react"
-import { Link, useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 
+import { PageBreadcrumbs } from "@/components/shared/page-breadcrumbs"
 import { getApiErrorMessage } from "@/api/client"
 import type { ItemBalance } from "@/api/purchase-orders"
 import { LoadError } from "@/components/shared/load-error"
@@ -239,13 +240,13 @@ export function RegisterReceiptPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <Link
-        to={`/ordens-de-compra/${order.id}`}
-        className="inline-flex w-fit items-center gap-1.5 rounded-md text-caption text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        <ArrowLeft size={13} aria-hidden />
-        {order.number}
-      </Link>
+      <PageBreadcrumbs
+        items={[
+        { label: "Recebimentos", to: "/recebimentos" },
+        { label: order.number, to: `/ordens-de-compra/${order.id}` },
+        { label: "Registrar recebimento" },
+        ]}
+      />
 
       <PageHeader
         title="Registrar recebimento"

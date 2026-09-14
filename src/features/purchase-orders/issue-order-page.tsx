@@ -1,8 +1,9 @@
-import { ArrowLeft, Info, ShoppingCart } from "@phosphor-icons/react"
+import { Info, ShoppingCart } from "@phosphor-icons/react"
 import { useState } from "react"
-import { Link, useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 
+import { PageBreadcrumbs } from "@/components/shared/page-breadcrumbs"
 import { getApiErrorMessage } from "@/api/client"
 import { LoadError } from "@/components/shared/load-error"
 import { MoneyDisplay } from "@/components/shared/money-display"
@@ -100,13 +101,13 @@ export function IssueOrderPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <Link
-        to={`/pedidos/${request.id}`}
-        className="inline-flex w-fit items-center gap-1.5 rounded-md text-caption text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        <ArrowLeft size={13} aria-hidden />
-        {request.number}
-      </Link>
+      <PageBreadcrumbs
+        items={[
+        { label: "Pedidos", to: "/pedidos" },
+        { label: request.number, to: `/pedidos/${request.id}` },
+        { label: "Emitir ordem de compra" },
+        ]}
+      />
 
       <PageHeader
         title="Emitir ordem de compra"

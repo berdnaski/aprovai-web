@@ -1,8 +1,9 @@
-import { ArrowLeft, Check, Warning } from "@phosphor-icons/react"
+import { Check, Warning } from "@phosphor-icons/react"
 import { useEffect, useState } from "react"
-import { Link, useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 
+import { PageBreadcrumbs } from "@/components/shared/page-breadcrumbs"
 import { getApiErrorMessage } from "@/api/client"
 import type { Member } from "@/api/members"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
@@ -73,19 +74,12 @@ export function MemberDetailPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <nav aria-label="Você está em">
-        <Link
-          to="/equipe"
-          className="group inline-flex items-center gap-1.5 text-caption text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft
-            size={13}
-            className="transition-transform duration-150 group-hover:-translate-x-0.5"
-            aria-hidden
-          />
-          Equipe
-        </Link>
-      </nav>
+      <PageBreadcrumbs
+        items={[
+        { label: "Equipe", to: "/equipe" },
+        { label: member.user?.name ?? "Pessoa" },
+        ]}
+      />
 
       <MemberSummary member={member} members={members} />
 

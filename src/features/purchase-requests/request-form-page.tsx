@@ -1,8 +1,9 @@
-import { ArrowLeft, Check, WarningCircle } from "@phosphor-icons/react"
+import { Check, WarningCircle } from "@phosphor-icons/react"
 import { useState } from "react"
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
+import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
 
+import { PageBreadcrumbs } from "@/components/shared/page-breadcrumbs"
 import { getApiErrorDetails, getApiErrorMessage } from "@/api/client"
 import type { CreateDraftPayload, SimilarRequest } from "@/api/purchase-requests"
 import { LoadError } from "@/components/shared/load-error"
@@ -281,14 +282,14 @@ export function RequestFormPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <PageBreadcrumbs
+        items={[
+        { label: "Pedidos", to: "/pedidos" },
+        { label: request.number },
+        ]}
+      />
+
       <header className="flex flex-col gap-3">
-        <Link
-          to="/pedidos"
-          className="inline-flex w-fit items-center gap-1.5 rounded-md text-caption text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-        >
-          <ArrowLeft size={13} aria-hidden />
-          Pedidos
-        </Link>
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <h1 className="text-display text-foreground">

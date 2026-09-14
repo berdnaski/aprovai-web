@@ -1,6 +1,6 @@
-import { ArrowLeft } from "@phosphor-icons/react"
-import { Link, useParams } from "react-router-dom"
+import { useParams } from "react-router-dom"
 
+import { PageBreadcrumbs } from "@/components/shared/page-breadcrumbs"
 import { getApiErrorMessage } from "@/api/client"
 import { LoadError } from "@/components/shared/load-error"
 import { PageHeader } from "@/components/shared/page-header"
@@ -54,17 +54,12 @@ export function ReceiptDetailPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <Link
-        to={
-          receipt.purchaseOrderId
-            ? `/ordens-de-compra/${receipt.purchaseOrderId}`
-            : "/ordens-de-compra"
-        }
-        className="inline-flex w-fit items-center gap-1.5 rounded-md text-caption text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        <ArrowLeft size={13} aria-hidden />
-        {order.data?.number ?? "Ordem de compra"}
-      </Link>
+      <PageBreadcrumbs
+        items={[
+        { label: "Recebimentos", to: "/recebimentos" },
+        { label: receipt.number },
+        ]}
+      />
 
       <PageHeader
         title={receipt.number}

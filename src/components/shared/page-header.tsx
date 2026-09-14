@@ -1,11 +1,10 @@
-import { CaretRight } from "@phosphor-icons/react"
-import { Link } from "react-router-dom"
+import {
+  PageBreadcrumbs,
+  type Breadcrumb,
+} from "@/components/shared/page-breadcrumbs"
 import { cn } from "@/lib/utils"
 
-export interface Breadcrumb {
-  label: string
-  to?: string
-}
+export type { Breadcrumb }
 
 export function PageHeader({
   title,
@@ -22,29 +21,7 @@ export function PageHeader({
 }) {
   return (
     <header className={cn("flex flex-col gap-4", className)}>
-      {breadcrumbs?.length ? (
-        <nav aria-label="Você está em">
-          <ol className="flex flex-wrap items-center gap-1 text-caption text-muted-foreground">
-            {breadcrumbs.map((crumb, index) => (
-              <li key={crumb.label} className="flex items-center gap-1">
-                {index > 0 ? (
-                  <CaretRight className="size-3.5 shrink-0 opacity-60" />
-                ) : null}
-                {crumb.to ? (
-                  <Link
-                    to={crumb.to}
-                    className="transition-colors hover:text-foreground"
-                  >
-                    {crumb.label}
-                  </Link>
-                ) : (
-                  <span className="text-foreground">{crumb.label}</span>
-                )}
-              </li>
-            ))}
-          </ol>
-        </nav>
-      ) : null}
+      {breadcrumbs?.length ? <PageBreadcrumbs items={breadcrumbs} /> : null}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">

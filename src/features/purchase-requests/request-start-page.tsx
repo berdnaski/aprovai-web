@@ -1,5 +1,4 @@
 import {
-  ArrowLeft,
   ArrowUp,
   FilePdf,
   ImageSquare,
@@ -9,9 +8,10 @@ import {
   X,
 } from "@phosphor-icons/react"
 import { useRef, useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
+import { PageBreadcrumbs } from "@/components/shared/page-breadcrumbs"
 import { getApiErrorMessage } from "@/api/client"
 import { requestExtraction, uploadFile } from "@/api/purchase-requests"
 import {
@@ -95,13 +95,12 @@ export function RequestStartPage() {
 
   return (
     <div className="flex min-h-[calc(100svh-13rem)] flex-col">
-      <Link
-        to="/pedidos"
-        className="inline-flex w-fit items-center gap-1.5 rounded-md text-caption text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        <ArrowLeft size={13} aria-hidden />
-        Pedidos
-      </Link>
+      <PageBreadcrumbs
+        items={[
+        { label: "Pedidos", to: "/pedidos" },
+        { label: "Novo pedido" },
+        ]}
+      />
 
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center gap-7 py-10">
         <header className="flex flex-col items-center gap-2.5 text-center">
