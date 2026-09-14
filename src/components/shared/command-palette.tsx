@@ -25,7 +25,7 @@ import { useCostCenters } from "@/hooks/onboarding/use-onboarding"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { formatCnpj } from "@/lib/cnpj"
 import { NAV_ICONS } from "@/lib/nav-icons"
-import { visibleAreas } from "@/lib/permissions"
+import { canListMembers, visibleAreas } from "@/lib/permissions"
 import { REQUEST_STATUS } from "@/lib/status-labels"
 import { cn } from "@/lib/utils"
 import { ROLE_LABELS } from "@/types/enums"
@@ -67,7 +67,7 @@ export function CommandPalette({
   const { membership } = useSession()
   const { data: costCenters = [] } = useCostCenters(open)
   const { data: categories = [] } = useCategories()
-  const { data: members = [] } = useMembers()
+  const { data: members = [] } = useMembers(canListMembers(membership?.role))
 
   const requests = useQuery({
     queryKey: ["command", "requests", term],

@@ -77,7 +77,7 @@ export const NAV_AREAS = [
     key: "members",
     label: "Equipe",
     to: "/equipe",
-    access: access("read", "read", "full"),
+    access: access("none", "read", "full"),
   },
   {
     key: "audit-logs",
@@ -119,6 +119,10 @@ export function canSee(
   role: CompanyMemberRole | null | undefined,
 ): boolean {
   return accessFor(area, role) !== "none"
+}
+
+export function canListMembers(role: CompanyMemberRole | null | undefined): boolean {
+  return role === APPROVER || role === FINANCE_ADMIN
 }
 
 export function visibleAreas(role: CompanyMemberRole | null | undefined): NavArea[] {

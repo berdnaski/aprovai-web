@@ -14,6 +14,8 @@ import {
   type UpdateCostCenterPayload,
 } from "@/api/cost-centers"
 import { listMembers } from "@/api/members"
+import { useSession } from "@/hooks/auth/use-session"
+import { canListMembers } from "@/lib/permissions"
 
 export const costCenterKeys = {
   all: ["cost-centers"] as const,
@@ -49,9 +51,12 @@ export function useCostCenterMembers(id: string | undefined) {
 }
 
 export function useCompanyMembers() {
+  const { membership } = useSession()
+
   return useQuery({
     queryKey: costCenterKeys.companyMembers,
     queryFn: listMembers,
+    enabled: canListMembers(membership?.role),
   })
 }
 

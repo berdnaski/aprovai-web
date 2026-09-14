@@ -15,7 +15,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { useSession } from "@/hooks/auth/use-session"
 import { useMembers } from "@/hooks/members/use-members"
+import { canListMembers } from "@/lib/permissions"
 import { useReassignStep } from "@/hooks/purchase-requests/use-purchase-requests"
 import { CompanyMemberRole } from "@/types/enums"
 
@@ -32,7 +34,8 @@ export function ReassignDialog({
 }) {
   const [memberId, setMemberId] = useState<string | null>(null)
 
-  const { data: members = [] } = useMembers()
+  const { membership } = useSession()
+  const { data: members = [] } = useMembers(canListMembers(membership?.role))
   const reassign = useReassignStep(request.id)
 
   const options = members

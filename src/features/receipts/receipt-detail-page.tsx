@@ -9,6 +9,8 @@ import { StatusBadge } from "@/components/shared/status-badge"
 import { StatusPill } from "@/components/ui/data-table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useMembers } from "@/hooks/members/use-members"
+import { useSession } from "@/hooks/auth/use-session"
+import { canListMembers } from "@/lib/permissions"
 import { usePurchaseOrder } from "@/hooks/purchase-orders/use-purchase-orders"
 import { useReceipt } from "@/hooks/receipts/use-receipts"
 import { displayName } from "@/lib/people"
@@ -30,7 +32,8 @@ export function ReceiptDetailPage() {
   const receiptQuery = useReceipt(id)
   const receipt = receiptQuery.data
   const order = usePurchaseOrder(receipt?.purchaseOrderId)
-  const { data: members = [] } = useMembers()
+  const { membership } = useSession()
+  const { data: members = [] } = useMembers(canListMembers(membership?.role))
 
   if (receiptQuery.isPending) {
     return (

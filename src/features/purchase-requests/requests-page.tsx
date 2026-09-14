@@ -23,6 +23,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { usePermissions } from "@/hooks/auth/use-permissions"
 import { useCategories } from "@/hooks/categories/use-categories"
 import { useMembers } from "@/hooks/members/use-members"
+import { useSession } from "@/hooks/auth/use-session"
+import { canListMembers } from "@/lib/permissions"
 import { useSuppliers } from "@/hooks/suppliers/use-suppliers"
 import { useCostCenters } from "@/hooks/onboarding/use-onboarding"
 import { usePurchaseRequests } from "@/hooks/purchase-requests/use-purchase-requests"
@@ -63,7 +65,8 @@ export function RequestsPage() {
 
   const { data: costCenters = [] } = useCostCenters()
   const { data: categories = [] } = useCategories()
-  const { data: members = [] } = useMembers()
+  const { membership } = useSession()
+  const { data: members = [] } = useMembers(canListMembers(membership?.role))
   const suppliersQuery = useSuppliers({ perPage: 100 })
 
   const costCenterName = new Map(costCenters.map((cc) => [cc.id, cc.name]))

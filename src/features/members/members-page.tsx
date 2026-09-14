@@ -75,7 +75,7 @@ export function MembersPage() {
   const canManageTeam = canManage("members")
 
   const membersQuery = useMembers()
-  const invitesQuery = useInvites()
+  const invitesQuery = useInvites(canManageTeam)
 
   if (membersQuery.isPending) {
     return <MembersSkeleton />

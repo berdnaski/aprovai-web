@@ -1,5 +1,6 @@
 import { CaretUpDown, ShieldCheck, SignOut, User } from "@phosphor-icons/react"
 import { Link } from "react-router-dom"
+import { avatarSrc } from "@/api/users"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -36,6 +37,7 @@ export function NavUser() {
   }
 
   const monogram = initials(user.name)
+  const photo = avatarSrc(user.avatarUrl)
 
   return (
     <SidebarMenu>
@@ -50,7 +52,7 @@ export function NavUser() {
             }
           >
             <Avatar className="size-8 rounded-md">
-              <AvatarImage src={user.avatarUrl ?? undefined} alt="" />
+              <AvatarImage src={photo} alt="" />
               <AvatarFallback className="rounded-md bg-primary text-caption font-medium text-primary-foreground">
                 {monogram}
               </AvatarFallback>
@@ -74,7 +76,7 @@ export function NavUser() {
           >
             <div className="flex items-center gap-3 px-1.5 py-2">
               <Avatar className="size-9 rounded-md">
-                <AvatarImage src={user.avatarUrl ?? undefined} alt="" />
+                <AvatarImage src={photo} alt="" />
                 <AvatarFallback className="rounded-md bg-primary text-caption font-medium text-primary-foreground">
                   {monogram}
                 </AvatarFallback>

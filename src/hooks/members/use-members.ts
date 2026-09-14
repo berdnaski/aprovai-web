@@ -50,10 +50,11 @@ export function useMemberResponsibilities(id: string | undefined) {
   })
 }
 
-export function useInvites() {
+export function useInvites(enabled = true) {
   return useQuery({
     queryKey: memberKeys.invites,
     queryFn: listInvites,
+    enabled,
   })
 }
 
