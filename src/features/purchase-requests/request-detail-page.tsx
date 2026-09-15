@@ -287,7 +287,7 @@ export function RequestDetailPage() {
 
       <DecideDialog
         request={request}
-        timeline={timeline}
+        costCenterName={costCenter?.name}
         open={deciding}
         onOpenChange={setDeciding}
       />

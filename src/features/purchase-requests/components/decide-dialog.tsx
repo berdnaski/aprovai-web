@@ -1,11 +1,9 @@
-import { Check, PencilSimple, ShieldWarning, X } from "@phosphor-icons/react"
-import type { Icon } from "@phosphor-icons/react"
+import { WarningCircle } from "@phosphor-icons/react"
 import { useState } from "react"
 import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/api/client"
-import type { PurchaseRequest, RequestTimeline } from "@/api/purchase-requests"
-import { MoneyDisplay } from "@/components/shared/money-display"
+import type { PurchaseRequest, RequestBudget } from "@/api/purchase-requests"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -17,92 +15,224 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { useDecideRequest } from "@/hooks/purchase-requests/use-purchase-requests"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  useDecideRequest,
+  useRequestBudget,
+} from "@/hooks/purchase-requests/use-purchase-requests"
+import { formatCents } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import { DecisionType } from "@/types/enums"
 
-import { RequestTimelineView } from "./request-timeline"
-
 const MIN_JUSTIFICATION = 10
 
-const OPTIONS: {
+interface Choice {
   type: DecisionType
   label: string
-  detail: string
-  icon: Icon
-  tone: "success" | "warning" | "danger"
-  needsJustification: boolean
-}[] = [
-  {
-    type: DecisionType.APPROVED,
-    label: "Aprovar",
-    detail: "O pedido segue para a próxima etapa, ou é liberado.",
-    icon: Check,
-    tone: "success",
-    needsJustification: false,
-  },
-  {
-    type: DecisionType.APPROVED_WITH_OVERRIDE,
-    label: "Aprovar com ressalva",
-    detail: "Aprova mesmo estourando o orçamento. Exige justificativa.",
-    icon: ShieldWarning,
-    tone: "warning",
-    needsJustification: true,
-  },
-  {
-    type: DecisionType.CHANGES_REQUESTED,
-    label: "Pedir ajustes",
-    detail: "Volta para quem pediu corrigir. Exige justificativa.",
-    icon: PencilSimple,
-    tone: "warning",
-    needsJustification: true,
-  },
-  {
-    type: DecisionType.REJECTED,
-    label: "Recusar",
-    detail: "Encerra o pedido. Exige justificativa.",
-    icon: X,
-    tone: "danger",
-    needsJustification: true,
-  },
-]
-
-const TONE_ACTIVE: Record<string, string> = {
-  success: "border-brand-accent/40 bg-brand-accent/[0.07]",
-  warning: "border-warning/40 bg-warning/[0.07]",
-  danger: "border-destructive/40 bg-destructive/[0.06]",
+  hint: string
+  action: string
+  done: string
+  prompt?: string
+  destructive?: boolean
 }
 
-const TONE_ICON: Record<string, string> = {
-  success: "text-brand-accent-strong",
-  warning: "text-warning-strong",
-  danger: "text-destructive",
+const APPROVE: Choice = {
+  type: DecisionType.APPROVED,
+  label: "Aprovar",
+  hint: "Segue para a próxima etapa ou libera a compra.",
+  action: "Aprovar",
+  done: "aprovado",
+}
+
+const APPROVE_OVER_BUDGET: Choice = {
+  type: DecisionType.APPROVED_WITH_OVERRIDE,
+  label: "Aprovar com ressalva",
+  hint: "Aprova acima do orçamento e registra o motivo.",
+  action: "Aprovar com ressalva",
+  done: "aprovado com ressalva",
+  prompt: "Por que aprovar mesmo passando do orçamento?",
+}
+
+const REQUEST_CHANGES: Choice = {
+  type: DecisionType.CHANGES_REQUESTED,
+  label: "Pedir ajustes",
+  hint: "Devolve para quem pediu corrigir.",
+  action: "Devolver para ajustes",
+  done: "devolvido para ajustes",
+  prompt: "O que precisa ser ajustado?",
+}
+
+const REJECT: Choice = {
+  type: DecisionType.REJECTED,
+  label: "Recusar",
+  hint: "Encerra o pedido.",
+  action: "Recusar pedido",
+  done: "recusado",
+  prompt: "Por que o pedido foi recusado?",
+  destructive: true,
+}
+
+function share(part: bigint, total: bigint): number {
+  if (total <= 0n) {
+    return 0
+  }
+
+  return Math.min(Number((part * 10000n) / total) / 100, 100)
+}
+
+function BudgetSummary({
+  budget,
+  costCenterName,
+  loading,
+  failed,
+  onRetry,
+}: {
+  budget: RequestBudget | undefined
+  costCenterName: string | undefined
+  loading: boolean
+  failed: boolean
+  onRetry: () => void
+}) {
+  const scope = costCenterName ?? "este centro de custo"
+
+  if (loading) {
+    return <Skeleton className="h-[74px] w-full rounded-lg" />
+  }
+
+  if (failed || !budget) {
+    return (
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3.5 py-2.5">
+        <span className="text-caption text-muted-foreground">
+          Não foi possível carregar o orçamento de {scope}.
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onRetry}
+          className="shrink-0 font-medium"
+        >
+          Tentar de novo
+        </Button>
+      </div>
+    )
+  }
+
+  if (budget.verdict === "NO_BUDGET" || budget.totalCents === null) {
+    return (
+      <p className="text-caption text-muted-foreground">
+        {scope} não tem orçamento cadastrado para este mês.
+      </p>
+    )
+  }
+
+  const total = BigInt(budget.totalCents)
+  const committed = BigInt(budget.committedCents ?? "0")
+  const amount = BigInt(budget.amountCents)
+  const available = BigInt(budget.availableCents ?? "0")
+  const overBudget = budget.verdict === "REQUIRES_OVERRIDE"
+  const withinTolerance = budget.verdict === "WITHIN_TOLERANCE"
+
+  const committedShare = share(committed, total)
+  const requestShare = Math.min(share(amount, total), 100 - committedShare)
+
+  return (
+    <div className="flex flex-col gap-2.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-caption text-muted-foreground">
+          Orçamento de {scope} no mês
+        </span>
+        <span className="text-caption tabular-nums text-foreground">
+          {formatCents(available > 0n ? available : 0n)} livres
+        </span>
+      </div>
+
+      <div
+        className="flex h-1.5 w-full overflow-hidden rounded-full bg-muted"
+        role="img"
+        aria-label={`${committedShare.toFixed(0)}% já comprometido, este pedido ocupa mais ${requestShare.toFixed(0)}%`}
+      >
+        <span
+          className="h-full bg-foreground/25"
+          style={{ width: `${committedShare}%` }}
+        />
+        <span
+          className={cn(
+            "h-full",
+            overBudget ? "bg-warning" : "bg-primary",
+          )}
+          style={{ width: `${requestShare}%` }}
+        />
+      </div>
+
+      <div className="flex items-center justify-between gap-3 text-micro tabular-nums text-muted-foreground">
+        <span>{formatCents(committed)} comprometido</span>
+        <span>de {formatCents(total)}</span>
+      </div>
+
+      {overBudget ? (
+        <p className="mt-1 flex items-start gap-2 text-caption text-warning-strong">
+          <WarningCircle
+            size={15}
+            weight="fill"
+            aria-hidden
+            className="mt-px shrink-0"
+          />
+          <span>
+            Este pedido passa {formatCents(budget.overrunCents ?? "0")} do que
+            sobra. Só dá para aprovar com ressalva.
+          </span>
+        </p>
+      ) : null}
+
+      {withinTolerance ? (
+        <p className="mt-1 text-caption text-muted-foreground">
+          Passa {formatCents(budget.overrunCents ?? "0")} do que sobra, dentro
+          da tolerância da empresa.
+        </p>
+      ) : null}
+    </div>
+  )
 }
 
 export function DecideDialog({
   request,
-  timeline,
+  costCenterName,
   open,
   onOpenChange,
 }: {
   request: PurchaseRequest
-  timeline?: RequestTimeline
+  costCenterName?: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const [type, setType] = useState<DecisionType>(DecisionType.APPROVED)
+  const [picked, setPicked] = useState<DecisionType | null>(null)
   const [justification, setJustification] = useState("")
 
   const decide = useDecideRequest(request.id)
-  const option = OPTIONS.find((item) => item.type === type)
+  const budgetQuery = useRequestBudget(request.id, open)
 
-  const tooShort =
-    Boolean(option?.needsJustification) &&
-    justification.trim().length < MIN_JUSTIFICATION
+  const overBudget = budgetQuery.data?.verdict === "REQUIRES_OVERRIDE"
+  const choices = [
+    overBudget ? APPROVE_OVER_BUDGET : APPROVE,
+    REQUEST_CHANGES,
+    REJECT,
+  ]
+  const selected =
+    choices.find((choice) => choice.type === picked) ?? choices[0]
+
+  const typed = justification.trim().length
+  const missingJustification =
+    Boolean(selected.prompt) && typed < MIN_JUSTIFICATION
+
+  const approving =
+    selected.type === DecisionType.APPROVED ||
+    selected.type === DecisionType.APPROVED_WITH_OVERRIDE
+  const budgetUnknown = budgetQuery.isPending || budgetQuery.isError
 
   function close(next: boolean) {
     if (!next) {
-      setType(DecisionType.APPROVED)
+      setPicked(null)
       setJustification("")
     }
 
@@ -112,18 +242,18 @@ export function DecideDialog({
   function submit(event: React.FormEvent) {
     event.preventDefault()
 
-    if (tooShort) {
+    if (missingJustification) {
       return
     }
 
     decide.mutate(
       {
-        type,
-        ...(justification.trim() ? { justification: justification.trim() } : {}),
+        type: selected.type,
+        ...(selected.prompt ? { justification: justification.trim() } : {}),
       },
       {
         onSuccess: () => {
-          toast.success(`Pedido ${request.number} decidido.`)
+          toast.success(`Pedido ${request.number} ${selected.done}.`)
           close(false)
         },
         onError: (error) => toast.error(getApiErrorMessage(error)),
@@ -133,129 +263,143 @@ export function DecideDialog({
 
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-md">
         <form onSubmit={submit}>
           <DialogHeader>
             <DialogTitle className="text-heading">Decidir pedido</DialogTitle>
-            <DialogDescription className="text-caption leading-relaxed">
-              {request.title} · {request.number}
+            <DialogDescription className="text-caption">
+              {request.number} · {request.title}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col gap-4 py-5">
-            <div className="flex items-baseline justify-between gap-3 rounded-md border border-border bg-muted/30 px-3.5 py-2.5">
+          <div className="flex flex-col gap-5 py-5">
+            <div className="flex items-baseline justify-between gap-3 border-b border-border pb-4">
               <span className="text-caption text-muted-foreground">
-                Valor total
+                Valor do pedido
               </span>
-              <MoneyDisplay
-                cents={request.totalAmountCents}
-                emphasis
-                className="text-body"
-              />
+              <span className="text-heading font-semibold tabular-nums text-foreground">
+                {formatCents(request.totalAmountCents)}
+              </span>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <span className="text-label text-foreground">Sua decisão</span>
+            <BudgetSummary
+              budget={budgetQuery.data}
+              costCenterName={costCenterName}
+              loading={budgetQuery.isPending}
+              failed={budgetQuery.isError}
+              onRetry={() => void budgetQuery.refetch()}
+            />
 
-              <div className="grid gap-1.5 sm:grid-cols-2">
-                {OPTIONS.map((item) => {
-                  const OptionIcon = item.icon
-                  const active = type === item.type
+            <fieldset className="flex flex-col gap-2">
+              <legend className="mb-2 text-label text-foreground">
+                Decisão
+              </legend>
+
+              <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+                {choices.map((choice) => {
+                  const active = choice.type === selected.type
 
                   return (
-                    <button
-                      key={item.type}
-                      type="button"
-                      onClick={() => setType(item.type)}
-                      aria-pressed={active}
+                    <label
+                      key={choice.type}
                       className={cn(
-                        "flex flex-col gap-1 rounded-md border px-3 py-2.5 text-left transition-colors",
-                        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                        active
-                          ? TONE_ACTIVE[item.tone]
-                          : "border-border hover:bg-muted/50",
+                        "flex cursor-pointer items-start gap-3 px-3.5 py-3 transition-colors",
+                        active ? "bg-muted/50" : "hover:bg-muted/30",
                       )}
                     >
-                      <span className="flex items-center gap-1.5">
-                        <OptionIcon
-                          size={14}
-                          weight="bold"
-                          aria-hidden
-                          className={cn(
-                            "shrink-0",
-                            active
-                              ? TONE_ICON[item.tone]
-                              : "text-muted-foreground",
-                          )}
-                        />
+                      <input
+                        type="radio"
+                        name="decision"
+                        value={choice.type}
+                        checked={active}
+                        onChange={() => setPicked(choice.type)}
+                        className="peer sr-only"
+                      />
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border bg-card transition-colors",
+                          "peer-focus-visible:ring-2 peer-focus-visible:ring-ring",
+                          active
+                            ? choice.destructive
+                              ? "border-destructive"
+                              : "border-primary"
+                            : "border-input",
+                        )}
+                      >
+                        {active ? (
+                          <span
+                            className={cn(
+                              "size-2 rounded-full",
+                              choice.destructive ? "bg-destructive" : "bg-primary",
+                            )}
+                          />
+                        ) : null}
+                      </span>
+                      <span className="flex min-w-0 flex-col gap-0.5">
                         <span className="text-caption font-medium text-foreground">
-                          {item.label}
+                          {choice.label}
+                        </span>
+                        <span className="text-caption text-muted-foreground">
+                          {choice.hint}
                         </span>
                       </span>
-                      <span className="text-caption leading-relaxed text-muted-foreground">
-                        {item.detail}
-                      </span>
-                    </button>
+                    </label>
                   )
                 })}
               </div>
-            </div>
+            </fieldset>
 
-            {option?.needsJustification ? (
+            {selected.prompt ? (
               <div className="flex flex-col gap-1.5">
                 <Label
                   htmlFor="justification"
                   className="text-label text-foreground"
                 >
-                  Justificativa
+                  {selected.prompt}
                 </Label>
                 <textarea
                   id="justification"
                   value={justification}
                   onChange={(event) => setJustification(event.target.value)}
                   rows={3}
-                  aria-invalid={tooShort || undefined}
                   className={cn(
                     "w-full resize-y rounded-lg border border-input bg-card px-3 py-2 text-body text-foreground",
                     "placeholder:text-muted-foreground",
                     "focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                   )}
-                  placeholder="Explique para quem pediu. Fica registrado na trilha."
+                  placeholder="Quem pediu recebe essa resposta."
                 />
-                <p className="text-caption text-muted-foreground">
-                  {justification.trim().length < MIN_JUSTIFICATION
-                    ? `Mínimo de ${MIN_JUSTIFICATION} caracteres.`
-                    : "Fica visível na trilha do pedido."}
+                <p className="text-micro tabular-nums text-muted-foreground">
+                  {typed < MIN_JUSTIFICATION
+                    ? `${typed}/${MIN_JUSTIFICATION} caracteres no mínimo`
+                    : "Fica registrado no histórico do pedido."}
                 </p>
               </div>
-            ) : null}
-
-            {timeline && timeline.steps.length > 0 ? (
-              <details className="rounded-md border border-border bg-card">
-                <summary className="cursor-pointer px-3.5 py-2.5 text-caption text-muted-foreground">
-                  Ver o que já aconteceu
-                </summary>
-                <div className="border-t border-border px-3.5 py-3">
-                  <RequestTimelineView timeline={timeline} compact />
-                </div>
-              </details>
             ) : null}
           </div>
 
           <DialogFooter>
             <DialogClose
-              render={
-                <Button variant="outline" type="button" className="font-medium" />
-              }
+              render={<Button variant="ghost" type="button" className="font-medium" />}
             >
               Cancelar
             </DialogClose>
             <Button
               type="submit"
-              disabled={tooShort || decide.isPending}
-              className="bg-primary font-medium text-primary-foreground hover:bg-primary-hover"
+              disabled={
+                missingJustification ||
+                decide.isPending ||
+                (approving && budgetUnknown)
+              }
+              className={cn(
+                "font-medium",
+                selected.destructive
+                  ? "bg-destructive text-white hover:bg-destructive/90"
+                  : "bg-primary text-primary-foreground hover:bg-primary-hover",
+              )}
             >
-              {decide.isPending ? "Registrando…" : "Registrar decisão"}
+              {decide.isPending ? "Registrando…" : selected.action}
             </Button>
           </DialogFooter>
         </form>

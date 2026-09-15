@@ -1,6 +1,7 @@
 import {
   ArrowRight,
   Check,
+  ListBullets,
   Package,
   Tag,
   WarningCircle,
@@ -154,6 +155,15 @@ export function ExtractionPanel({
     )
   }
 
+  const hasPrice =
+    Boolean(resolved.totalAmountCents) ||
+    fields.items.some((item) => Boolean(item.unitPriceCents))
+  const notInText = [
+    resolved.supplier.state === "absent" ? "fornecedor" : null,
+    hasPrice ? null : "valor",
+    resolved.paymentTerms ? null : "condição de pagamento",
+  ].filter((label): label is string => label !== null)
+
   return (
     <section className="overflow-hidden rounded-lg border border-primary/20 bg-card shadow-xs">
       <header className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-primary/15 bg-primary/[0.04] px-5 py-3">
@@ -246,9 +256,11 @@ export function ExtractionPanel({
               <p className="text-caption text-foreground">
                 <MoneyDisplay cents={resolved.totalAmountCents} emphasis />
               </p>
-              <p className="mt-0.5 text-caption leading-relaxed text-muted-foreground">
-                Vira um item único. Detalhe em várias linhas se precisar.
-              </p>
+              {fields.items.length === 0 ? (
+                <p className="mt-0.5 text-caption leading-relaxed text-muted-foreground">
+                  Vira um item único. Detalhe em várias linhas se precisar.
+                </p>
+              ) : null}
             </div>
           </li>
         ) : null}
@@ -261,7 +273,36 @@ export function ExtractionPanel({
             value={resolved.paymentTerms}
           />
         ) : null}
+
+        {fields.items.length > 0 ? (
+          <Line
+            icon={ListBullets}
+            label={fields.items.length === 1 ? "Item" : "Itens"}
+            state="plain"
+            value={
+              <span className="flex flex-col gap-0.5">
+                {fields.items.map((item, index) => (
+                  <span key={`${item.description}-${index}`}>
+                    {item.quantity} {item.unit} · {item.description}
+                  </span>
+                ))}
+              </span>
+            }
+            note={
+              fields.items.some((item) => !item.unitPriceCents) && !resolved.totalAmountCents
+                ? "Sem preço no texto. Informe o valor antes de enviar."
+                : undefined
+            }
+          />
+        ) : null}
       </ul>
+
+      {notInText.length > 0 && !applied ? (
+        <p className="border-t border-border/50 px-4 py-2.5 text-caption text-muted-foreground">
+          Não veio no texto: {notInText.join(", ")}. Você completa no
+          formulário abaixo.
+        </p>
+      ) : null}
     </section>
   )
 }

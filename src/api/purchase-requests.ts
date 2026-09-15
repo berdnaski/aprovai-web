@@ -210,6 +210,29 @@ export async function getTimeline(id: string): Promise<RequestTimeline> {
   return data
 }
 
+export type BudgetVerdict =
+  | "FITS"
+  | "WITHIN_TOLERANCE"
+  | "REQUIRES_OVERRIDE"
+  | "NO_BUDGET"
+
+export interface RequestBudget {
+  verdict: BudgetVerdict
+  amountCents: string
+  totalCents: string | null
+  committedCents: string | null
+  availableCents: string | null
+  overrunCents: string | null
+  toleranceCents: string | null
+}
+
+export async function getRequestBudget(id: string): Promise<RequestBudget> {
+  const { data } = await apiClient.get<RequestBudget>(
+    `/purchase-requests/${id}/budget`,
+  )
+  return data
+}
+
 export async function listItems(id: string): Promise<RequestItem[]> {
   const { data } = await apiClient.get<RequestItem[]>(
     `/purchase-requests/${id}/items`,
@@ -296,7 +319,7 @@ export interface ExtractedItem {
   description: string
   quantity: string
   unit: string
-  unitPriceCents: string
+  unitPriceCents: string | null
 }
 
 export interface ExtractedFields {

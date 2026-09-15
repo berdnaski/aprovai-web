@@ -11,6 +11,7 @@ import {
   duplicateRequest,
   getExtraction,
   getPurchaseRequest,
+  getRequestBudget,
   getTimeline,
   listFiles,
   listItems,
@@ -36,6 +37,7 @@ export const requestKeys = {
   items: (id: string) => ["purchase-requests", id, "items"] as const,
   files: (id: string) => ["purchase-requests", id, "files"] as const,
   timeline: (id: string) => ["purchase-requests", id, "timeline"] as const,
+  budget: (id: string) => ["purchase-requests", id, "budget"] as const,
   extraction: (id: string) => ["purchase-requests", id, "extract"] as const,
 }
 
@@ -76,6 +78,14 @@ export function useRequestTimeline(id: string | undefined) {
     queryKey: requestKeys.timeline(id ?? ""),
     queryFn: () => getTimeline(id as string),
     enabled: Boolean(id),
+  })
+}
+
+export function useRequestBudget(id: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: requestKeys.budget(id ?? ""),
+    queryFn: () => getRequestBudget(id as string),
+    enabled: Boolean(id) && enabled,
   })
 }
 

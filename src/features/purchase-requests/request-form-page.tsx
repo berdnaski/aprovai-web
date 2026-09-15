@@ -214,12 +214,21 @@ export function RequestFormPage() {
     }
 
     if (fields.items.length > 0) {
+      const single = fields.items.length === 1 ? fields.items[0] : null
+
       for (const item of fields.items) {
+        const priceFromTotal =
+          item === single && !item.unitPriceCents && resolved.totalAmountCents
+            ? (
+                BigInt(resolved.totalAmountCents) / BigInt(item.quantity || "1")
+              ).toString()
+            : null
+
         addItem.mutate({
           description: item.description,
           quantity: item.quantity,
           unit: item.unit,
-          unitPriceCents: item.unitPriceCents,
+          unitPriceCents: item.unitPriceCents ?? priceFromTotal ?? "0",
         })
       }
       return
@@ -275,8 +284,13 @@ export function RequestFormPage() {
     },
     {
       label: "Itens",
-      done: items.length > 0,
-      missing: "Ao menos um item.",
+      done:
+        items.length > 0 &&
+        items.every((item) => BigInt(item.unitPriceCents) > 0n),
+      missing:
+        items.length > 0
+          ? "Informe o preço de todos os itens."
+          : "Ao menos um item.",
     },
   ]
 

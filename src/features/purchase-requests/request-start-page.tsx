@@ -25,6 +25,9 @@ import { useCostCenters } from "@/hooks/onboarding/use-onboarding"
 import { useCreateDraft } from "@/hooks/purchase-requests/use-purchase-requests"
 import { cn } from "@/lib/utils"
 
+import { WritingGuide } from "./components/writing-guide"
+import { analyzeRequestText } from "./request-hints"
+
 const PLACEHOLDER_TITLE = "Pedido sem título"
 const MIN_TEXT = 20
 const MAX_HEIGHT = 280
@@ -32,6 +35,7 @@ const MAX_HEIGHT = 280
 export function RequestStartPage() {
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const textRef = useRef<HTMLTextAreaElement>(null)
 
   const [text, setText] = useState("")
   const [file, setFile] = useState<File | null>(null)
@@ -44,10 +48,30 @@ export function RequestStartPage() {
   const ready = Boolean(costCenterId)
   const hasText = text.trim().length >= MIN_TEXT
   const canRead = ready && (hasText || file !== null) && !working
+  const hints = analyzeRequestText(text)
 
   function grow(element: HTMLTextAreaElement) {
     element.style.height = "auto"
     element.style.height = `${Math.min(element.scrollHeight, MAX_HEIGHT)}px`
+  }
+
+  function suggest(snippet: string) {
+    const current = text.trimEnd()
+    const next = current ? `${current}\n${snippet}` : snippet
+
+    setText(next)
+
+    requestAnimationFrame(() => {
+      const element = textRef.current
+
+      if (!element) {
+        return
+      }
+
+      grow(element)
+      element.focus()
+      element.setSelectionRange(next.length, next.length)
+    })
   }
 
   async function start(withExtraction: boolean) {
@@ -118,6 +142,7 @@ export function RequestStartPage() {
           )}
         >
           <textarea
+            ref={textRef}
             value={text}
             onChange={(event) => {
               setText(event.target.value)
@@ -140,6 +165,13 @@ export function RequestStartPage() {
           />
 
           {file ? <FileChip file={file} onRemove={() => setFile(null)} /> : null}
+
+          {text.trim() ? (
+            <WritingGuide
+              hints={hints}
+              onSuggest={(hint) => suggest(hint.snippet)}
+            />
+          ) : null}
 
           <div className="flex items-center gap-1.5 px-3 pb-3">
             <button
