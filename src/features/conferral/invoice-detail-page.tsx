@@ -21,13 +21,6 @@ import { SettingGroup, SettingRow } from "@/components/shared/setting-row"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
 import { StatusPill } from "@/components/ui/data-table"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   useInvoice,
@@ -35,8 +28,13 @@ import {
   useRejectInvoice,
 } from "@/hooks/invoices/use-invoices"
 import { useRunMatch } from "@/hooks/matching/use-matching"
-import { usePurchaseOrders } from "@/hooks/purchase-orders/use-purchase-orders"
-import { formatCnpj } from "@/lib/cnpj"
+import {
+  usePurchaseOrder,
+  usePurchaseOrders,
+} from "@/hooks/purchase-orders/use-purchase-orders"
+import { useSuppliers } from "@/hooks/suppliers/use-suppliers"
+import { formatCnpj, onlyDigits } from "@/lib/cnpj"
+import { formatCents } from "@/lib/money"
 import { INVOICE_STATUS } from "@/lib/status-labels"
 import { cn } from "@/lib/utils"
 import { InvoiceStatus, PurchaseOrderStatus } from "@/types/enums"
@@ -58,6 +56,10 @@ export function InvoiceDetailPage() {
 
   const invoiceQuery = useInvoice(id)
   const ordersQuery = usePurchaseOrders({ perPage: 100 })
+  const suppliersQuery = useSuppliers({ perPage: 100 })
+  const linkedOrderQuery = usePurchaseOrder(
+    invoiceQuery.data?.purchaseOrderId ?? undefined,
+  )
   const link = useLinkInvoice(id ?? "")
   const reject = useRejectInvoice(id ?? "")
   const match = useRunMatch()
@@ -80,11 +82,44 @@ export function InvoiceDetailPage() {
   const orders = ordersQuery.data?.items ?? []
   const linkedOrder = orders.find((order) => order.id === invoice.purchaseOrderId)
 
-  const openOrders = orders.filter(
-    (order) =>
-      order.status !== PurchaseOrderStatus.CANCELED &&
-      order.status !== PurchaseOrderStatus.CLOSED,
-  )
+  const suppliers = suppliersQuery.data?.items ?? []
+  const supplierById = new Map(suppliers.map((supplier) => [supplier.id, supplier]))
+  const issuerCnpj = onlyDigits(invoice.issuerCnpj)
+  const invoiceTotal = BigInt(invoice.totalAmountCents)
+
+  const candidates = orders
+    .filter(
+      (order) =>
+        order.status !== PurchaseOrderStatus.CANCELED &&
+        order.status !== PurchaseOrderStatus.CLOSED,
+    )
+    .map((order) => {
+      const supplier = supplierById.get(order.supplierId)
+      const difference = BigInt(order.totalAmountCents) - invoiceTotal
+
+      return {
+        order,
+        supplierLabel: supplier?.tradeName ?? supplier?.legalName ?? "Fornecedor",
+        sameSupplier: supplier ? onlyDigits(supplier.cnpj) === issuerCnpj : false,
+        sameTotal: difference === 0n,
+        distance: difference < 0n ? -difference : difference,
+      }
+    })
+    .sort((left, right) => {
+      if (left.sameSupplier !== right.sameSupplier) {
+        return left.sameSupplier ? -1 : 1
+      }
+
+      return left.distance < right.distance ? -1 : left.distance > right.distance ? 1 : 0
+    })
+    .slice(0, 8)
+
+  const chosen = candidates.find((candidate) => candidate.order.id === linking)
+
+  const orderItems = linkedOrderQuery.data?.items ?? []
+  const orderItemById = new Map(orderItems.map((item) => [item.id, item]))
+  const invoiceItems = invoice.items ?? []
+  const linkedCount = invoiceItems.filter((item) => item.purchaseOrderItemId).length
 
   const canMatch =
     invoice.purchaseOrderId !== null &&
@@ -239,60 +274,138 @@ export function InvoiceDetailPage() {
         </div>
       </section>
 
-      {invoice.purchaseOrderId === null ? (
-        <section className="flex flex-col gap-3 rounded-lg border border-warning/25 bg-warning/[0.06] px-5 py-4">
-          <div>
-            <p className="text-caption font-medium text-foreground">
-              Esta nota não está vinculada a nenhuma ordem
-            </p>
-            <p className="mt-0.5 text-caption leading-relaxed text-muted-foreground">
-              Sem vínculo não dá para conferir contra o que foi pedido e
-              recebido.
-            </p>
-          </div>
+      {invoice.purchaseOrderId === null &&
+      invoice.status === InvoiceStatus.RECEIVED ? (
+        <section className="overflow-hidden rounded-lg border border-border bg-card shadow-xs">
+          <header className="flex items-start gap-3 border-b border-border px-5 py-4">
+            <LinkSimple
+              size={16}
+              aria-hidden
+              className="mt-0.5 shrink-0 text-warning-strong"
+            />
+            <div className="min-w-0">
+              <p className="text-caption font-medium text-foreground">
+                Ligue a nota à ordem de compra
+              </p>
+              <p className="mt-0.5 text-caption leading-relaxed text-muted-foreground">
+                Cada item da nota é casado com o item pedido. Sem isso, a
+                conferência não tem com o que comparar.
+              </p>
+            </div>
+          </header>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Select
-              value={linking}
-              onValueChange={(next) => setLinking((next ?? null) as string | null)}
-            >
-              <SelectTrigger
-                className="h-9 w-64 bg-card px-3"
-                aria-label="Ordem de compra"
-              >
-                <SelectValue>
-                  {(value: string | null) =>
-                    value
-                      ? (orders.find((order) => order.id === value)?.number ??
-                        "Ordem")
-                      : "Escolher ordem"
-                  }
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {openOrders.map((order) => (
-                  <SelectItem key={order.id} value={order.id}>
-                    {order.number}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {candidates.length === 0 ? (
+            <p className="px-5 py-4 text-caption text-muted-foreground">
+              Nenhuma ordem de compra aberta para vincular.
+            </p>
+          ) : (
+            <fieldset>
+              <legend className="sr-only">Ordem de compra</legend>
+              <ul className="divide-y divide-border">
+                {candidates.map((candidate) => {
+                  const active = candidate.order.id === linking
 
+                  return (
+                    <li key={candidate.order.id}>
+                      <label
+                        className={cn(
+                          "flex cursor-pointer items-center gap-3 px-5 py-3 transition-colors",
+                          active ? "bg-muted/50" : "hover:bg-muted/30",
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          name="order"
+                          value={candidate.order.id}
+                          checked={active}
+                          onChange={() => setLinking(candidate.order.id)}
+                          className="peer sr-only"
+                        />
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "flex size-4 shrink-0 items-center justify-center rounded-full border bg-card transition-colors",
+                            "peer-focus-visible:ring-2 peer-focus-visible:ring-ring",
+                            active ? "border-primary" : "border-input",
+                          )}
+                        >
+                          {active ? (
+                            <span className="size-2 rounded-full bg-primary" />
+                          ) : null}
+                        </span>
+
+                        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <span className="flex flex-wrap items-center gap-2 text-caption font-medium text-foreground">
+                            {candidate.order.number}
+                            {candidate.sameSupplier ? (
+                              <StatusPill tone="success">Mesmo fornecedor</StatusPill>
+                            ) : null}
+                          </span>
+                          <span className="truncate text-caption text-muted-foreground">
+                            {candidate.supplierLabel}
+                          </span>
+                        </span>
+
+                        <span className="flex shrink-0 flex-col items-end gap-0.5">
+                          <MoneyDisplay
+                            cents={candidate.order.totalAmountCents}
+                            emphasis
+                            className="text-caption"
+                          />
+                          <span
+                            className={cn(
+                              "text-micro tabular-nums",
+                              candidate.sameTotal
+                                ? "text-brand-accent-strong"
+                                : "text-muted-foreground",
+                            )}
+                          >
+                            {candidate.sameTotal
+                              ? "Mesmo valor da nota"
+                              : `Nota: ${formatCents(invoice.totalAmountCents)}`}
+                          </span>
+                        </span>
+                      </label>
+                    </li>
+                  )
+                })}
+              </ul>
+            </fieldset>
+          )}
+
+          <footer className="flex items-center justify-end border-t border-border bg-muted/20 px-5 py-3">
             <Button
-              size="lg"
-              disabled={!linking || link.isPending}
-              onClick={() =>
-                link.mutate(linking as string, {
-                  onSuccess: () => toast.success("Nota vinculada à ordem."),
+              disabled={!chosen || link.isPending}
+              onClick={() => {
+                if (!chosen) {
+                  return
+                }
+
+                link.mutate(chosen.order.id, {
+                  onSuccess: (linked) => {
+                    const total = linked.items?.length ?? 0
+                    const matched =
+                      linked.items?.filter((item) => item.purchaseOrderItemId)
+                        .length ?? 0
+
+                    toast.success(
+                      `Nota vinculada à ${chosen.order.number}: ${matched} de ${total} itens casados.`,
+                    )
+                    setLinking(null)
+                  },
                   onError: (error) => toast.error(getApiErrorMessage(error)),
                 })
-              }
+              }}
               className="gap-1.5 bg-primary font-medium text-primary-foreground hover:bg-primary-hover"
             >
-              <LinkSimple size={15} aria-hidden />
-              {link.isPending ? "Vinculando…" : "Vincular"}
+              <LinkSimple size={14} aria-hidden />
+              {link.isPending
+                ? "Vinculando…"
+                : chosen
+                  ? `Vincular à ${chosen.order.number}`
+                  : "Escolha uma ordem"}
             </Button>
-          </div>
+          </footer>
         </section>
       ) : null}
 
@@ -332,12 +445,27 @@ export function InvoiceDetailPage() {
           label="Ordem vinculada"
           control={
             linkedOrder ? (
-              <Link
-                to={`/ordens-de-compra/${linkedOrder.id}`}
-                className="text-caption font-medium text-primary underline-offset-2 hover:underline"
-              >
-                {linkedOrder.number}
-              </Link>
+              <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <Link
+                  to={`/ordens-de-compra/${linkedOrder.id}`}
+                  className="text-caption font-medium text-primary underline-offset-2 hover:underline"
+                >
+                  {linkedOrder.number}
+                </Link>
+                {invoiceItems.length > 0 ? (
+                  <span
+                    className={cn(
+                      "text-caption tabular-nums",
+                      linkedCount === invoiceItems.length
+                        ? "text-muted-foreground"
+                        : "text-warning-strong",
+                    )}
+                  >
+                    {linkedCount} de {invoiceItems.length}{" "}
+                    {invoiceItems.length === 1 ? "item casado" : "itens casados"}
+                  </span>
+                ) : null}
+              </span>
             ) : (
               <StatusPill tone="warning">Sem vínculo</StatusPill>
             )
@@ -355,26 +483,41 @@ export function InvoiceDetailPage() {
 
       {invoice.items && invoice.items.length > 0 ? (
         <SettingGroup title="Itens da nota" count={invoice.items.length}>
-          {invoice.items.map((item) => (
-            <SettingRow
-              key={item.id}
-              label={item.description}
-              description={item.ncm ? `NCM ${item.ncm}` : undefined}
-              control={
-                <div className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-1">
-                  <span className="text-caption tabular-nums text-muted-foreground">
-                    {item.quantity} {item.unit} ×{" "}
-                    <MoneyDisplay cents={item.unitPriceCents} />
-                  </span>
-                  <MoneyDisplay
-                    cents={item.totalCents}
-                    emphasis
-                    className="ml-auto"
-                  />
-                </div>
-              }
-            />
-          ))}
+          {invoice.items.map((item) => {
+            const orderItem = item.purchaseOrderItemId
+              ? orderItemById.get(item.purchaseOrderItemId)
+              : undefined
+            const details = [
+              item.ncm ? `NCM ${item.ncm}` : null,
+              orderItem ? `Na ordem: ${orderItem.description}` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")
+
+            return (
+              <SettingRow
+                key={item.id}
+                label={item.description}
+                description={details || undefined}
+                control={
+                  <div className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-1">
+                    <span className="text-caption tabular-nums text-muted-foreground">
+                      {item.quantity} {item.unit} ×{" "}
+                      <MoneyDisplay cents={item.unitPriceCents} />
+                    </span>
+                    {invoice.purchaseOrderId && !item.purchaseOrderItemId ? (
+                      <StatusPill tone="warning">Fora da ordem</StatusPill>
+                    ) : null}
+                    <MoneyDisplay
+                      cents={item.totalCents}
+                      emphasis
+                      className="ml-auto"
+                    />
+                  </div>
+                }
+              />
+            )
+          })}
         </SettingGroup>
       ) : null}
 

@@ -11,6 +11,7 @@ import type {
 export interface InvoiceItem {
   id: string
   sequence: number
+  purchaseOrderItemId: string | null
   description: string
   ncm: string | null
   cfop: string | null

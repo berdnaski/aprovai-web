@@ -1,5 +1,6 @@
-import { Plus, Wallet } from "@phosphor-icons/react"
+import { FileText, LockOpen, Plus, Wallet } from "@phosphor-icons/react"
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/api/client"
@@ -22,9 +23,14 @@ import {
   type DataTableColumn,
 } from "@/components/ui/data-table"
 import { Skeleton } from "@/components/ui/skeleton"
-import { usePayPayable, usePayables } from "@/hooks/payables/use-payables"
+import {
+  usePayPayable,
+  usePayables,
+  useReleasePayable,
+} from "@/hooks/payables/use-payables"
 import { useSuppliers } from "@/hooks/suppliers/use-suppliers"
 import { PAYABLE_STATUS } from "@/lib/status-labels"
+import { cn } from "@/lib/utils"
 import {
   PAYABLE_RELEASE_REASON_LABELS,
   PayableStatus,
@@ -35,10 +41,42 @@ import { ReleaseDialog } from "./components/release-dialog"
 
 const PER_PAGE = 25
 
+const EMPTY: Record<string, { title: string; description: string }> = {
+  [PayableStatus.RELEASED]: {
+    title: "Nada pronto para pagar",
+    description:
+      "Uma conta aparece aqui quando a nota passa na conferência e o pagamento é liberado.",
+  },
+  [PayableStatus.BLOCKED]: {
+    title: "Nada esperando liberação",
+    description:
+      "Quando a conferência de uma nota bate, a conta espera aqui até alguém do financeiro liberar.",
+  },
+  [PayableStatus.PAID]: {
+    title: "Nada pago ainda",
+    description: "As contas marcadas como pagas ficam guardadas aqui.",
+  },
+}
+
+function todayUtc(): number {
+  const now = new Date()
+  return Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+}
+
+function isOverdue(payable: Payable): boolean {
+  return (
+    payable.status !== PayableStatus.PAID &&
+    new Date(payable.dueDate).getTime() < todayUtc()
+  )
+}
+
 export function PayablesPage() {
+  const navigate = useNavigate()
+
   const [filter, setFilter] = useState<PayableStatus>(PayableStatus.RELEASED)
   const [page, setPage] = useState(1)
-  const [releasing, setReleasing] = useState(false)
+  const [releasingWithoutInvoice, setReleasingWithoutInvoice] = useState(false)
+  const [releasing, setReleasing] = useState<Payable | null>(null)
   const [paying, setPaying] = useState<Payable | null>(null)
 
   const payablesQuery = usePayables({
@@ -57,6 +95,7 @@ export function PayablesPage() {
 
   const suppliersQuery = useSuppliers({ perPage: 100 })
   const pay = usePayPayable()
+  const release = useReleasePayable()
 
   const supplierName = new Map(
     (suppliersQuery.data?.items ?? []).map((item) => [
@@ -77,15 +116,13 @@ export function PayablesPage() {
     },
     {
       id: "reason",
-      header: "Liberação",
+      header: "Origem",
       hideBelow: "lg",
       width: "190px",
       cell: (payable) =>
         payable.releaseReason ? (
           <StatusPill
-            tone={
-              payable.releaseReason === "MATCHED" ? "success" : "warning"
-            }
+            tone={payable.releaseReason === "MATCHED" ? "success" : "warning"}
           >
             {
               PAYABLE_RELEASE_REASON_LABELS[
@@ -93,6 +130,8 @@ export function PayablesPage() {
               ]
             }
           </StatusPill>
+        ) : payable.invoiceId ? (
+          <StatusPill tone="success">Conferência bateu</StatusPill>
         ) : (
           <span className="text-caption text-muted-foreground">—</span>
         ),
@@ -110,14 +149,27 @@ export function PayablesPage() {
       header: "Vencimento",
       align: "end",
       width: "120px",
-      cell: (payable) => (
-        <span className="text-caption tabular-nums text-muted-foreground">
-          {new Date(payable.dueDate).toLocaleDateString("pt-BR", {
-            day: "2-digit",
-            month: "short",
-          })}
-        </span>
-      ),
+      cell: (payable) => {
+        const overdue = isOverdue(payable)
+
+        return (
+          <span
+            className={cn(
+              "flex flex-col items-end text-caption tabular-nums",
+              overdue ? "text-destructive" : "text-muted-foreground",
+            )}
+          >
+            {new Date(payable.dueDate).toLocaleDateString("pt-BR", {
+              day: "2-digit",
+              month: "short",
+              timeZone: "UTC",
+            })}
+            {overdue ? (
+              <span className="text-micro font-medium">Vencida</span>
+            ) : null}
+          </span>
+        )
+      },
     },
     {
       id: "amount",
@@ -151,16 +203,17 @@ export function PayablesPage() {
 
   const rows = payablesQuery.data?.items ?? []
   const meta = payablesQuery.data?.meta
+  const empty = EMPTY[filter] ?? EMPTY[PayableStatus.PAID]
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Contas a pagar"
-        description="O que já passou pela conferência e está pronto para sair."
+        description="Tudo que passou pela conferência: libere, pague e acompanhe o que vence."
         action={
           <Button
             size="lg"
-            onClick={() => setReleasing(true)}
+            onClick={() => setReleasingWithoutInvoice(true)}
             className="gap-1.5 bg-primary font-medium text-primary-foreground hover:bg-primary-hover"
           >
             <Plus size={15} weight="bold" aria-hidden />
@@ -169,7 +222,7 @@ export function PayablesPage() {
         }
       />
 
-      <section>
+      <section className="flex flex-col gap-3">
         <TableToolbar>
           <TableSegments
             value={filter}
@@ -186,7 +239,7 @@ export function PayablesPage() {
               },
               {
                 id: PayableStatus.BLOCKED,
-                label: "Travadas",
+                label: "Aguardando liberação",
                 count: blockedCount.data?.meta.total,
                 tone: "warning",
               },
@@ -194,6 +247,14 @@ export function PayablesPage() {
             ]}
           />
         </TableToolbar>
+
+        {filter === PayableStatus.BLOCKED && rows.length > 0 ? (
+          <p className="text-caption leading-relaxed text-muted-foreground">
+            A nota destas contas já passou na conferência. O pagamento só vai
+            para &quot;Prontas para pagar&quot; depois que alguém do financeiro
+            liberar.
+          </p>
+        ) : null}
 
         <DataTableShell
           footer={
@@ -214,40 +275,97 @@ export function PayablesPage() {
             columns={columns}
             rows={rows}
             rowKey={(payable) => payable.id}
-            rowActions={
-              filter === PayableStatus.RELEASED
-                ? (payable) => (
-                    <RowAction
-                      icon={Wallet}
-                      label="Marcar como paga"
-                      onClick={() => setPaying(payable)}
-                    />
-                  )
-                : undefined
-            }
+            rowActions={(payable) => (
+              <div className="flex items-center justify-end gap-0.5">
+                {payable.invoiceId ? (
+                  <RowAction
+                    icon={FileText}
+                    label="Ver nota"
+                    onClick={() =>
+                      navigate(`/conferencia/notas/${payable.invoiceId}`)
+                    }
+                  />
+                ) : null}
+                {payable.status === PayableStatus.BLOCKED ? (
+                  <RowAction
+                    icon={LockOpen}
+                    label="Liberar pagamento"
+                    onClick={() => setReleasing(payable)}
+                  />
+                ) : null}
+                {payable.status === PayableStatus.RELEASED ? (
+                  <RowAction
+                    icon={Wallet}
+                    label="Marcar como paga"
+                    onClick={() => setPaying(payable)}
+                  />
+                ) : null}
+              </div>
+            )}
             empty={
               <EmptyState
                 variant="inline"
                 icon={Wallet}
-                title={
-                  filter === PayableStatus.RELEASED
-                    ? "Nada pronto para pagar"
-                    : filter === PayableStatus.BLOCKED
-                      ? "Nada travado"
-                      : "Nada pago ainda"
-                }
-                description={
-                  filter === PayableStatus.RELEASED
-                    ? "Uma conta aparece aqui quando a conferência da nota bate."
-                    : "As contas travadas esperam a conferência ser resolvida."
-                }
+                title={empty.title}
+                description={empty.description}
               />
             }
           />
         </DataTableShell>
       </section>
 
-      <ReleaseDialog open={releasing} onOpenChange={setReleasing} />
+      <ReleaseDialog
+        open={releasingWithoutInvoice}
+        onOpenChange={setReleasingWithoutInvoice}
+      />
+
+      <ConfirmDialog
+        open={releasing !== null}
+        onOpenChange={(next) => {
+          if (!next) {
+            setReleasing(null)
+          }
+        }}
+        variant="default"
+        title="Liberar este pagamento?"
+        description={
+          releasing ? (
+            <>
+              A nota de{" "}
+              {supplierName.get(releasing.supplierId) ?? "este fornecedor"}{" "}
+              passou na conferência. Ao liberar,{" "}
+              <MoneyDisplay cents={releasing.amountCents} emphasis /> vai para
+              &quot;Prontas para pagar&quot;.
+            </>
+          ) : (
+            ""
+          )
+        }
+        confirmLabel={release.isPending ? "Liberando…" : "Liberar pagamento"}
+        cancelLabel="Voltar"
+        isPending={release.isPending}
+        reason={{
+          label: "Observação (opcional)",
+          placeholder: "Ex.: conferido com o boleto do fornecedor",
+          required: false,
+        }}
+        onConfirm={(note) => {
+          if (!releasing) {
+            return
+          }
+
+          release.mutate(
+            { id: releasing.id, note },
+            {
+              onSuccess: () => {
+                toast.success("Pagamento liberado.")
+                setReleasing(null)
+              },
+              onError: (error) => toast.error(getApiErrorMessage(error)),
+            },
+          )
+        }}
+      />
 
       <ConfirmDialog
         open={paying !== null}

@@ -35,6 +35,17 @@ export async function payPayable(id: string): Promise<Payable> {
   return data
 }
 
+export async function releasePayable(
+  id: string,
+  note?: string,
+): Promise<Payable> {
+  const { data } = await apiClient.post<Payable>(
+    `/payables/${id}/release`,
+    note ? { note } : {},
+  )
+  return data
+}
+
 export interface ReleaseWithoutInvoicePayload {
   supplierId: string
   amountCents: string
@@ -51,7 +62,7 @@ export async function releaseWithoutInvoice(
   form.append("amountCents", payload.amountCents)
   form.append("dueDate", payload.dueDate)
   form.append("note", payload.note)
-  form.append("file", payload.file)
+  form.append("proof", payload.file)
 
   const { data } = await apiClient.post<Payable>(
     "/payables/release-without-invoice",
