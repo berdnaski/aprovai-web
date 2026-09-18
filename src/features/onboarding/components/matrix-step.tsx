@@ -1,24 +1,36 @@
-import type { ApprovalRule } from "@/api/approval-rules"
+import { Plus, Trash } from "@phosphor-icons/react"
+import { useMemo, useState } from "react"
+import { toast } from "sonner"
+
+import { getApiErrorMessage } from "@/api/client"
+import { Button } from "@/components/ui/button"
+import { MoneyInput } from "@/components/ui/money-input"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useApprovalRules } from "@/hooks/approval-rules/use-approval-rules"
+import {
+  useApprovalRules,
+  useReplaceApprovalMatrix,
+} from "@/hooks/approval-rules/use-approval-rules"
 import { formatCents } from "@/lib/money"
-import { APPROVER_TYPE_LABELS } from "@/types/enums"
+import { cn } from "@/lib/utils"
+
+import { ApproverTypeChoice } from "@/features/approval-rules/components/approver-type-choice"
+import { SignatureChoice } from "@/features/approval-rules/components/signature-choice"
+import {
+  GLOBAL_SCOPE,
+  floorOf,
+  insertTierAfter,
+  isMatrixEqual,
+  MAX_TIERS,
+  removeTier,
+  seedTiers,
+  toRanges,
+  toTiers,
+  updateTier,
+  validateTiers,
+  type Tier,
+} from "@/features/approval-rules/matrix"
 
 import { StepFrame } from "./step-frame"
-
-function rangeLabel(rule: ApprovalRule): string {
-  const min = formatCents(rule.minAmountCents)
-
-  if (rule.maxAmountCents === null) {
-    return `Acima de ${min}`
-  }
-
-  if (rule.minAmountCents === "0") {
-    return `Até ${formatCents(rule.maxAmountCents)}`
-  }
-
-  return `${min} a ${formatCents(rule.maxAmountCents)}`
-}
 
 export function MatrixStep({
   onBack,
@@ -27,61 +39,172 @@ export function MatrixStep({
   onBack: () => void
   onNext: () => void
 }) {
-  const { data: rules = [], isPending } = useApprovalRules()
+  const { data: rules, isPending } = useApprovalRules()
+  const replace = useReplaceApprovalMatrix()
 
-  const ordered = [...rules].sort(
-    (a, b) => Number(a.minAmountCents) - Number(b.minAmountCents),
+  const [draft, setDraft] = useState<Tier[] | null>(null)
+
+  const saved = useMemo(
+    () => (rules ? (rules.length > 0 ? toTiers(rules) : seedTiers()) : []),
+    [rules],
   )
+
+  const tiers = draft ?? saved
+  const setTiers = (update: (current: Tier[]) => Tier[]) =>
+    setDraft((current) => update(current ?? saved))
+
+  const problems = validateTiers(tiers)
+  const problemOf = (key: string) =>
+    problems.find((problem) => problem.key === key)?.message
+
+  function handleNext() {
+    if (problems.length > 0) {
+      return
+    }
+
+    if (isMatrixEqual(tiers, saved)) {
+      onNext()
+      return
+    }
+
+    replace.mutate(
+      { ...GLOBAL_SCOPE, ranges: toRanges(tiers) },
+      {
+        onSuccess: () => {
+          setDraft(null)
+          onNext()
+        },
+        onError: (error) => toast.error(getApiErrorMessage(error)),
+      },
+    )
+  }
 
   return (
     <StepFrame
       question="Quem aprova o quê?"
-      support="Quanto maior o valor, mais alto o pedido sobe. Estas são as faixas configuradas para a sua empresa — você ajusta os valores depois, em Configurações."
+      support="Quanto maior o valor, mais alto o pedido sobe. Comece pelas faixas sugeridas e ajuste os valores para a realidade da sua empresa."
       onBack={onBack}
-      onNext={onNext}
+      onNext={handleNext}
+      nextDisabled={problems.length > 0}
+      isSubmitting={replace.isPending}
+      hint="Dá para mudar isso depois, e criar exceções por Centro de Custo ou categoria, em Matriz de alçadas."
     >
       {isPending ? (
         <ul className="flex flex-col gap-2">
           {[0, 1, 2].map((index) => (
             <li key={index}>
-              <Skeleton className="h-16 w-full rounded-xl" />
-            </li>
-          ))}
-        </ul>
-      ) : ordered.length > 0 ? (
-        <ul className="flex flex-col gap-2">
-          {ordered.map((rule, index) => (
-            <li
-              key={rule.id}
-              className="flex items-center gap-4 rounded-xl border border-border bg-card px-4 py-3.5"
-            >
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-caption font-semibold text-muted-foreground tabular-nums">
-                {index + 1}
-              </span>
-
-              <div className="min-w-0 flex-1">
-                <p className="text-body font-semibold text-foreground tabular-nums">
-                  {rangeLabel(rule)}
-                </p>
-                <p className="mt-0.5 text-caption text-muted-foreground">
-                  {APPROVER_TYPE_LABELS[rule.approverType]}
-                </p>
-              </div>
-
-              <span className="shrink-0 rounded-md bg-muted px-2 py-1 text-overline font-medium normal-case tracking-normal text-muted-foreground">
-                {rule.requiresDualApproval
-                  ? "2 assinaturas"
-                  : "1 assinatura"}
-              </span>
+              <Skeleton className="h-28 w-full rounded-xl" />
             </li>
           ))}
         </ul>
       ) : (
-        <p className="rounded-xl border border-dashed border-border bg-card/50 px-4 py-8 text-center text-caption leading-relaxed text-muted-foreground">
-          Nenhuma faixa configurada ainda. Sem matriz de alçadas, os pedidos
-          ficam sem rota de aprovação — defina as faixas em Configurações antes
-          de abrir o primeiro pedido.
-        </p>
+        <div className="flex flex-col gap-2">
+          {tiers.map((tier, index) => {
+            const last = index === tiers.length - 1
+            const floor = floorOf(tiers, index)
+            const problem = problemOf(tier.key)
+
+            return (
+              <div
+                key={tier.key}
+                className={cn(
+                  "flex flex-col gap-4 rounded-xl border bg-card px-4 py-4",
+                  problem ? "border-destructive/40" : "border-border",
+                )}
+              >
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-caption font-semibold tabular-nums text-muted-foreground">
+                    {index + 1}
+                  </span>
+
+                  {last ? (
+                    <p className="text-body font-semibold tabular-nums text-foreground">
+                      {floor === "0"
+                        ? "Qualquer valor"
+                        : `Acima de ${formatCents(floor)}`}
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-caption text-muted-foreground">
+                        {floor === "0"
+                          ? "Até"
+                          : `${formatCents(floor)} até`}
+                      </span>
+                      <MoneyInput
+                        value={tier.ceilingCents ?? ""}
+                        onChange={(cents) =>
+                          setTiers((current) =>
+                            updateTier(current, index, { ceilingCents: cents }),
+                          )
+                        }
+                        size="sm"
+                        invalid={Boolean(problem)}
+                        ariaLabel={`Teto da faixa ${index + 1}`}
+                        className="w-36"
+                      />
+                    </div>
+                  )}
+
+                  {tiers.length > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setTiers((current) => removeTier(current, index))
+                      }
+                      aria-label={`Remover faixa ${index + 1}`}
+                      className="ml-auto flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    >
+                      <Trash size={14} aria-hidden />
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <ApproverTypeChoice
+                    value={tier.approverType}
+                    onChange={(approverType) =>
+                      setTiers((current) =>
+                        updateTier(current, index, { approverType }),
+                      )
+                    }
+                    className="flex-1"
+                  />
+                  <SignatureChoice
+                    value={tier.requiresDualApproval}
+                    onChange={(requiresDualApproval) =>
+                      setTiers((current) =>
+                        updateTier(current, index, { requiresDualApproval }),
+                      )
+                    }
+                    className="flex-1"
+                  />
+                </div>
+
+                {problem ? (
+                  <p role="alert" className="text-caption text-destructive">
+                    {problem}
+                  </p>
+                ) : null}
+              </div>
+            )
+          })}
+
+          {tiers.length < MAX_TIERS ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                setTiers((current) =>
+                  insertTierAfter(current, current.length - 1),
+                )
+              }
+              className="self-start gap-1.5 font-medium"
+            >
+              <Plus size={14} aria-hidden />
+              Adicionar faixa
+            </Button>
+          ) : null}
+        </div>
       )}
     </StepFrame>
   )
