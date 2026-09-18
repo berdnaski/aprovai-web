@@ -4,17 +4,19 @@ export type NavAccess = "full" | "read" | "none"
 
 export type NavArea = (typeof NAV_AREAS)[number]
 
-const { REQUESTER, APPROVER, FINANCE_ADMIN } = CompanyMemberRole
+const { REQUESTER, APPROVER, FINANCE_ADMIN, ACCOUNTANT } = CompanyMemberRole
 
 function access(
   requester: NavAccess,
   approver: NavAccess,
   financeAdmin: NavAccess,
+  accountant: NavAccess = "none",
 ): Record<CompanyMemberRole, NavAccess> {
   return {
     [REQUESTER]: requester,
     [APPROVER]: approver,
     [FINANCE_ADMIN]: financeAdmin,
+    [ACCOUNTANT]: accountant,
   }
 }
 
@@ -47,13 +49,25 @@ export const NAV_AREAS = [
     key: "payables",
     label: "Contas a pagar",
     to: "/contas-a-pagar",
+    access: access("none", "none", "full", "read"),
+  },
+  {
+    key: "service-invoices",
+    label: "Notas de serviço",
+    to: "/notas-de-servico",
+    access: access("none", "none", "full", "read"),
+  },
+  {
+    key: "recurring-contracts",
+    label: "Assinaturas recorrentes",
+    to: "/assinaturas-recorrentes",
     access: access("none", "none", "full"),
   },
   {
     key: "cost-centers",
     label: "Centros de Custo",
     to: "/centros-de-custo",
-    access: access("read", "read", "full"),
+    access: access("read", "read", "full", "read"),
   },
   {
     key: "approval-rules",
@@ -65,13 +79,19 @@ export const NAV_AREAS = [
     key: "suppliers",
     label: "Fornecedores",
     to: "/fornecedores",
-    access: access("read", "read", "full"),
+    access: access("read", "read", "full", "read"),
   },
   {
     key: "categories",
     label: "Categorias",
     to: "/categorias",
-    access: access("read", "read", "full"),
+    access: access("read", "read", "full", "read"),
+  },
+  {
+    key: "chart-accounts",
+    label: "Plano de contas",
+    to: "/plano-de-contas",
+    access: access("none", "read", "full", "read"),
   },
   {
     key: "members",
@@ -83,7 +103,7 @@ export const NAV_AREAS = [
     key: "audit-logs",
     label: "Auditoria",
     to: "/auditoria",
-    access: access("none", "none", "full"),
+    access: access("none", "none", "full", "read"),
   },
   {
     key: "analytics",

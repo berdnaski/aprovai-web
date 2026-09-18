@@ -1,11 +1,22 @@
 import { apiClient } from "@/api/client"
 import type { Paginated } from "@/api/pagination"
 import type {
+  BankAccountStatus,
+  BankAccountType,
   CnpjLookupFailure,
+  PixKeyType,
   RegistrationStatus,
   SupplierUsage,
+  TaxRegime,
+  TaxRegimeSource,
   ValidationStatus,
 } from "@/types/enums"
+
+export interface SupplierPartner {
+  name: string
+  role: string
+  enteredAt: string | null
+}
 
 export interface Supplier {
   id: string
@@ -24,7 +35,55 @@ export interface Supplier {
   blocked: boolean
   usage: SupplierUsage
   usageReason: string | null
+  openedOn: string | null
+  legalNature: string | null
+  companySize: string | null
+  shareCapitalCents: string | null
+  mainActivityCode: string | null
+  mainActivityDescription: string | null
+  simplesOpted: boolean | null
+  meiOpted: boolean | null
+  taxRegime: TaxRegime
+  taxRegimeSource: TaxRegimeSource | null
+  stateRegistration: string | null
+  municipalRegistration: string | null
+  partners: SupplierPartner[]
   createdAt: string
+}
+
+export interface SupplierBankAccount {
+  id: string
+  bankCode: string
+  branch: string
+  accountNumber: string
+  accountDigit: string | null
+  accountType: BankAccountType
+  holderName: string
+  holderDocument: string
+  pixKeyType: PixKeyType | null
+  pixKey: string | null
+  thirdParty: boolean
+  justification: string | null
+  status: BankAccountStatus
+  requestedById: string
+  requestedAt: string
+  reviewedById: string | null
+  reviewedAt: string | null
+  reviewNote: string | null
+}
+
+export interface RequestBankAccountPayload {
+  bankCode: string
+  branch: string
+  accountNumber: string
+  accountDigit?: string | null
+  accountType: BankAccountType
+  holderName: string
+  holderDocument: string
+  pixKeyType?: PixKeyType
+  pixKey?: string | null
+  thirdParty?: boolean
+  justification?: string | null
 }
 
 export interface SupplierLookup {
@@ -55,6 +114,8 @@ export interface CreateSupplierPayload {
   city?: string | null
   state?: string | null
   zipCode?: string | null
+  taxRegime?: TaxRegime
+  municipalRegistration?: string | null
 }
 
 export type UpdateSupplierPayload = Omit<CreateSupplierPayload, "cnpj">
@@ -116,5 +177,60 @@ export async function setSupplierBlocked(
 
 export async function revalidateSupplier(id: string): Promise<Supplier> {
   const { data } = await apiClient.post<Supplier>(`/suppliers/${id}/revalidate`)
+  return data
+}
+
+
+export async function listBankAccounts(
+  supplierId: string,
+): Promise<SupplierBankAccount[]> {
+  const { data } = await apiClient.get<SupplierBankAccount[]>(
+    `/suppliers/${supplierId}/bank-accounts`,
+  )
+  return data
+}
+
+export async function requestBankAccount(
+  supplierId: string,
+  payload: RequestBankAccountPayload,
+): Promise<SupplierBankAccount> {
+  const { data } = await apiClient.post<SupplierBankAccount>(
+    `/suppliers/${supplierId}/bank-accounts`,
+    payload,
+  )
+  return data
+}
+
+export async function approveBankAccount(
+  supplierId: string,
+  id: string,
+  note?: string,
+): Promise<SupplierBankAccount> {
+  const { data } = await apiClient.post<SupplierBankAccount>(
+    `/suppliers/${supplierId}/bank-accounts/${id}/approve`,
+    note ? { note } : {},
+  )
+  return data
+}
+
+export async function rejectBankAccount(
+  supplierId: string,
+  id: string,
+  note: string,
+): Promise<SupplierBankAccount> {
+  const { data } = await apiClient.post<SupplierBankAccount>(
+    `/suppliers/${supplierId}/bank-accounts/${id}/reject`,
+    { note },
+  )
+  return data
+}
+
+export async function archiveBankAccount(
+  supplierId: string,
+  id: string,
+): Promise<SupplierBankAccount> {
+  const { data } = await apiClient.post<SupplierBankAccount>(
+    `/suppliers/${supplierId}/bank-accounts/${id}/archive`,
+  )
   return data
 }

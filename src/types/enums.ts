@@ -20,6 +20,7 @@ export const CompanyMemberRole = {
   REQUESTER: "REQUESTER",
   APPROVER: "APPROVER",
   FINANCE_ADMIN: "FINANCE_ADMIN",
+  ACCOUNTANT: "ACCOUNTANT",
 } as const
 
 export type CompanyMemberRole =
@@ -29,12 +30,15 @@ export const ROLE_LABELS: Record<CompanyMemberRole, string> = {
   REQUESTER: "Solicitante",
   APPROVER: "Aprovador",
   FINANCE_ADMIN: "Admin Financeiro",
+  ACCOUNTANT: "Contador",
 }
 
 export const ROLE_DESCRIPTIONS: Record<CompanyMemberRole, string> = {
   REQUESTER: "Cria pedidos de compra para o Centro de Custo a que pertence.",
   APPROVER: "Decide os pedidos que sobem até a alçada dele.",
   FINANCE_ADMIN: "Configura a empresa, aprova sem limite e cuida do financeiro.",
+  ACCOUNTANT:
+    "Só leitura: plano de contas, orçamento, fornecedores, contas a pagar e auditoria. Não aprova nem edita nada.",
 }
 
 export const InviteStatus = {
@@ -339,6 +343,27 @@ export const TaxKind = {
 
 export type TaxKind = (typeof TaxKind)[keyof typeof TaxKind]
 
+export const ServiceInvoiceStatus = {
+  RECEIVED: "RECEIVED",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+} as const
+
+export type ServiceInvoiceStatus =
+  (typeof ServiceInvoiceStatus)[keyof typeof ServiceInvoiceStatus]
+
+export const WithholdingKind = {
+  IRRF: "IRRF",
+  INSS: "INSS",
+  PIS: "PIS",
+  COFINS: "COFINS",
+  CSLL: "CSLL",
+  ISS_RETIDO: "ISS_RETIDO",
+} as const
+
+export type WithholdingKind =
+  (typeof WithholdingKind)[keyof typeof WithholdingKind]
+
 export const MatchStatus = {
   MATCHED: "MATCHED",
   DIVERGENT: "DIVERGENT",
@@ -384,10 +409,12 @@ export const PayableReleaseReason = {
   MATCHED: "MATCHED",
   NO_INVOICE_REQUIRED: "NO_INVOICE_REQUIRED",
   BELOW_MATCH_THRESHOLD: "BELOW_MATCH_THRESHOLD",
+  RECURRING_CONTRACT: "RECURRING_CONTRACT",
 } as const
 
 export type PayableReleaseReason =
   (typeof PayableReleaseReason)[keyof typeof PayableReleaseReason]
+
 
 export const PAYABLE_RELEASE_REASON_LABELS: Record<
   PayableReleaseReason,
@@ -396,6 +423,7 @@ export const PAYABLE_RELEASE_REASON_LABELS: Record<
   MATCHED: "Conferência bateu",
   NO_INVOICE_REQUIRED: "Liberado sem nota fiscal",
   BELOW_MATCH_THRESHOLD: "Abaixo do limite de conferência",
+  RECURRING_CONTRACT: "Assinatura recorrente",
 }
 
 export const NfeAuthorizationStatus = {
@@ -437,6 +465,18 @@ export const AuditEventType = {
   MATCH_OVERRIDDEN: "MATCH_OVERRIDDEN",
   PAYABLE_RELEASED: "PAYABLE_RELEASED",
   PAYABLE_PAID: "PAYABLE_PAID",
+  ACCOUNTS_CHANGED: "ACCOUNTS_CHANGED",
+  ALLOCATIONS_CHANGED: "ALLOCATIONS_CHANGED",
+  SUPPLIER_CHANGED: "SUPPLIER_CHANGED",
+  BANK_ACCOUNT_REQUESTED: "BANK_ACCOUNT_REQUESTED",
+  BANK_ACCOUNT_APPROVED: "BANK_ACCOUNT_APPROVED",
+  BANK_ACCOUNT_REJECTED: "BANK_ACCOUNT_REJECTED",
+  BANK_ACCOUNT_ARCHIVED: "BANK_ACCOUNT_ARCHIVED",
+  BUDGET_DOCUMENT_ADDED: "BUDGET_DOCUMENT_ADDED",
+  RECURRING_CONTRACT_CREATED: "RECURRING_CONTRACT_CREATED",
+  RECURRING_CONTRACT_CANCELED: "RECURRING_CONTRACT_CANCELED",
+  RECURRING_OCCURRENCE_GENERATED: "RECURRING_OCCURRENCE_GENERATED",
+  RECURRING_OCCURRENCE_MATCHED: "RECURRING_OCCURRENCE_MATCHED",
 } as const
 
 export type AuditEventType =
@@ -464,6 +504,18 @@ export const AUDIT_EVENT_LABELS: Record<AuditEventType, string> = {
   MATCH_OVERRIDDEN: "Liberou exceção na conferência",
   PAYABLE_RELEASED: "Liberou o pagamento",
   PAYABLE_PAID: "Marcou como pago",
+  ACCOUNTS_CHANGED: "Alterou o plano de contas",
+  ALLOCATIONS_CHANGED: "Alterou o rateio",
+  SUPPLIER_CHANGED: "Alterou o fornecedor",
+  BANK_ACCOUNT_REQUESTED: "Cadastrou conta bancária",
+  BANK_ACCOUNT_APPROVED: "Aprovou conta bancária",
+  BANK_ACCOUNT_REJECTED: "Recusou conta bancária",
+  BANK_ACCOUNT_ARCHIVED: "Arquivou conta bancária",
+  BUDGET_DOCUMENT_ADDED: "Anexou documento ao orçamento",
+  RECURRING_CONTRACT_CREATED: "Criou assinatura recorrente",
+  RECURRING_CONTRACT_CANCELED: "Cancelou assinatura recorrente",
+  RECURRING_OCCURRENCE_GENERATED: "Gerou cobrança da assinatura",
+  RECURRING_OCCURRENCE_MATCHED: "Ligou nota à assinatura recorrente",
 }
 
 export const AUDIT_ENTITY_LABELS: Record<string, string> = {
@@ -477,6 +529,10 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   budget: "Orçamento",
   company_member: "Membro",
   company: "Empresa",
+  supplier_bank_account: "Conta bancária",
+  chart_account: "Conta contábil",
+  category: "Categoria",
+  recurring_contract: "Assinatura recorrente",
 }
 
 export const SubscriptionStatus = {
@@ -532,3 +588,138 @@ export const FeedbackStatus = {
 
 export type FeedbackStatus =
   (typeof FeedbackStatus)[keyof typeof FeedbackStatus]
+
+export const ChartAccountKind = {
+  ASSET: "ASSET",
+  LIABILITY: "LIABILITY",
+  EQUITY: "EQUITY",
+  REVENUE: "REVENUE",
+  COST: "COST",
+  EXPENSE: "EXPENSE",
+} as const
+
+export type ChartAccountKind =
+  (typeof ChartAccountKind)[keyof typeof ChartAccountKind]
+
+export const CHART_ACCOUNT_KIND_LABELS: Record<ChartAccountKind, string> = {
+  ASSET: "Ativo",
+  LIABILITY: "Passivo",
+  EQUITY: "Patrimônio líquido",
+  REVENUE: "Receita",
+  COST: "Custo",
+  EXPENSE: "Despesa",
+}
+
+export const TaxRegime = {
+  MEI: "MEI",
+  SIMPLES_NACIONAL: "SIMPLES_NACIONAL",
+  LUCRO_PRESUMIDO: "LUCRO_PRESUMIDO",
+  LUCRO_REAL: "LUCRO_REAL",
+  LUCRO_ARBITRADO: "LUCRO_ARBITRADO",
+  IMMUNE_OR_EXEMPT: "IMMUNE_OR_EXEMPT",
+  UNKNOWN: "UNKNOWN",
+} as const
+
+export type TaxRegime = (typeof TaxRegime)[keyof typeof TaxRegime]
+
+export const TAX_REGIME_LABELS: Record<TaxRegime, string> = {
+  MEI: "MEI",
+  SIMPLES_NACIONAL: "Simples Nacional",
+  LUCRO_PRESUMIDO: "Lucro Presumido",
+  LUCRO_REAL: "Lucro Real",
+  LUCRO_ARBITRADO: "Lucro Arbitrado",
+  IMMUNE_OR_EXEMPT: "Imune ou isenta",
+  UNKNOWN: "Não identificado",
+}
+
+export const TaxRegimeSource = {
+  RECEITA: "RECEITA",
+  MANUAL: "MANUAL",
+} as const
+
+export type TaxRegimeSource =
+  (typeof TaxRegimeSource)[keyof typeof TaxRegimeSource]
+
+export const BankAccountType = {
+  CHECKING: "CHECKING",
+  SAVINGS: "SAVINGS",
+  PAYMENT: "PAYMENT",
+} as const
+
+export type BankAccountType =
+  (typeof BankAccountType)[keyof typeof BankAccountType]
+
+export const BANK_ACCOUNT_TYPE_LABELS: Record<BankAccountType, string> = {
+  CHECKING: "Conta corrente",
+  SAVINGS: "Poupança",
+  PAYMENT: "Conta de pagamento",
+}
+
+export const PixKeyType = {
+  CNPJ: "CNPJ",
+  CPF: "CPF",
+  EMAIL: "EMAIL",
+  PHONE: "PHONE",
+  RANDOM: "RANDOM",
+} as const
+
+export type PixKeyType = (typeof PixKeyType)[keyof typeof PixKeyType]
+
+export const PIX_KEY_TYPE_LABELS: Record<PixKeyType, string> = {
+  CNPJ: "CNPJ",
+  CPF: "CPF",
+  EMAIL: "E-mail",
+  PHONE: "Telefone",
+  RANDOM: "Chave aleatória",
+}
+
+export const BankAccountStatus = {
+  PENDING: "PENDING",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+  ARCHIVED: "ARCHIVED",
+} as const
+
+export type BankAccountStatus =
+  (typeof BankAccountStatus)[keyof typeof BankAccountStatus]
+
+export const BANK_ACCOUNT_STATUS_LABELS: Record<BankAccountStatus, string> = {
+  PENDING: "Aguardando aprovação",
+  APPROVED: "Aprovada",
+  REJECTED: "Recusada",
+  ARCHIVED: "Arquivada",
+}
+
+
+export const RecurringFrequency = {
+  MONTHLY: "MONTHLY",
+  QUARTERLY: "QUARTERLY",
+  ANNUAL: "ANNUAL",
+} as const
+
+export type RecurringFrequency =
+  (typeof RecurringFrequency)[keyof typeof RecurringFrequency]
+
+export const RECURRING_FREQUENCY_LABELS: Record<RecurringFrequency, string> = {
+  MONTHLY: "Mensal",
+  QUARTERLY: "Trimestral",
+  ANNUAL: "Anual",
+}
+
+export const RecurringOccurrenceStatus = {
+  PENDING: "PENDING",
+  MATCHED: "MATCHED",
+  SKIPPED: "SKIPPED",
+} as const
+
+export type RecurringOccurrenceStatus =
+  (typeof RecurringOccurrenceStatus)[keyof typeof RecurringOccurrenceStatus]
+
+export const RECURRING_OCCURRENCE_STATUS_LABELS: Record<
+  RecurringOccurrenceStatus,
+  string
+> = {
+  PENDING: "Aguardando nota",
+  MATCHED: "Conferida",
+  SKIPPED: "Pulada",
+}

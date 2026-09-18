@@ -49,6 +49,7 @@ src/
 │   ├── cost-centers.ts
 │   ├── approval-rules.ts
 │   ├── categories.ts
+│   ├── chart-accounts.ts
 │   ├── suppliers.ts
 │   ├── budgets.ts
 │   ├── purchase-requests.ts
@@ -339,13 +340,73 @@ Cobre: `GET /approval-rules`, `PUT /approval-rules`, `GET /approval-rules/resolv
 - Linha abre `/fornecedores/{id}`; `rowActions` traz o atalho de abrir.
 
 ### 6.4 Tela — Detalhe do fornecedor (`/fornecedores/{id}`)
+- Quatro abas (`<Tabs>`): **Cadastro**, **Fiscal**, **Contas bancárias**, **Histórico**. Cada uma é descrita nas subseções 6.4.1–6.4.4; a aba não é rota própria (estado local do componente), porque nenhuma delas precisa de link direto compartilhável.
+
+#### 6.4.1 Aba — Cadastro
 - Dados cadastrais (edição via `PATCH /suppliers/{id}`).
 - Badge de situação + botão "revalidar CNPJ na Receita" (`POST /suppliers/{id}/revalidate`), mostra spinner durante a chamada (é uma consulta externa, pode demorar).
 - Toggle "bloqueado" (`PATCH /suppliers/{id}/blocked`) com `<ConfirmDialog>` explicando o efeito (bloqueia novos pedidos com este fornecedor).
 
+#### 6.4.2 Aba — Fiscal
+- Somente leitura dos campos que a Receita devolveu na última consulta (`regime tributário`, natureza jurídica, atividade principal/CNAE, capital social, data de abertura, inscrições estadual/municipal, sócios) — todos vêm de `GET /suppliers/{id}`, sem chamada própria.
+- Quando `taxRegimeSource: "MANUAL"`, uma etiqueta "definido manualmente" acompanha o regime — o valor não é sobrescrito na próxima revalidação automática.
+- Botão "ajustar regime" (`FINANCE_ADMIN`) abre modal com regime tributário (select) e inscrição municipal → `PATCH /suppliers/{id}` com `taxRegime`/`municipalRegistration`. É o único par de campos fiscais editável manualmente; o resto só muda por nova consulta à Receita.
+- Sem nenhum dado fiscal ainda (consulta nunca trouxe ou falhou): mensagem "a consulta à Receita não trouxe dados fiscais" em vez de campos vazios.
+
+#### 6.4.3 Aba — Contas bancárias
+Cobre `GET /suppliers/{id}/bank-accounts`, `POST /suppliers/{id}/bank-accounts`, `POST /suppliers/{id}/bank-accounts/{bankAccountId}/approve`, `POST .../reject`, `POST .../archive`.
+- Lista de contas com banco/agência/conta, tipo, titular, `<StatusPill>` de situação (`BankAccountStatus`), e badge "titular terceiro" quando `thirdParty: true`.
+- Botão "cadastrar" (`FINANCE_ADMIN`) abre modal: banco, agência, conta+dígito, tipo, titular, CPF/CNPJ do titular, chave PIX (tipo + valor, opcional), toggle "titular diferente do fornecedor" que exige justificativa (mín. 10 caracteres) quando ligado → `POST .../bank-accounts`.
+- **Aprovação dupla**: uma conta `PENDING` só mostra os botões aprovar/recusar para quem **não** foi quem cadastrou — o front lê `requestedById` contra o membro logado e esconde a ação antes mesmo de chamar a API (que também recusa, com `SameReviewerError`). Recusar exige motivo (`<ConfirmDialog>` com `reason` obrigatório, mín. 10 caracteres); aprovar aceita nota opcional.
+- Conta `APPROVED` ganha ação "arquivar" (`<ConfirmDialog>` destrutivo).
+- Vazio: `<EmptyState>` explicando que a conta cadastrada aqui só entra em uso depois da aprovação de outra pessoa do financeiro.
+
+#### 6.4.4 Aba — Histórico
+- Três blocos somente leitura, cada um as últimas ~8 linhas: **Pedidos de compra** (`GET /purchase-requests?view=ALL&supplierId=`), **Notas fiscais** (`GET /invoices?supplierId=`), **Contas a pagar** (`GET /payables?supplierId=`). Sem paginação própria — é visão rápida, não listagem completa; cada bloco linka para a tela cheia do domínio quando a pessoa quer ver mais.
+
 ### 6.5 Modal — Novo fornecedor
 - Campo CNPJ com botão "buscar" → `GET /suppliers/lookup/{cnpj}`, pré-preenche razão social/endereço a partir do retorno.
 - **API**: `POST /suppliers`. Erro 409 (`SupplierCnpjTakenError`) leva à tela do fornecedor existente em vez de deixar o form travado.
+
+---
+
+## 6-A. Plano de contas e rateio
+
+Fase 1 da base contábil. Cobre `GET /chart-accounts`, `POST /chart-accounts`, `PATCH /chart-accounts/{id}`, `PATCH /chart-accounts/{id}/active`, `POST /chart-accounts/import`, `POST /chart-accounts/model`, `GET /purchase-requests/{id}/allocations`, `PUT /purchase-requests/{id}/allocations`, `GET /payables/{id}/allocations`, `PUT /payables/{id}/allocations`.
+
+**Empresa sem plano de contas mantém o comportamento anterior.** Nenhuma tela de rateio aparece enquanto `GET /chart-accounts` devolve vazio — o pedido e a conta a pagar seguem como antes da Fase 1, só com centro de custo. O rateio é aditivo, não uma mudança obrigatória de fluxo.
+
+### 6-A.1 Tela — Plano de contas (`/plano-de-contas`)
+- **Acesso**: `FINANCE_ADMIN` edita; `APPROVER` vê em leitura; `REQUESTER` não vê a tela (item novo em `lib/permissions.ts`, grupo "Configuração" da sidebar).
+- `<DataTable>` de `GET /chart-accounts?includeInactive=true`: código, nome (indentado pela profundidade do código, contas de agrupamento em negrito com selo "agrupa"), natureza (`ChartAccountKind`, a partir de `lg`), código no ERP (a partir de `xl`), situação (`<StatusDot>`).
+- `<TableSegments>`: Ativas (padrão) / Arquivadas / Todas, mesmo padrão de Categorias (6.2).
+- Vazio (`accounts.length === 0`): `<EmptyState>` com duas ações — "importar planilha" (abre 6-A.3) e "usar plano modelo" (`POST /chart-accounts/model`, cria ~26 contas enxutas de ativo/custo/despesa e já liga as 7 categorias padrão às contas correspondentes).
+- `rowActions`: "adicionar conta abaixo" (só em conta de agrupamento), editar, arquivar/reativar (`PATCH .../active`, `<ConfirmDialog>`).
+- Modal "nova conta"/"editar conta": conta superior (combobox, só contas de agrupamento), código, natureza (herdada da conta superior quando há uma, editável só em conta de primeiro nível), nome, código no ERP, toggle "recebe lançamento" → `POST`/`PATCH /chart-accounts/{id}`. Código e natureza não mudam depois de criados.
+- Modal "importar planilha" (6-A.3): `<FileDropzone accept={['.csv']}>` → `POST /chart-accounts/import`, mostra quantas contas foram criadas/atualizadas. Qualquer problema na planilha cancela a importação inteira — a mensagem da API já lista as linhas com erro.
+
+### 6-A.2 Componente — Editor de rateio
+Componente compartilhado (`components/shared/allocation-editor.tsx`), não é tela própria — usado dentro de 8.2/8.3 (pedido) e 12.4 (conta a pagar).
+- Uma linha por combinação centro de custo + conta contábil: select de centro de custo, select de conta contábil (opcional, "sem conta contábil"), percentual, valor calculado ao lado (nunca digitado — é sempre percentual × total, exibido, não editável).
+- Rodapé: total de percentual somado, em vermelho enquanto não fecha 100%; botão "adicionar linha".
+- Só aparece quando `GET /chart-accounts` não está vazio — ver nota no topo da seção.
+
+### 6-A.2.1 Painel — Rateio (dentro de 8.2/8.3, `/pedidos/{id}` e `/pedidos/{id}/editar`)
+- Sem rateio definido (`custom: false` na resposta), a tela mostra a linha automática — 100% no centro de custo do pedido, conta padrão da categoria — em vez do editor, com a legenda "automático, 100% no centro de custo do pedido".
+- Editável por quem criou o rascunho (`DRAFT`/`CHANGES_REQUESTED`) e por `FINANCE_ADMIN` em qualquer status — depois do envio, a API só aceita trocar a conta contábil de cada linha, mantendo os mesmos centros de custo e percentuais (`AllocationLockedError` se a tentativa mexer nisso).
+- Botão "salvar rateio" só aparece quando o rascunho local diverge do salvo, some quando os dois batem (mesmo prato de "há alterações" de 8.2, mas restrito a esta seção).
+- **API**: `GET`/`PUT /purchase-requests/{id}/allocations`.
+
+### 6-A.2.2 Painel — Rateio (dentro de 12.4, ação "Rateio" na linha de `/contas-a-pagar`)
+- Modal com o mesmo editor, percentuais sobre o valor da conta a pagar. Uma conta a pagar não tem "centro de custo obrigatório": o rateio aqui aceita fechar 100% em qualquer combinação, sem exigir nenhum centro específico (diferente do pedido, que sempre inclui o dele).
+- Rateio nasce sozinho quando a nota casa com a ordem (herdado do rateio do pedido de origem) ou quando o Admin Financeiro libera com exceção — o modal só existe para reclassificar depois. Ao liberar pagamento sem nota fiscal (12.5), o mesmo editor aparece embutido, atrás de um toggle "ratear entre centros de custo" (opcional).
+- **API**: `GET`/`PUT /payables/{id}/allocations`.
+
+### 6-A.3 Aba — Documentos de apoio (dentro de `/orcamentos/{id}`)
+Cobre `GET /budgets/{id}/documents`, `POST /budgets/{id}/documents`, `GET /budgets/{id}/documents/{documentId}/download`.
+- Lista de documentos (nome, tamanho, data, quem enviou), cada um abre em nova aba via URL assinada (`GET .../download`).
+- `<FileDropzone accept={['.pdf', '.png', '.jpg', '.jpeg', '.webp']}>` (só `FINANCE_ADMIN`) → `POST .../documents` (multipart, com descrição opcional).
+- **Documentos são imutáveis**: não há edição nem remoção. Cada um grava hash sha256 no upload (não exibido na UI, é conferência de integridade do backend).
 
 ---
 
@@ -739,6 +800,7 @@ Cobre `POST /feedbacks` e `GET /feedbacks/mine`.
 | Orçamento | leitura (do próprio CC) | leitura | ✅ |
 | Matriz de alçadas | — | leitura | ✅ |
 | Fornecedores / Categorias | leitura | leitura | ✅ |
+| Plano de contas | — | leitura | ✅ |
 | Equipe | leitura | leitura | ✅ |
 | Auditoria | — | — | ✅ |
 | Dashboard/Analytics | — | — | ✅ |
@@ -770,7 +832,8 @@ Todas as ~130 rotas do backend mapeadas para pelo menos uma tela/modal/ação ac
 | invites, members | 4 |
 | cost-centers | 5 |
 | approval-rules, categories, suppliers | 6 |
-| budgets | 7 |
+| chart-accounts, rateio de pedido/conta a pagar | 6-A |
+| budgets, documentos de orçamento | 7, 6-A.3 |
 | purchase-requests | 8 |
 | purchase-orders | 9 |
 | receipts | 10 |

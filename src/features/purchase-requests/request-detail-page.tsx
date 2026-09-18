@@ -1,4 +1,5 @@
 import {
+  ArrowsClockwise,
   CopySimple,
   Gavel,
   PencilSimple,
@@ -34,14 +35,17 @@ import {
   useRequestItems,
   useRequestTimeline,
 } from "@/hooks/purchase-requests/use-purchase-requests"
+import { useRecurringContractByRequest } from "@/hooks/recurring-contracts/use-recurring-contracts"
 import { REQUEST_STATUS } from "@/lib/status-labels"
 import { RequestStatus, URGENCY_LABELS } from "@/types/enums"
 
 import { CancelDialog } from "./components/cancel-dialog"
+import { CreateRecurringContractDialog } from "./components/create-recurring-contract-dialog"
 import { DecideDialog } from "./components/decide-dialog"
 import { FilesPanel } from "./components/files-panel"
 import { ReassignDialog } from "./components/reassign-dialog"
 import { RequestTimelineView } from "./components/request-timeline"
+import { AllocationPanel } from "./components/allocation-panel"
 
 const CANCELABLE: RequestStatus[] = [
   RequestStatus.PENDING,
@@ -60,6 +64,7 @@ export function RequestDetailPage() {
   const [canceling, setCanceling] = useState(false)
   const [reassigning, setReassigning] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [creatingContract, setCreatingContract] = useState(false)
 
   const requestQuery = usePurchaseRequest(id)
   const { data: items = [] } = useRequestItems(id)
@@ -69,6 +74,7 @@ export function RequestDetailPage() {
   const { data: categories = [] } = useCategories()
 
   const duplicate = useDuplicateRequest()
+  const contractQuery = useRecurringContractByRequest(id)
   const remove = useDeleteDraft()
 
   if (requestQuery.isPending) {
@@ -135,6 +141,30 @@ export function RequestDetailPage() {
           <ShoppingCart size={15} aria-hidden />
           Emitir ordem de compra
         </Button>
+      ) : null}
+
+      {request.status === RequestStatus.APPROVED && isFinanceAdmin ? (
+        contractQuery.data ? (
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={() => navigate(`/assinaturas-recorrentes/${contractQuery.data.id}`)}
+            className="gap-1.5 font-medium"
+          >
+            <ArrowsClockwise size={15} aria-hidden />
+            Ver assinatura recorrente
+          </Button>
+        ) : (
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={() => setCreatingContract(true)}
+            className="gap-1.5 font-medium"
+          >
+            <ArrowsClockwise size={15} aria-hidden />
+            Transformar em assinatura recorrente
+          </Button>
+        )
       ) : null}
 
       {request.status === RequestStatus.PENDING && isFinanceAdmin ? (
@@ -265,6 +295,14 @@ export function RequestDetailPage() {
 
           <ItemsSummary items={items} totalCents={request.totalAmountCents} />
 
+          <AllocationPanel
+            requestId={request.id}
+            requestStatus={request.status}
+            primaryCostCenterId={request.costCenterId}
+            totalCents={request.totalAmountCents}
+            editable={(isDraft && isOwner) || isFinanceAdmin}
+          />
+
           <FilesPanel requestId={request.id} files={files} readOnly />
         </div>
 
@@ -303,6 +341,12 @@ export function RequestDetailPage() {
         currentApproverId={currentStep?.expectedApproverId}
         open={reassigning}
         onOpenChange={setReassigning}
+      />
+
+      <CreateRecurringContractDialog
+        request={request}
+        open={creatingContract}
+        onOpenChange={setCreatingContract}
       />
 
       <ConfirmDialog

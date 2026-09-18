@@ -2,10 +2,10 @@ import { Navigate } from "react-router-dom"
 
 import { LandingPage } from "@/features/marketing/landing-page"
 import { useSession } from "@/hooks/auth/use-session"
-import { APP_HOME } from "@/routes/destinations"
+import { appHomeFor } from "@/routes/destinations"
 
 export function RootRoute() {
-  const { isAuthenticated, isLoading } = useSession()
+  const { isAuthenticated, isLoading, membership } = useSession()
 
   if (isLoading) {
     return (
@@ -19,5 +19,9 @@ export function RootRoute() {
     )
   }
 
-  return isAuthenticated ? <Navigate to={APP_HOME} replace /> : <LandingPage />
+  return isAuthenticated ? (
+    <Navigate to={appHomeFor(membership?.role)} replace />
+  ) : (
+    <LandingPage />
+  )
 }

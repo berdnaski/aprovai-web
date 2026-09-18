@@ -8,11 +8,12 @@ import { cn } from "@/lib/utils"
 import { StatusPill } from "@/components/ui/data-table"
 import { CompanyMemberRole, ROLE_LABELS } from "@/types/enums"
 
-const ROLE_TONE = {
+const ROLE_TONE: Record<CompanyMemberRole, "neutral" | "brand"> = {
   REQUESTER: "neutral",
   APPROVER: "neutral",
   FINANCE_ADMIN: "brand",
-} as const
+  ACCOUNTANT: "neutral",
+}
 
 function limitLabel(member: Member): { value: string; note: string } {
   if (member.role === CompanyMemberRole.FINANCE_ADMIN) {

@@ -1,4 +1,4 @@
-import { FileText, LockOpen, Plus, Wallet } from "@phosphor-icons/react"
+import { FileText, LockOpen, Plus, Table, Wallet } from "@phosphor-icons/react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
@@ -37,6 +37,7 @@ import {
   type PayableReleaseReason,
 } from "@/types/enums"
 
+import { PayableAllocationDialog } from "./components/allocation-dialog"
 import { ReleaseDialog } from "./components/release-dialog"
 
 const PER_PAGE = 25
@@ -78,6 +79,7 @@ export function PayablesPage() {
   const [releasingWithoutInvoice, setReleasingWithoutInvoice] = useState(false)
   const [releasing, setReleasing] = useState<Payable | null>(null)
   const [paying, setPaying] = useState<Payable | null>(null)
+  const [allocating, setAllocating] = useState<Payable | null>(null)
 
   const payablesQuery = usePayables({
     page,
@@ -300,6 +302,11 @@ export function PayablesPage() {
                     onClick={() => setPaying(payable)}
                   />
                 ) : null}
+                <RowAction
+                  icon={Table}
+                  label="Rateio"
+                  onClick={() => setAllocating(payable)}
+                />
               </div>
             )}
             empty={
@@ -317,6 +324,16 @@ export function PayablesPage() {
       <ReleaseDialog
         open={releasingWithoutInvoice}
         onOpenChange={setReleasingWithoutInvoice}
+      />
+
+      <PayableAllocationDialog
+        payable={allocating}
+        open={allocating !== null}
+        onOpenChange={(next) => {
+          if (!next) {
+            setAllocating(null)
+          }
+        }}
       />
 
       <ConfirmDialog

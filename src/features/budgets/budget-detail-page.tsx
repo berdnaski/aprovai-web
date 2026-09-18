@@ -28,6 +28,9 @@ import { useCostCenter } from "@/hooks/cost-centers/use-cost-centers"
 import { MembersError } from "@/features/members/components/members-error"
 import { formatPeriodLabel } from "@/features/cost-centers/period"
 import { BudgetEntryType } from "@/types/enums"
+import { usePermissions } from "@/hooks/auth/use-permissions"
+
+import { BudgetDocumentsCard } from "./components/budget-documents-card"
 
 const PER_PAGE = 25
 
@@ -42,6 +45,7 @@ export function BudgetDetailPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
 
+  const { canManage } = usePermissions()
   const budgetQuery = useBudget(id)
   const entriesQuery = useBudgetEntries(id)
   const exportCsv = useExportBudgetEntries()
@@ -201,6 +205,11 @@ export function BudgetDetailPage() {
           hint={available < 0n ? "o período estourou o teto" : undefined}
         />
       </StatRow>
+
+      <BudgetDocumentsCard
+        budgetId={budget.id}
+        canEdit={canManage("cost-centers")}
+      />
 
       <DataTableShell
         title="Extrato"

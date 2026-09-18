@@ -25,7 +25,17 @@ import {
 } from "@/hooks/suppliers/use-suppliers"
 import { formatCnpj } from "@/lib/cnpj"
 import { SupplierUsage, ValidationStatus } from "@/types/enums"
+import {
+  Tabs,
+  TabsIndicator,
+  TabsList,
+  TabsPanel,
+  TabsTab,
+} from "@/components/ui/tabs"
 
+import { BankAccountsCard } from "./components/bank-accounts-card"
+import { FiscalCard } from "./components/fiscal-card"
+import { SupplierHistoryTab } from "./components/supplier-history-tab"
 import { RegistrationPill, UsagePill, ValidationPill } from "./components/supplier-status"
 
 const DATE = new Intl.DateTimeFormat("pt-BR", {
@@ -88,11 +98,33 @@ export function SupplierDetailPage() {
         </div>
       ) : null}
 
-      <RegistrationCard supplier={supplier} canEdit={canEdit} />
+      <Tabs defaultValue="cadastro">
+        <TabsList>
+          <TabsTab value="cadastro">Cadastro</TabsTab>
+          <TabsTab value="fiscal">Fiscal</TabsTab>
+          <TabsTab value="bancario">Contas bancárias</TabsTab>
+          <TabsTab value="historico">Histórico</TabsTab>
+          <TabsIndicator />
+        </TabsList>
 
-      <ContactCard supplier={supplier} canEdit={canEdit} />
+        <TabsPanel value="cadastro" className="flex flex-col gap-6">
+          <RegistrationCard supplier={supplier} canEdit={canEdit} />
+          <ContactCard supplier={supplier} canEdit={canEdit} />
+          {canEdit ? <BlockCard supplier={supplier} /> : null}
+        </TabsPanel>
 
-      {canEdit ? <BlockCard supplier={supplier} /> : null}
+        <TabsPanel value="fiscal">
+          <FiscalCard supplier={supplier} canEdit={canEdit} />
+        </TabsPanel>
+
+        <TabsPanel value="bancario">
+          <BankAccountsCard supplier={supplier} canEdit={canEdit} />
+        </TabsPanel>
+
+        <TabsPanel value="historico">
+          <SupplierHistoryTab supplierId={supplier.id} />
+        </TabsPanel>
+      </Tabs>
     </div>
   )
 }

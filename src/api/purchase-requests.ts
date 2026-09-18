@@ -216,7 +216,9 @@ export type BudgetVerdict =
   | "REQUIRES_OVERRIDE"
   | "NO_BUDGET"
 
-export interface RequestBudget {
+export interface CostCenterBudget {
+  costCenterId: string
+  costCenterName: string
   verdict: BudgetVerdict
   amountCents: string
   totalCents: string | null
@@ -226,9 +228,58 @@ export interface RequestBudget {
   toleranceCents: string | null
 }
 
+export interface RequestBudget {
+  verdict: BudgetVerdict
+  amountCents: string
+  totalCents: string | null
+  committedCents: string | null
+  availableCents: string | null
+  overrunCents: string | null
+  toleranceCents: string | null
+  lines: CostCenterBudget[]
+}
+
 export async function getRequestBudget(id: string): Promise<RequestBudget> {
   const { data } = await apiClient.get<RequestBudget>(
     `/purchase-requests/${id}/budget`,
+  )
+  return data
+}
+
+export interface AllocationLine {
+  costCenterId: string
+  chartAccountId: string | null
+  shareBps: number
+  amountCents: string
+}
+
+export interface RequestAllocations {
+  custom: boolean
+  lines: AllocationLine[]
+}
+
+export interface AllocationLinePayload {
+  costCenterId: string
+  chartAccountId?: string | null
+  shareBps: number
+}
+
+export async function getRequestAllocations(
+  id: string,
+): Promise<RequestAllocations> {
+  const { data } = await apiClient.get<RequestAllocations>(
+    `/purchase-requests/${id}/allocations`,
+  )
+  return data
+}
+
+export async function replaceRequestAllocations(
+  id: string,
+  lines: AllocationLinePayload[],
+): Promise<RequestAllocations> {
+  const { data } = await apiClient.put<RequestAllocations>(
+    `/purchase-requests/${id}/allocations`,
+    { lines },
   )
   return data
 }

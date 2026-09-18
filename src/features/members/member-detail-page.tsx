@@ -37,6 +37,7 @@ const ROLES: CompanyMemberRole[] = [
   CompanyMemberRole.REQUESTER,
   CompanyMemberRole.APPROVER,
   CompanyMemberRole.FINANCE_ADMIN,
+  CompanyMemberRole.ACCOUNTANT,
 ]
 
 const LIMIT_PRESETS = ["500000", "2000000", "5000000"]

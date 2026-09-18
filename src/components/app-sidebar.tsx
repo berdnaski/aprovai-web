@@ -23,6 +23,8 @@ const GROUPS: { label: string; keys: string[] }[] = [
       "receipts",
       "conferral",
       "payables",
+      "service-invoices",
+      "recurring-contracts",
     ],
   },
   {
@@ -32,6 +34,7 @@ const GROUPS: { label: string; keys: string[] }[] = [
       "approval-rules",
       "suppliers",
       "categories",
+      "chart-accounts",
       "members",
     ],
   },

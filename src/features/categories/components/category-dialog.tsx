@@ -16,6 +16,14 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { useChartAccounts } from "@/hooks/chart-accounts/use-chart-accounts"
+import {
   useCreateCategory,
   useUpdateCategory,
 } from "@/hooks/categories/use-categories"
@@ -35,6 +43,10 @@ export function CategoryDialog({
 }) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
+  const [defaultAccountId, setDefaultAccountId] = useState<string | null>(null)
+
+  const accountsQuery = useChartAccounts()
+  const accounts = (accountsQuery.data ?? []).filter((account) => account.postable)
 
   const create = useCreateCategory()
   const update = useUpdateCategory(category?.id ?? "")
@@ -46,6 +58,7 @@ export function CategoryDialog({
     if (open) {
       setName(category?.name ?? "")
       setDescription(category?.description ?? "")
+      setDefaultAccountId(category?.defaultAccountId ?? null)
     }
   }, [open, category])
 
@@ -63,6 +76,7 @@ export function CategoryDialog({
       {
         name: trimmed,
         description: description.trim() || null,
+        defaultAccountId,
       },
       {
         onSuccess: () => {
@@ -140,6 +154,48 @@ export function CategoryDialog({
                 Ajuda quem abre o pedido a escolher a categoria certa.
               </p>
             </div>
+
+            {accounts.length > 0 ? (
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-caption">
+                  Conta contábil padrão
+                  <span className="ml-1.5 font-normal text-muted-foreground">
+                    opcional
+                  </span>
+                </Label>
+                <Select
+                  value={defaultAccountId}
+                  onValueChange={(next) =>
+                    setDefaultAccountId((next ?? null) as string | null)
+                  }
+                >
+                  <SelectTrigger
+                    className="h-9 w-full bg-card px-3"
+                    aria-label="Conta contábil padrão"
+                  >
+                    <SelectValue>
+                      {(value: string | null) => {
+                        const found = accounts.find((item) => item.id === value)
+                        return found
+                          ? `${found.code} · ${found.name}`
+                          : "Sem conta padrão"
+                      }}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={null}>Sem conta padrão</SelectItem>
+                    {accounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.code} · {account.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-caption text-muted-foreground">
+                  Sugerida automaticamente no rateio de pedidos com esta categoria.
+                </p>
+              </div>
+            ) : null}
           </div>
 
           <DialogFooter>

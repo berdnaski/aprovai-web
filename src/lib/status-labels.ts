@@ -55,6 +55,12 @@ export const INVOICE_STATUS: Record<string, StatusMeta> = {
   REJECTED: meta("Recusada", "danger"),
 }
 
+export const SERVICE_INVOICE_STATUS: Record<string, StatusMeta> = {
+  RECEIVED: meta("Recebida", "progress"),
+  APPROVED: meta("Aprovada", "success"),
+  REJECTED: meta("Recusada", "danger"),
+}
+
 export const MATCH_STATUS: Record<string, StatusMeta> = {
   MATCHED: meta("Sem divergência", "success"),
   DIVERGENT: meta("Com divergência", "warning"),

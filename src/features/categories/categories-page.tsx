@@ -35,6 +35,7 @@ import {
   useSetCategoryActive,
 } from "@/hooks/categories/use-categories"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { useChartAccounts } from "@/hooks/chart-accounts/use-chart-accounts"
 
 import { CategoryDialog } from "./components/category-dialog"
 
@@ -62,7 +63,12 @@ export function CategoriesPage() {
   const canEdit = canManage("categories")
 
   const categoriesQuery = useCategories(true)
+  const accountsQuery = useChartAccounts()
   const setActive = useSetCategoryActive()
+
+  const accountLabel = new Map(
+    (accountsQuery.data ?? []).map((account) => [account.id, `${account.code} · ${account.name}`]),
+  )
 
   const categories = categoriesQuery.data ?? []
   const archivedCount = categories.filter((item) => !item.active).length
@@ -116,6 +122,18 @@ export function CategoriesPage() {
               {category.description}
             </span>
           ) : null}
+        </span>
+      ),
+    },
+    {
+      id: "account",
+      header: "Conta contábil",
+      hideBelow: "lg",
+      cell: (category) => (
+        <span className="truncate text-caption tabular-nums text-muted-foreground">
+          {category.defaultAccountId
+            ? (accountLabel.get(category.defaultAccountId) ?? "—")
+            : "—"}
         </span>
       ),
     },

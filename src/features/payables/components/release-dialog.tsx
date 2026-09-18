@@ -2,6 +2,12 @@ import { useState } from "react"
 import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/api/client"
+import {
+  AllocationEditor,
+  allocationIsValid,
+  toAllocationPayload,
+  type AllocationRow,
+} from "@/components/shared/allocation-editor"
 import { FileDropzone } from "@/components/shared/file-dropzone"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,7 +28,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
+import { useChartAccounts } from "@/hooks/chart-accounts/use-chart-accounts"
+import { useCostCenters } from "@/hooks/onboarding/use-onboarding"
 import { useReleaseWithoutInvoice } from "@/hooks/payables/use-payables"
 import { useSuppliers } from "@/hooks/suppliers/use-suppliers"
 
@@ -40,17 +49,30 @@ export function ReleaseDialog({
   const [dueDate, setDueDate] = useState("")
   const [note, setNote] = useState("")
   const [file, setFile] = useState<File | null>(null)
+  const [allocate, setAllocate] = useState(false)
+  const [rows, setRows] = useState<AllocationRow[]>([])
 
   const suppliersQuery = useSuppliers({ perPage: 100 })
   const suppliers = suppliersQuery.data?.items ?? []
   const release = useReleaseWithoutInvoice()
+  const costCentersQuery = useCostCenters()
+  const accountsQuery = useChartAccounts()
+
+  const costCenters = (costCentersQuery.data ?? [])
+    .filter((item) => !item.disabledAt)
+    .map((item) => ({ id: item.id, label: item.name }))
+  const accounts = (accountsQuery.data ?? [])
+    .filter((item) => item.postable)
+    .map((item) => ({ id: item.id, label: `${item.code} · ${item.name}` }))
+  const hasChart = accounts.length > 0
 
   const ready =
     Boolean(supplierId) &&
     Number(amountCents || "0") > 0 &&
     Boolean(dueDate) &&
     note.trim().length >= MIN_NOTE &&
-    file !== null
+    file !== null &&
+    (!allocate || allocationIsValid(rows))
 
   function close(next: boolean) {
     if (!next) {
@@ -59,6 +81,8 @@ export function ReleaseDialog({
       setDueDate("")
       setNote("")
       setFile(null)
+      setAllocate(false)
+      setRows([])
     }
 
     onOpenChange(next)
@@ -76,6 +100,9 @@ export function ReleaseDialog({
         dueDate: new Date(`${dueDate}T12:00:00`).toISOString(),
         note: note.trim(),
         file,
+        ...(allocate && rows.length > 0
+          ? { allocations: toAllocationPayload(rows) }
+          : {}),
       },
       {
         onSuccess: () => {
@@ -183,6 +210,46 @@ export function ReleaseDialog({
               </p>
             ) : null}
           </div>
+
+          {hasChart ? (
+            <div className="flex flex-col gap-3 rounded-lg border border-border px-3.5 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-caption font-medium text-foreground">
+                    Ratear entre centros de custo
+                  </p>
+                  <p className="text-caption text-muted-foreground">
+                    Opcional. Sem rateio, a conta fica sem centro de custo definido.
+                  </p>
+                </div>
+                <Switch
+                  checked={allocate}
+                  onCheckedChange={(next) => {
+                    setAllocate(next)
+                    if (next && rows.length === 0) {
+                      setRows([
+                        {
+                          costCenterId: costCenters[0]?.id ?? "",
+                          chartAccountId: null,
+                          percent: "100",
+                        },
+                      ])
+                    }
+                  }}
+                />
+              </div>
+
+              {allocate ? (
+                <AllocationEditor
+                  rows={rows}
+                  onChange={setRows}
+                  costCenters={costCenters}
+                  accounts={accounts}
+                  totalCents={amountCents || "0"}
+                />
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="flex flex-col gap-1.5">
             <Label className="text-label text-foreground">Comprovante</Label>

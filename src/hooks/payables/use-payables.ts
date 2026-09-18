@@ -1,10 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import {
+  getPayableAllocations,
   listPayables,
   payPayable,
   releasePayable,
   releaseWithoutInvoice,
+  replacePayableAllocations,
+  type AllocationLinePayload,
   type ListPayablesQuery,
   type ReleaseWithoutInvoicePayload,
 } from "@/api/payables"
@@ -12,6 +15,15 @@ import {
 export const payableKeys = {
   all: ["payables"] as const,
   list: (query: ListPayablesQuery) => ["payables", "list", query] as const,
+  allocations: (id: string) => ["payables", id, "allocations"] as const,
+}
+
+export function usePayableAllocations(id: string | undefined) {
+  return useQuery({
+    queryKey: payableKeys.allocations(id ?? ""),
+    queryFn: () => getPayableAllocations(id as string),
+    enabled: Boolean(id),
+  })
 }
 
 export function usePayables(query: ListPayablesQuery = {}) {
@@ -53,5 +65,17 @@ export function useReleaseWithoutInvoice() {
     mutationFn: (payload: ReleaseWithoutInvoicePayload) =>
       releaseWithoutInvoice(payload),
     onSuccess: invalidate,
+  })
+}
+
+export function useReplacePayableAllocations(id: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (lines: AllocationLinePayload[]) =>
+      replacePayableAllocations(id, lines),
+    onSuccess: (data) => {
+      queryClient.setQueryData(payableKeys.allocations(id), data)
+    },
   })
 }

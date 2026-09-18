@@ -5,12 +5,14 @@ export interface Category {
   name: string
   description: string | null
   active: boolean
+  defaultAccountId: string | null
   createdAt: string
 }
 
 export interface CategoryPayload {
   name: string
   description?: string | null
+  defaultAccountId?: string | null
 }
 
 export async function listCategories(

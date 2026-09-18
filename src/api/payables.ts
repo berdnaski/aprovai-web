@@ -17,6 +17,7 @@ export interface Payable {
 
 export interface ListPayablesQuery {
   status?: PayableStatus[]
+  supplierId?: string
   page?: number
   perPage?: number
 }
@@ -46,12 +47,25 @@ export async function releasePayable(
   return data
 }
 
+export interface AllocationLine {
+  costCenterId: string
+  chartAccountId: string | null
+  amountCents: string
+}
+
+export interface AllocationLinePayload {
+  costCenterId: string
+  chartAccountId?: string | null
+  shareBps: number
+}
+
 export interface ReleaseWithoutInvoicePayload {
   supplierId: string
   amountCents: string
   dueDate: string
   note: string
   file: File
+  allocations?: AllocationLinePayload[]
 }
 
 export async function releaseWithoutInvoice(
@@ -64,10 +78,38 @@ export async function releaseWithoutInvoice(
   form.append("note", payload.note)
   form.append("proof", payload.file)
 
+  payload.allocations?.forEach((line, index) => {
+    form.append(`allocations[${index}][costCenterId]`, line.costCenterId)
+    if (line.chartAccountId) {
+      form.append(`allocations[${index}][chartAccountId]`, line.chartAccountId)
+    }
+    form.append(`allocations[${index}][shareBps]`, String(line.shareBps))
+  })
+
   const { data } = await apiClient.post<Payable>(
     "/payables/release-without-invoice",
     form,
     { headers: { "Content-Type": "multipart/form-data" } },
+  )
+  return data
+}
+
+export async function getPayableAllocations(
+  id: string,
+): Promise<AllocationLine[]> {
+  const { data } = await apiClient.get<AllocationLine[]>(
+    `/payables/${id}/allocations`,
+  )
+  return data
+}
+
+export async function replacePayableAllocations(
+  id: string,
+  lines: AllocationLinePayload[],
+): Promise<AllocationLine[]> {
+  const { data } = await apiClient.put<AllocationLine[]>(
+    `/payables/${id}/allocations`,
+    { lines },
   )
   return data
 }

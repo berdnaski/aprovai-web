@@ -33,6 +33,7 @@ import {
   usePurchaseOrders,
 } from "@/hooks/purchase-orders/use-purchase-orders"
 import { useSuppliers } from "@/hooks/suppliers/use-suppliers"
+import { LinkRecurringContractPanel } from "./components/link-recurring-contract-panel"
 import { formatCnpj, onlyDigits } from "@/lib/cnpj"
 import { formatCents } from "@/lib/money"
 import { INVOICE_STATUS } from "@/lib/status-labels"
@@ -407,6 +408,11 @@ export function InvoiceDetailPage() {
             </Button>
           </footer>
         </section>
+      ) : null}
+
+      {invoice.purchaseOrderId === null &&
+      invoice.status === InvoiceStatus.RECEIVED ? (
+        <LinkRecurringContractPanel invoice={invoice} suppliers={suppliers} />
       ) : null}
 
       {invoice.rejectReason ? (

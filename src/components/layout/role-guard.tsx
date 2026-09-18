@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { APP_HOME } from "@/routes/destinations"
+import { appHomeFor } from "@/routes/destinations"
 import { Navigate, Outlet } from "react-router-dom"
 import { toast } from "sonner"
 
@@ -13,7 +13,7 @@ export function RoleGuard({
   area: NavAreaKey
   requireManage?: boolean
 }) {
-  const { areaAccess, isLoading } = usePermissions()
+  const { areaAccess, isLoading, role } = usePermissions()
   const access = areaAccess(area)
 
   const denied =
@@ -30,7 +30,7 @@ export function RoleGuard({
   }
 
   if (denied) {
-    return <Navigate to={APP_HOME} replace />
+    return <Navigate to={appHomeFor(role)} replace />
   }
 
   return <Outlet />

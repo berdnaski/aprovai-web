@@ -5,6 +5,7 @@ import { RoleGuard } from "@/components/layout/role-guard"
 import { ApprovalRulesPage } from "@/features/approval-rules/approval-rules-page"
 import { BudgetDetailPage } from "@/features/budgets/budget-detail-page"
 import { CategoriesPage } from "@/features/categories/categories-page"
+import { ChartAccountsPage } from "@/features/chart-accounts/chart-accounts-page"
 import { CompanyPage } from "@/features/company/company-page"
 import { CostCenterDetailPage } from "@/features/cost-centers/cost-center-detail-page"
 import { CostCentersPage } from "@/features/cost-centers/cost-centers-page"
@@ -18,6 +19,10 @@ import { InvoicesPage } from "@/features/conferral/invoices-page"
 import { MatchDetailPage } from "@/features/conferral/match-detail-page"
 import { MatchesPage } from "@/features/conferral/matches-page"
 import { PayablesPage } from "@/features/payables/payables-page"
+import { ServiceInvoiceDetailPage } from "@/features/service-invoices/service-invoice-detail-page"
+import { ServiceInvoicesPage } from "@/features/service-invoices/service-invoices-page"
+import { RecurringContractsPage } from "@/features/recurring-contracts/recurring-contracts-page"
+import { RecurringContractDetailPage } from "@/features/recurring-contracts/recurring-contract-detail-page"
 import { IssueOrderPage } from "@/features/purchase-orders/issue-order-page"
 import { OrderDetailPage } from "@/features/purchase-orders/order-detail-page"
 import { OrdersPage } from "@/features/purchase-orders/orders-page"
@@ -91,6 +96,19 @@ export function appRoutes() {
         <Route path="/contas-a-pagar" element={<PayablesPage />} />
       </Route>
 
+      <Route element={<RoleGuard area="service-invoices" />}>
+        <Route path="/notas-de-servico" element={<ServiceInvoicesPage />} />
+        <Route
+          path="/notas-de-servico/:id"
+          element={<ServiceInvoiceDetailPage />}
+        />
+      </Route>
+
+      <Route element={<RoleGuard area="recurring-contracts" />}>
+        <Route path="/assinaturas-recorrentes" element={<RecurringContractsPage />} />
+        <Route path="/assinaturas-recorrentes/:id" element={<RecurringContractDetailPage />} />
+      </Route>
+
       <Route element={<RoleGuard area="cost-centers" />}>
         <Route path="/centros-de-custo" element={<CostCentersPage />} />
         <Route path="/centros-de-custo/:id" element={<CostCenterDetailPage />} />
@@ -108,6 +126,10 @@ export function appRoutes() {
 
       <Route element={<RoleGuard area="categories" />}>
         <Route path="/categorias" element={<CategoriesPage />} />
+      </Route>
+
+      <Route element={<RoleGuard area="chart-accounts" />}>
+        <Route path="/plano-de-contas" element={<ChartAccountsPage />} />
       </Route>
 
       <Route element={<RoleGuard area="company" requireManage />}>

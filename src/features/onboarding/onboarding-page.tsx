@@ -1,11 +1,12 @@
 import { useState } from "react"
-import { APP_HOME } from "@/routes/destinations"
+import { appHomeFor } from "@/routes/destinations"
 import { Navigate, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/api/client"
 import { SetupShell } from "@/components/layout/setup-shell"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useSession } from "@/hooks/auth/use-session"
 import {
   useCompleteOnboarding,
   useOnboardingStatus,
@@ -23,12 +24,13 @@ type StepKey = (typeof STEPS)[number]
 
 export function OnboardingPage() {
   const navigate = useNavigate()
+  const { membership } = useSession()
   const statusQuery = useOnboardingStatus()
   const completeMutation = useCompleteOnboarding()
   const [stepIndex, setStepIndex] = useState(0)
 
   if (statusQuery.data?.step === OnboardingStep.DONE) {
-    return <Navigate to={APP_HOME} replace />
+    return <Navigate to={appHomeFor(membership?.role)} replace />
   }
 
   const currentStep: StepKey = STEPS[stepIndex]

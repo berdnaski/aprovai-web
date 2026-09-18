@@ -80,58 +80,21 @@ function share(part: bigint, total: bigint): number {
   return Math.min(Number((part * 10000n) / total) / 100, 100)
 }
 
-function BudgetSummary({
-  budget,
-  costCenterName,
-  loading,
-  failed,
-  onRetry,
-}: {
-  budget: RequestBudget | undefined
-  costCenterName: string | undefined
-  loading: boolean
-  failed: boolean
-  onRetry: () => void
-}) {
-  const scope = costCenterName ?? "este centro de custo"
-
-  if (loading) {
-    return <Skeleton className="h-[74px] w-full rounded-lg" />
-  }
-
-  if (failed || !budget) {
-    return (
-      <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3.5 py-2.5">
-        <span className="text-caption text-muted-foreground">
-          Não foi possível carregar o orçamento de {scope}.
-        </span>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onRetry}
-          className="shrink-0 font-medium"
-        >
-          Tentar de novo
-        </Button>
-      </div>
-    )
-  }
-
-  if (budget.verdict === "NO_BUDGET" || budget.totalCents === null) {
+function BudgetLine({ label, line }: { label: string; line: RequestBudget["lines"][number] }) {
+  if (line.verdict === "NO_BUDGET" || line.totalCents === null) {
     return (
       <p className="text-caption text-muted-foreground">
-        {scope} não tem orçamento cadastrado para este mês.
+        {label} não tem orçamento cadastrado para este mês.
       </p>
     )
   }
 
-  const total = BigInt(budget.totalCents)
-  const committed = BigInt(budget.committedCents ?? "0")
-  const amount = BigInt(budget.amountCents)
-  const available = BigInt(budget.availableCents ?? "0")
-  const overBudget = budget.verdict === "REQUIRES_OVERRIDE"
-  const withinTolerance = budget.verdict === "WITHIN_TOLERANCE"
+  const total = BigInt(line.totalCents)
+  const committed = BigInt(line.committedCents ?? "0")
+  const amount = BigInt(line.amountCents)
+  const available = BigInt(line.availableCents ?? "0")
+  const overBudget = line.verdict === "REQUIRES_OVERRIDE"
+  const withinTolerance = line.verdict === "WITHIN_TOLERANCE"
 
   const committedShare = share(committed, total)
   const requestShare = Math.min(share(amount, total), 100 - committedShare)
@@ -140,7 +103,7 @@ function BudgetSummary({
     <div className="flex flex-col gap-2.5">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-caption text-muted-foreground">
-          Orçamento de {scope} no mês
+          Orçamento de {label} no mês
         </span>
         <span className="text-caption tabular-nums text-foreground">
           {formatCents(available > 0n ? available : 0n)} livres
@@ -179,7 +142,7 @@ function BudgetSummary({
             className="mt-px shrink-0"
           />
           <span>
-            Este pedido passa {formatCents(budget.overrunCents ?? "0")} do que
+            Este pedido passa {formatCents(line.overrunCents ?? "0")} do que
             sobra. Só dá para aprovar com ressalva.
           </span>
         </p>
@@ -187,10 +150,63 @@ function BudgetSummary({
 
       {withinTolerance ? (
         <p className="mt-1 text-caption text-muted-foreground">
-          Passa {formatCents(budget.overrunCents ?? "0")} do que sobra, dentro
+          Passa {formatCents(line.overrunCents ?? "0")} do que sobra, dentro
           da tolerância da empresa.
         </p>
       ) : null}
+    </div>
+  )
+}
+
+function BudgetSummary({
+  budget,
+  costCenterName,
+  loading,
+  failed,
+  onRetry,
+}: {
+  budget: RequestBudget | undefined
+  costCenterName: string | undefined
+  loading: boolean
+  failed: boolean
+  onRetry: () => void
+}) {
+  const scope = costCenterName ?? "este centro de custo"
+
+  if (loading) {
+    return <Skeleton className="h-[74px] w-full rounded-lg" />
+  }
+
+  if (failed || !budget) {
+    return (
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3.5 py-2.5">
+        <span className="text-caption text-muted-foreground">
+          Não foi possível carregar o orçamento de {scope}.
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onRetry}
+          className="shrink-0 font-medium"
+        >
+          Tentar de novo
+        </Button>
+      </div>
+    )
+  }
+
+  if (budget.lines.length <= 1) {
+    return <BudgetLine label={scope} line={budget.lines[0] ?? budget} />
+  }
+
+  return (
+    <div className="flex flex-col gap-4 divide-y divide-border/60">
+      {budget.lines.map((line) => (
+        <div key={line.costCenterId} className="pt-4 first:pt-0">
+          <BudgetLine label={line.costCenterName} line={line} />
+        </div>
+      ))}
     </div>
   )
 }

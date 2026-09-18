@@ -5,7 +5,7 @@ import {
   Envelope,
   Stack,
 } from "@phosphor-icons/react"
-import { APP_HOME } from "@/routes/destinations"
+import { appHomeFor } from "@/routes/destinations"
 import { useEffect } from "react"
 import { Link, NavLink, Navigate, Outlet } from "react-router-dom"
 import { toast } from "sonner"
@@ -47,7 +47,7 @@ export function PlatformLayout() {
   }
 
   if (denied || !user) {
-    return <Navigate to={APP_HOME} replace />
+    return <Navigate to={appHomeFor(membership?.role)} replace />
   }
 
   return (
@@ -56,7 +56,7 @@ export function PlatformLayout() {
         {membership ? (
           <>
             <Link
-              to={APP_HOME}
+              to={appHomeFor(membership?.role)}
               className="flex shrink-0 items-center gap-1.5 rounded-md text-caption text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <ArrowLeft size={13} aria-hidden />

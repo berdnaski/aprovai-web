@@ -1,13 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import {
+  approveBankAccount,
+  archiveBankAccount,
   createSupplier,
   getSupplier,
+  listBankAccounts,
   listSuppliers,
   lookupCnpj,
+  rejectBankAccount,
+  requestBankAccount,
   revalidateSupplier,
   setSupplierBlocked,
   updateSupplier,
+  type RequestBankAccountPayload,
   type SupplierFilters,
   type UpdateSupplierPayload,
 } from "@/api/suppliers"
@@ -16,6 +22,7 @@ export const supplierKeys = {
   all: ["suppliers"] as const,
   list: (filters: SupplierFilters) => ["suppliers", "list", filters] as const,
   detail: (id: string) => ["suppliers", id] as const,
+  bankAccounts: (id: string) => ["suppliers", id, "bank-accounts"] as const,
 }
 
 function useInvalidateSuppliers() {
@@ -79,6 +86,64 @@ export function useRevalidateSupplier() {
 
   return useMutation({
     mutationFn: revalidateSupplier,
+    onSuccess: invalidate,
+  })
+}
+
+
+export function useBankAccounts(supplierId: string | undefined) {
+  return useQuery({
+    queryKey: supplierKeys.bankAccounts(supplierId ?? ""),
+    queryFn: () => listBankAccounts(supplierId as string),
+    enabled: Boolean(supplierId),
+  })
+}
+
+function useInvalidateBankAccounts(supplierId: string) {
+  const queryClient = useQueryClient()
+
+  return () => {
+    void queryClient.invalidateQueries({
+      queryKey: supplierKeys.bankAccounts(supplierId),
+    })
+  }
+}
+
+export function useRequestBankAccount(supplierId: string) {
+  const invalidate = useInvalidateBankAccounts(supplierId)
+
+  return useMutation({
+    mutationFn: (payload: RequestBankAccountPayload) =>
+      requestBankAccount(supplierId, payload),
+    onSuccess: invalidate,
+  })
+}
+
+export function useApproveBankAccount(supplierId: string) {
+  const invalidate = useInvalidateBankAccounts(supplierId)
+
+  return useMutation({
+    mutationFn: ({ id, note }: { id: string; note?: string }) =>
+      approveBankAccount(supplierId, id, note),
+    onSuccess: invalidate,
+  })
+}
+
+export function useRejectBankAccount(supplierId: string) {
+  const invalidate = useInvalidateBankAccounts(supplierId)
+
+  return useMutation({
+    mutationFn: ({ id, note }: { id: string; note: string }) =>
+      rejectBankAccount(supplierId, id, note),
+    onSuccess: invalidate,
+  })
+}
+
+export function useArchiveBankAccount(supplierId: string) {
+  const invalidate = useInvalidateBankAccounts(supplierId)
+
+  return useMutation({
+    mutationFn: (id: string) => archiveBankAccount(supplierId, id),
     onSuccess: invalidate,
   })
 }

@@ -107,6 +107,55 @@ export async function listBudgetEntries(
   return data
 }
 
+export interface BudgetDocument {
+  id: string
+  fileName: string
+  mimeType: string
+  sizeBytes: string
+  sha256: string
+  description: string | null
+  uploadedById: string
+  uploadedAt: string
+}
+
+export async function listBudgetDocuments(
+  budgetId: string,
+): Promise<BudgetDocument[]> {
+  const { data } = await apiClient.get<BudgetDocument[]>(
+    `/budgets/${budgetId}/documents`,
+  )
+  return data
+}
+
+export async function uploadBudgetDocument(
+  budgetId: string,
+  file: File,
+  description?: string,
+): Promise<BudgetDocument> {
+  const form = new FormData()
+  form.append("file", file)
+  if (description) {
+    form.append("description", description)
+  }
+
+  const { data } = await apiClient.post<BudgetDocument>(
+    `/budgets/${budgetId}/documents`,
+    form,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  )
+  return data
+}
+
+export async function getBudgetDocumentDownloadUrl(
+  budgetId: string,
+  documentId: string,
+): Promise<string> {
+  const { data } = await apiClient.get<{ url: string }>(
+    `/budgets/${budgetId}/documents/${documentId}/download`,
+  )
+  return data.url
+}
+
 export async function downloadBudgetEntriesCsv(id: string): Promise<void> {
   const { data, headers } = await apiClient.get<Blob>(
     `/budgets/${id}/entries/export`,

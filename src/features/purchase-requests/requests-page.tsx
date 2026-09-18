@@ -1,6 +1,6 @@
 import { FileText, MagnifyingGlass, Plus } from "@phosphor-icons/react"
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 
 import type { PurchaseRequest } from "@/api/purchase-requests"
 import { EmptyState } from "@/components/shared/empty-state"
@@ -31,7 +31,7 @@ import { usePurchaseRequests } from "@/hooks/purchase-requests/use-purchase-requ
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { initialsOf, displayName } from "@/lib/people"
 import { REQUEST_STATUS } from "@/lib/status-labels"
-import { RequestView } from "@/types/enums"
+import { RequestStatus, RequestView } from "@/types/enums"
 
 import { RequestFilters, type Filters } from "./components/request-filters"
 import { UrgencyMark } from "./components/urgency-mark"
@@ -40,12 +40,18 @@ const PER_PAGE = 25
 
 export function RequestsPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { isFinanceAdmin, isApprover } = usePermissions()
 
-  const [view, setView] = useState<RequestView>(RequestView.MINE)
+  const statusParam = searchParams.get("status") as RequestStatus | null
+  const initialView = statusParam ? RequestView.ALL : RequestView.MINE
+
+  const [view, setView] = useState<RequestView>(initialView)
   const [query, setQuery] = useState("")
   const [page, setPage] = useState(1)
-  const [filters, setFilters] = useState<Filters>({})
+  const [filters, setFilters] = useState<Filters>(
+    statusParam ? { status: [statusParam] } : {},
+  )
 
   const search = useDebouncedValue(query).trim()
   const decides = isApprover || isFinanceAdmin

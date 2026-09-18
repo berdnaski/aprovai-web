@@ -11,17 +11,20 @@ import {
   duplicateRequest,
   getExtraction,
   getPurchaseRequest,
+  getRequestAllocations,
   getRequestBudget,
   getTimeline,
   listFiles,
   listItems,
   listPurchaseRequests,
   reassignStep,
+  replaceRequestAllocations,
   requestExtraction,
   submitRequest,
   updateDraft,
   updateItem,
   uploadFile,
+  type AllocationLinePayload,
   type CreateDraftPayload,
   type DecidePayload,
   type ExtractionPayload,
@@ -38,6 +41,8 @@ export const requestKeys = {
   files: (id: string) => ["purchase-requests", id, "files"] as const,
   timeline: (id: string) => ["purchase-requests", id, "timeline"] as const,
   budget: (id: string) => ["purchase-requests", id, "budget"] as const,
+  allocations: (id: string) =>
+    ["purchase-requests", id, "allocations"] as const,
   extraction: (id: string) => ["purchase-requests", id, "extract"] as const,
 }
 
@@ -86,6 +91,28 @@ export function useRequestBudget(id: string | undefined, enabled = true) {
     queryKey: requestKeys.budget(id ?? ""),
     queryFn: () => getRequestBudget(id as string),
     enabled: Boolean(id) && enabled,
+  })
+}
+
+export function useRequestAllocations(id: string | undefined) {
+  return useQuery({
+    queryKey: requestKeys.allocations(id ?? ""),
+    queryFn: () => getRequestAllocations(id as string),
+    enabled: Boolean(id),
+  })
+}
+
+export function useReplaceRequestAllocations(id: string) {
+  const invalidate = useInvalidateRequest(id)
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (lines: AllocationLinePayload[]) =>
+      replaceRequestAllocations(id, lines),
+    onSuccess: () => {
+      invalidate()
+      void queryClient.invalidateQueries({ queryKey: requestKeys.budget(id) })
+    },
   })
 }
 

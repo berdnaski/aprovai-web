@@ -2,11 +2,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import {
   getBudget,
+  getBudgetDocumentDownloadUrl,
   createBudget,
   downloadBudgetEntriesCsv,
+  listBudgetDocuments,
   listBudgetEntries,
   listCostCenterBudgets,
   updateBudget,
+  uploadBudgetDocument,
   type BudgetEntriesFilters,
   type CreateBudgetPayload,
   type UpdateBudgetPayload,
@@ -19,6 +22,36 @@ export const budgetKeys = {
   detail: (budgetId: string) => ["budgets", budgetId] as const,
   entries: (budgetId: string, filters?: BudgetEntriesFilters) =>
     ["budgets", budgetId, "entries", filters ?? {}] as const,
+  documents: (budgetId: string) => ["budgets", budgetId, "documents"] as const,
+}
+
+export function useBudgetDocuments(budgetId: string | undefined) {
+  return useQuery({
+    queryKey: budgetKeys.documents(budgetId ?? ""),
+    queryFn: () => listBudgetDocuments(budgetId as string),
+    enabled: Boolean(budgetId),
+  })
+}
+
+export function useUploadBudgetDocument(budgetId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ file, description }: { file: File; description?: string }) =>
+      uploadBudgetDocument(budgetId, file, description),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: budgetKeys.documents(budgetId),
+      })
+    },
+  })
+}
+
+export function useBudgetDocumentDownloadUrl(budgetId: string) {
+  return useMutation({
+    mutationFn: (documentId: string) =>
+      getBudgetDocumentDownloadUrl(budgetId, documentId),
+  })
 }
 
 export function useCostCenterBudgets(costCenterId: string | undefined) {

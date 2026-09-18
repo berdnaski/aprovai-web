@@ -38,6 +38,7 @@ import { ExtractionPanel } from "./components/extraction-panel"
 import { FilesPanel } from "./components/files-panel"
 import { ItemsTable } from "./components/items-table"
 import { SubmitPanel, type Requirement } from "./components/submit-panel"
+import { AllocationPanel } from "./components/allocation-panel"
 
 const URGENCIES: Urgency[] = [Urgency.LOW, Urgency.MEDIUM, Urgency.HIGH]
 const PLACEHOLDER_TITLE = "Pedido sem título"
@@ -503,6 +504,14 @@ export function RequestFormPage() {
               }
             />
           </SettingGroup>
+
+          <AllocationPanel
+            requestId={request.id}
+            requestStatus={request.status}
+            primaryCostCenterId={request.costCenterId}
+            totalCents={request.totalAmountCents}
+            editable
+          />
 
           <FilesPanel requestId={request.id} files={files} />
         </div>

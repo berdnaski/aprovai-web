@@ -28,6 +28,7 @@ const ROLES: CompanyMemberRole[] = [
   CompanyMemberRole.REQUESTER,
   CompanyMemberRole.APPROVER,
   CompanyMemberRole.FINANCE_ADMIN,
+  CompanyMemberRole.ACCOUNTANT,
 ]
 
 export function InviteMemberDialog({ trigger }: { trigger: React.ReactElement }) {
@@ -60,7 +61,10 @@ export function InviteMemberDialog({ trigger }: { trigger: React.ReactElement })
       {
         email: email.trim(),
         role,
-        defaultCostCenterId: costCenterId || undefined,
+        defaultCostCenterId:
+          role === CompanyMemberRole.ACCOUNTANT
+            ? undefined
+            : costCenterId || undefined,
       },
       {
         onSuccess: () => {
@@ -159,7 +163,7 @@ export function InviteMemberDialog({ trigger }: { trigger: React.ReactElement })
               ) : null}
             </div>
 
-            {centers.length > 0 ? (
+            {centers.length > 0 && role !== CompanyMemberRole.ACCOUNTANT ? (
               <div className="flex flex-col gap-2">
                 <span className="text-label text-foreground">
                   Centro de Custo padrão{" "}
