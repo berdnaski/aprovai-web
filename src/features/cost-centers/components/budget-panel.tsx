@@ -1,6 +1,7 @@
 import {
   ArrowRight,
   MagnifyingGlass,
+  Paperclip,
   PencilSimple,
   Plus,
   Receipt,
@@ -178,19 +179,30 @@ export function BudgetPanel({
             </span>
           </div>
 
-          {canManage ? (
-            <AdjustBudgetDialog
-              budget={selected}
-              committedCents={String(committed)}
-              underReviewCents={String(underReview)}
-              trigger={
-                <Button variant="outline" className="h-8 gap-1.5 font-medium">
-                  <PencilSimple size={14} aria-hidden />
-                  Ajustar teto
-                </Button>
-              }
-            />
-          ) : null}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link to={`/orcamentos/${selected.id}`} />}
+              className="h-8 gap-1.5 font-medium"
+            >
+              <Paperclip size={14} aria-hidden />
+              Documentos
+            </Button>
+            {canManage ? (
+              <AdjustBudgetDialog
+                budget={selected}
+                committedCents={String(committed)}
+                underReviewCents={String(underReview)}
+                trigger={
+                  <Button variant="outline" className="h-8 gap-1.5 font-medium">
+                    <PencilSimple size={14} aria-hidden />
+                    Ajustar teto
+                  </Button>
+                }
+              />
+            ) : null}
+          </div>
         </header>
 
         <div className="px-5 py-5 sm:px-6">
