@@ -113,3 +113,30 @@ export async function replacePayableAllocations(
   )
   return data
 }
+
+export interface ExportPayablesQuery {
+  from?: string
+  to?: string
+  supplierId?: string
+}
+
+export async function exportPayablesCsv(
+  query: ExportPayablesQuery = {},
+): Promise<void> {
+  const { data, headers } = await apiClient.get<Blob>("/payables/export", {
+    params: query,
+    responseType: "blob",
+  })
+
+  const disposition = String(headers["content-disposition"] ?? "")
+  const match = /filename="?([^";]+)"?/.exec(disposition)
+  const url = URL.createObjectURL(data)
+  const anchor = document.createElement("a")
+
+  anchor.href = url
+  anchor.download = match?.[1] ?? "contas-pagas.csv"
+  document.body.append(anchor)
+  anchor.click()
+  anchor.remove()
+  URL.revokeObjectURL(url)
+}

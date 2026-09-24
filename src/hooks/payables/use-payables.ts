@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import {
+  exportPayablesCsv,
   getPayableAllocations,
   listPayables,
   payPayable,
@@ -8,6 +9,7 @@ import {
   releaseWithoutInvoice,
   replacePayableAllocations,
   type AllocationLinePayload,
+  type ExportPayablesQuery,
   type ListPayablesQuery,
   type ReleaseWithoutInvoicePayload,
 } from "@/api/payables"
@@ -77,5 +79,11 @@ export function useReplacePayableAllocations(id: string) {
     onSuccess: (data) => {
       queryClient.setQueryData(payableKeys.allocations(id), data)
     },
+  })
+}
+
+export function useExportPayables() {
+  return useMutation({
+    mutationFn: (query: ExportPayablesQuery) => exportPayablesCsv(query),
   })
 }

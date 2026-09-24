@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import {
   getBudget,
+  getBudgetConsumption,
   getBudgetDocumentDownloadUrl,
   createBudget,
   downloadBudgetEntriesCsv,
@@ -20,9 +21,19 @@ export const budgetKeys = {
   byCostCenter: (costCenterId: string) =>
     ["budgets", "cost-center", costCenterId] as const,
   detail: (budgetId: string) => ["budgets", budgetId] as const,
+  consumption: (budgetId: string) =>
+    ["budgets", budgetId, "consumption"] as const,
   entries: (budgetId: string, filters?: BudgetEntriesFilters) =>
     ["budgets", budgetId, "entries", filters ?? {}] as const,
   documents: (budgetId: string) => ["budgets", budgetId, "documents"] as const,
+}
+
+export function useBudgetConsumption(budgetId: string | undefined) {
+  return useQuery({
+    queryKey: budgetKeys.consumption(budgetId ?? ""),
+    queryFn: () => getBudgetConsumption(budgetId as string),
+    enabled: Boolean(budgetId),
+  })
 }
 
 export function useBudgetDocuments(budgetId: string | undefined) {

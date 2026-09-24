@@ -23,6 +23,18 @@ export interface BudgetConsumption {
   underReviewCents: string
   availableCents: string
   usagePercent: number
+  realizedCents: string
+  varianceCents: string
+  realizedPercent: number
+}
+
+export async function getBudgetConsumption(
+  budgetId: string,
+): Promise<BudgetConsumption> {
+  const { data } = await apiClient.get<BudgetConsumption>(
+    `/budgets/${budgetId}/consumption`,
+  )
+  return data
 }
 
 export interface BudgetEntry {

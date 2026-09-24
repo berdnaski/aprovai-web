@@ -10,6 +10,7 @@ import { CompanyPage } from "@/features/company/company-page"
 import { CostCenterDetailPage } from "@/features/cost-centers/cost-center-detail-page"
 import { CostCentersPage } from "@/features/cost-centers/cost-centers-page"
 import { AnalyticsPage } from "@/features/analytics/analytics-page"
+import { DrePage } from "@/features/dre/dre-page"
 import { BillingPage } from "@/features/billing/billing-page"
 import { ReceiptsPage } from "@/features/receipts/receipts-page"
 import { AuditLogsPage } from "@/features/audit-logs/audit-logs-page"
@@ -86,6 +87,10 @@ export function appRoutes() {
 
       <Route element={<RoleGuard area="analytics" />}>
         <Route path="/analytics" element={<AnalyticsPage />} />
+      </Route>
+
+      <Route element={<RoleGuard area="dre" />}>
+        <Route path="/dre" element={<DrePage />} />
       </Route>
 
       <Route element={<RoleGuard area="audit-logs" />}>

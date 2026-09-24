@@ -21,6 +21,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   useBudget,
+  useBudgetConsumption,
   useBudgetEntries,
   useExportBudgetEntries,
 } from "@/hooks/budgets/use-budgets"
@@ -48,6 +49,7 @@ export function BudgetDetailPage() {
   const { canManage } = usePermissions()
   const budgetQuery = useBudget(id)
   const entriesQuery = useBudgetEntries(id)
+  const consumptionQuery = useBudgetConsumption(id)
   const exportCsv = useExportBudgetEntries()
 
   const budget = budgetQuery.data
@@ -84,6 +86,8 @@ export function BudgetDetailPage() {
 
   const committed = consumed - reversed
   const available = BigInt(budget.totalAmountCents) - committed
+  const realized = BigInt(consumptionQuery.data?.realizedCents ?? 0)
+  const variance = BigInt(budget.totalAmountCents) - realized
 
   const columns: DataTableColumn<BudgetEntry>[] = [
     {
@@ -188,7 +192,7 @@ export function BudgetDetailPage() {
         </Button>
       </div>
 
-      <StatRow className="xl:grid-cols-3">
+      <StatRow className="xl:grid-cols-5">
         <StatTile
           label="Teto do período"
           value={<MoneyDisplay cents={budget.totalAmountCents} />}
@@ -203,6 +207,17 @@ export function BudgetDetailPage() {
           value={<MoneyDisplay cents={available.toString()} />}
           tone={available < 0n ? "warning" : "neutral"}
           hint={available < 0n ? "o período estourou o teto" : undefined}
+        />
+        <StatTile
+          label="Realizado"
+          value={<MoneyDisplay cents={realized.toString()} />}
+          hint="o que já saiu do caixa no período"
+        />
+        <StatTile
+          label="Variação"
+          value={<MoneyDisplay cents={variance.toString()} />}
+          tone={variance < 0n ? "warning" : "neutral"}
+          hint={variance < 0n ? "pagou acima do teto" : "teto menos realizado"}
         />
       </StatRow>
 

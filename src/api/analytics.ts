@@ -91,3 +91,29 @@ export async function exportRequests(
   })
   return data
 }
+
+export interface DreLine {
+  chartAccountId: string
+  code: string
+  name: string
+  kind: "REVENUE" | "COST" | "EXPENSE"
+  amountCents: string
+}
+
+export interface DreReport {
+  from: string
+  to: string
+  revenueCents: string
+  costCents: string
+  expenseCents: string
+  resultCents: string
+  lines: DreLine[]
+}
+
+export async function getDre(params: {
+  from?: string
+  to?: string
+}): Promise<DreReport> {
+  const { data } = await apiClient.get<DreReport>("/analytics/dre", { params })
+  return data
+}

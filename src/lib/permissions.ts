@@ -112,6 +112,12 @@ export const NAV_AREAS = [
     access: access("none", "none", "full"),
   },
   {
+    key: "dre",
+    label: "DRE gerencial",
+    to: "/dre",
+    access: access("none", "none", "full", "read"),
+  },
+  {
     key: "billing",
     label: "Plano e assinatura",
     to: "/plano",

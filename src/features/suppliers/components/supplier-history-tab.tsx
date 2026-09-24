@@ -3,11 +3,12 @@ import { Link } from "react-router-dom"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { MoneyDisplay } from "@/components/shared/money-display"
-import { StatusPill } from "@/components/ui/data-table"
+import { StatusBadge } from "@/components/shared/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { usePayables } from "@/hooks/payables/use-payables"
 import { usePurchaseRequests } from "@/hooks/purchase-requests/use-purchase-requests"
 import { useInvoices } from "@/hooks/invoices/use-invoices"
+import { INVOICE_STATUS, PAYABLE_STATUS } from "@/lib/status-labels"
 import { RequestView } from "@/types/enums"
 
 const DATE = new Intl.DateTimeFormat("pt-BR", {
@@ -114,7 +115,7 @@ export function SupplierHistoryTab({ supplierId }: { supplierId: string }) {
                 {DATE.format(new Date(invoice.issuedAt))}
               </span>
               <span className="flex shrink-0 items-center gap-2">
-                <StatusPill tone="neutral">{invoice.status}</StatusPill>
+                <StatusBadge map={INVOICE_STATUS} value={invoice.status} />
                 <MoneyDisplay
                   cents={invoice.totalAmountCents}
                   className="text-caption font-medium text-foreground"
@@ -140,7 +141,7 @@ export function SupplierHistoryTab({ supplierId }: { supplierId: string }) {
               vence {DATE.format(new Date(payable.dueDate))}
             </span>
             <span className="flex shrink-0 items-center gap-2">
-              <StatusPill tone="neutral">{payable.status}</StatusPill>
+              <StatusBadge map={PAYABLE_STATUS} value={payable.status} />
               <MoneyDisplay
                 cents={payable.amountCents}
                 className="text-caption font-medium text-foreground"

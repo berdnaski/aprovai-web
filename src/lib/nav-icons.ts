@@ -37,6 +37,7 @@ export const NAV_ICONS: Record<NavAreaKey, Icon> = {
   members: UsersThree,
   "audit-logs": Scroll,
   analytics: ChartBar,
+  dre: Scales,
   billing: CreditCard,
   company: Buildings,
 }

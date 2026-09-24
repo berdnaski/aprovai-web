@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
+  useBudgetConsumption,
   useBudgetEntries,
   useCostCenterBudgets,
 } from "@/hooks/budgets/use-budgets"
@@ -84,6 +85,7 @@ export function BudgetPanel({
   })
 
   const allEntriesQuery = useBudgetEntries(selected?.id)
+  const consumptionQuery = useBudgetConsumption(selected?.id)
 
   if (budgetsQuery.isPending) {
     return <BudgetPanelSkeleton />
@@ -104,6 +106,9 @@ export function BudgetPanel({
       <NoBudgetState costCenterId={costCenterId} canManage={canManage} />
     )
   }
+
+  const consumption = consumptionQuery.data
+  const realized = BigInt(consumption?.realizedCents ?? 0)
 
   const allEntries = allEntriesQuery.data ?? []
   const visible = entriesQuery.data ?? []
@@ -260,7 +265,7 @@ export function BudgetPanel({
             />
           </div>
 
-          <dl className="mt-5 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+          <dl className="mt-5 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-5">
             <Figure
               label="Orçado"
               hint="teto do período"
@@ -283,6 +288,11 @@ export function BudgetPanel({
               hint={overBudget ? "acima do teto" : "livre para gastar"}
               value={overBudget ? String(exceeded) : String(available)}
               tone={overBudget ? "destructive" : "success"}
+            />
+            <Figure
+              label="Realizado"
+              hint="já saiu do caixa"
+              value={String(realized)}
             />
           </dl>
         </div>

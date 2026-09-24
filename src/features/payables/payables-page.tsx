@@ -1,4 +1,11 @@
-import { FileText, LockOpen, Plus, Table, Wallet } from "@phosphor-icons/react"
+import {
+  DownloadSimple,
+  FileText,
+  LockOpen,
+  Plus,
+  Table,
+  Wallet,
+} from "@phosphor-icons/react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
@@ -24,6 +31,7 @@ import {
 } from "@/components/ui/data-table"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
+  useExportPayables,
   usePayPayable,
   usePayables,
   useReleasePayable,
@@ -97,6 +105,7 @@ export function PayablesPage() {
 
   const suppliersQuery = useSuppliers({ perPage: 100 })
   const pay = usePayPayable()
+  const exportPayables = useExportPayables()
   const release = useReleasePayable()
 
   const supplierName = new Map(
@@ -213,14 +222,37 @@ export function PayablesPage() {
         title="Contas a pagar"
         description="Tudo que passou pela conferência: libere, pague e acompanhe o que vence."
         action={
-          <Button
-            size="lg"
-            onClick={() => setReleasingWithoutInvoice(true)}
-            className="gap-1.5 bg-primary font-medium text-primary-foreground hover:bg-primary-hover"
-          >
-            <Plus size={15} weight="bold" aria-hidden />
-            Liberar sem nota fiscal
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="lg"
+              variant="outline"
+              disabled={exportPayables.isPending}
+              onClick={() =>
+                exportPayables.mutate(
+                  {},
+                  {
+                    onSuccess: () =>
+                      toast.success(
+                        "Arquivo gerado. Importe no seu ERP: uma linha por rateio, com as retenções separadas.",
+                      ),
+                    onError: (error) => toast.error(getApiErrorMessage(error)),
+                  },
+                )
+              }
+              className="gap-1.5 font-medium"
+            >
+              <DownloadSimple size={15} aria-hidden />
+              {exportPayables.isPending ? "Gerando…" : "Exportar pro ERP"}
+            </Button>
+            <Button
+              size="lg"
+              onClick={() => setReleasingWithoutInvoice(true)}
+              className="gap-1.5 bg-primary font-medium text-primary-foreground hover:bg-primary-hover"
+            >
+              <Plus size={15} weight="bold" aria-hidden />
+              Liberar sem nota fiscal
+            </Button>
+          </div>
         }
       />
 

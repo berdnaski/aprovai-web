@@ -40,7 +40,7 @@ const GROUPS: { label: string; keys: string[] }[] = [
   },
   {
     label: "Administração",
-    keys: ["analytics", "audit-logs", "billing", "company"],
+    keys: ["analytics", "dre", "audit-logs", "billing", "company"],
   },
 ]
 
