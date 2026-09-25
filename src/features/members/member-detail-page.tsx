@@ -15,10 +15,19 @@ import {
   useDisableMember,
   useMemberResponsibilities,
   useMembers,
+  useUpdateMemberDefaultCostCenter,
   useUpdateMemberLimit,
   useUpdateMemberManager,
   useUpdateMemberRole,
 } from "@/hooks/members/use-members"
+import { useCostCenters } from "@/hooks/onboarding/use-onboarding"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { formatCents, toCents } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import {
@@ -87,6 +96,7 @@ export function MemberDetailPage() {
       <SettingGroup title="Poder de decisão">
         <RoleRow member={member} />
         <LimitRow member={member} />
+        <DefaultCostCenterRow member={member} />
         <ManagerRow member={member} members={members} />
       </SettingGroup>
 
@@ -263,6 +273,60 @@ function LimitRow({ member }: { member: Member }) {
           </p>
         ) : null
       }
+    />
+  )
+}
+
+function DefaultCostCenterRow({ member }: { member: Member }) {
+  const { data: costCenters = [] } = useCostCenters()
+  const update = useUpdateMemberDefaultCostCenter(member.id)
+
+  if (member.role !== CompanyMemberRole.APPROVER) {
+    return null
+  }
+
+  const current = costCenters.find(
+    (item) => item.id === member.defaultCostCenterId,
+  )
+
+  return (
+    <SettingRow
+      label="Centro de Custo preferido"
+      description="Entre quem tem alçada suficiente, o pedido prefere cair aqui."
+      control={
+        <div className="max-w-sm">
+          <Select
+            value={member.defaultCostCenterId}
+            onValueChange={(next) =>
+              update.mutate((next ?? null) as string | null, {
+                onSuccess: () =>
+                  toast.success(
+                    next
+                      ? `Passa a ser preferida para pedidos de ${costCenters.find((item) => item.id === next)?.name ?? "um Centro de Custo"}.`
+                      : "Preferência removida.",
+                  ),
+                onError: (error) => toast.error(getApiErrorMessage(error)),
+              })
+            }
+            disabled={update.isPending}
+          >
+            <SelectTrigger className="h-9 bg-card px-3" aria-label="Centro de Custo preferido">
+              <SelectValue>
+                {() => current?.name ?? "Nenhum"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null}>Nenhum</SelectItem>
+              {costCenters.map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {item.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      }
+      status={update.isPending ? <SavedHint saving /> : undefined}
     />
   )
 }

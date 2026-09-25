@@ -92,6 +92,17 @@ export async function updateMemberManager(
   return data
 }
 
+export async function updateMemberDefaultCostCenter(
+  id: string,
+  costCenterId: string | null,
+): Promise<Member> {
+  const { data } = await apiClient.patch<Member>(
+    `/members/${id}/default-cost-center`,
+    { costCenterId },
+  )
+  return data
+}
+
 export async function disableMember(id: string): Promise<void> {
   await apiClient.delete(`/members/${id}`)
 }

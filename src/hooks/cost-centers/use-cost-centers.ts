@@ -60,7 +60,7 @@ export function useCompanyMembers() {
   })
 }
 
-function useInvalidateCostCenters() {
+export function useInvalidateCostCenters() {
   const queryClient = useQueryClient()
 
   return () => {

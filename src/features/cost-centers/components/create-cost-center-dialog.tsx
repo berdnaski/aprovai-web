@@ -1,6 +1,8 @@
+import { Check } from "@phosphor-icons/react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
+import { linkCostCenterMember } from "@/api/cost-centers"
 import { getApiErrorMessage } from "@/api/client"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,11 +19,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
   useCompanyMembers,
+  useCostCenterMembers,
   useCostCentersSummary,
   useCreateCostCenter,
+  useInvalidateCostCenters,
 } from "@/hooks/cost-centers/use-cost-centers"
 import { initialsOf } from "@/lib/people"
 import { cn } from "@/lib/utils"
+import { ROLE_LABELS } from "@/types/enums"
 
 const ELIGIBLE_ROLES = ["APPROVER", "FINANCE_ADMIN"]
 
@@ -43,13 +48,17 @@ export function CreateCostCenterDialog({
   const [code, setCode] = useState("")
   const [managerId, setManagerId] = useState("")
   const [parentId, setParentId] = useState(defaultParentId)
+  const [inheritedIds, setInheritedIds] = useState<string[]>([])
+  const [suggestedFor, setSuggestedFor] = useState("")
 
   const isControlled = controlledOpen !== undefined
   const open = isControlled ? controlledOpen : uncontrolledOpen
 
   const { data: members = [] } = useCompanyMembers()
   const { data: centers = [] } = useCostCentersSummary()
+  const { data: parentLinks = [] } = useCostCenterMembers(parentId || undefined)
   const create = useCreateCostCenter()
+  const invalidateCostCenters = useInvalidateCostCenters()
 
   function setOpen(next: boolean) {
     if (!isControlled) {
@@ -66,6 +75,31 @@ export function CreateCostCenterDialog({
       setParentId(defaultParentId)
     }
   }, [open, defaultParentId])
+
+  const parent = centers.find((center) => center.id === parentId)
+
+  // As pessoas do centro-pai já fazem esse tipo de pedido: sugerir de cara,
+  // em vez de mandar vincular uma por uma de novo no centro filho.
+  const inherited = members.filter(
+    (member) =>
+      member.id !== managerId &&
+      (member.id === parent?.managerId ||
+        parentLinks.some((link) => link.memberId === member.id)),
+  )
+  const inheritedApprover = inherited.some(
+    (member) =>
+      member.role === "APPROVER" &&
+      inheritedIds.includes(member.id),
+  )
+
+  // Ajuste de estado durante a renderização: sempre que o centro-pai (ou o
+  // gestor escolhido) muda, a sugestão de quem herdar também muda. Nada de
+  // efeito aqui — só recalcular antes do próximo paint.
+  const suggestionKey = `${parentId}:${managerId}:${parentLinks.length}`
+  if (suggestionKey !== suggestedFor) {
+    setSuggestedFor(suggestionKey)
+    setInheritedIds(inherited.map((member) => member.id))
+  }
 
   const eligible = members.filter((member) =>
     ELIGIBLE_ROLES.includes(member.role),
@@ -89,7 +123,18 @@ export function CreateCostCenterDialog({
         parentId: parentId ? parentId : null,
       },
       {
-        onSuccess: () => {
+        onSuccess: async (created) => {
+          const toLink = inheritedIds.filter((id) => id !== managerId)
+
+          if (toLink.length > 0) {
+            await Promise.all(
+              toLink.map((memberId) =>
+                linkCostCenterMember(created.id, memberId).catch(() => null),
+              ),
+            )
+            invalidateCostCenters()
+          }
+
           toast.success(`Centro de Custo "${name.trim()}" criado.`)
           setOpen(false)
         },
@@ -111,9 +156,9 @@ export function CreateCostCenterDialog({
                 : "Novo Centro de Custo"}
             </DialogTitle>
             <DialogDescription className="text-caption leading-relaxed">
-              O gestor responde pelo orçamento do período e é o primeiro a
-              receber os pedidos que nascem aqui, quando tem alçada para o
-              valor.
+              O gestor responde pelo orçamento deste centro específico — não é
+              o perfil da pessoa, que continua o mesmo em todo o resto do
+              sistema. Sempre pode abrir pedidos aqui, mesmo sem se vincular.
             </DialogDescription>
           </DialogHeader>
 
@@ -157,6 +202,32 @@ export function CreateCostCenterDialog({
               O código é o mesmo que o seu contador usa no ERP. Deixe em branco
               se a empresa ainda não usa um.
             </p>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-label text-foreground">
+                Fica dentro de{" "}
+                <span className="font-normal text-muted-foreground">
+                  opcional
+                </span>
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                <ParentChip
+                  active={parentId === ""}
+                  onClick={() => setParentId("")}
+                >
+                  Centro raiz
+                </ParentChip>
+                {parents.map((center) => (
+                  <ParentChip
+                    key={center.id}
+                    active={parentId === center.id}
+                    onClick={() => setParentId(center.id)}
+                  >
+                    {center.name}
+                  </ParentChip>
+                ))}
+              </div>
+            </div>
 
             <div className="flex flex-col gap-2">
               <span className="text-label text-foreground">Gestor</span>
@@ -206,31 +277,64 @@ export function CreateCostCenterDialog({
               )}
             </div>
 
-            <div className="flex flex-col gap-2">
-              <span className="text-label text-foreground">
-                Fica dentro de{" "}
-                <span className="font-normal text-muted-foreground">
-                  opcional
+            {parentId && inherited.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <span className="text-label text-foreground">
+                  Herdar pessoas de {parent?.name}
                 </span>
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                <ParentChip
-                  active={parentId === ""}
-                  onClick={() => setParentId("")}
-                >
-                  Centro raiz
-                </ParentChip>
-                {parents.map((center) => (
-                  <ParentChip
-                    key={center.id}
-                    active={parentId === center.id}
-                    onClick={() => setParentId(center.id)}
-                  >
-                    {center.name}
-                  </ParentChip>
-                ))}
+
+                <div className="max-h-48 overflow-y-auto rounded-md border border-border">
+                  {inherited.map((member) => {
+                    const checked = inheritedIds.includes(member.id)
+                    const memberName = member.user?.name ?? "Pessoa sem cadastro"
+
+                    return (
+                      <button
+                        key={member.id}
+                        type="button"
+                        onClick={() =>
+                          setInheritedIds((current) =>
+                            checked
+                              ? current.filter((id) => id !== member.id)
+                              : [...current, member.id],
+                          )
+                        }
+                        aria-pressed={checked}
+                        className={cn(
+                          "flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors",
+                          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                          checked ? "bg-primary/6" : "hover:bg-muted/50",
+                        )}
+                      >
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "flex size-4 shrink-0 items-center justify-center rounded-sm border",
+                            checked
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-input",
+                          )}
+                        >
+                          {checked ? <Check size={11} weight="bold" /> : null}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-body text-foreground">
+                          {memberName}
+                        </span>
+                        <span className="shrink-0 text-caption text-muted-foreground">
+                          {ROLE_LABELS[member.role]}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <p className="text-caption leading-relaxed text-muted-foreground">
+                  {inheritedApprover
+                    ? "Elas passam a abrir pedidos aqui também. O perfil e a alçada de cada uma não mudam."
+                    : "Nenhuma aprovadora selecionada: os pedidos daqui caem direto no Admin Financeiro, a não ser que uma delas também tenha alçada em outro Centro de Custo."}
+                </p>
               </div>
-            </div>
+            ) : null}
           </div>
 
           <DialogFooter>

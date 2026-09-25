@@ -7,6 +7,7 @@ import {
   listMembers,
   setMySubstitute,
   updateMemberLimit,
+  updateMemberDefaultCostCenter,
   updateMemberManager,
   updateMemberRole,
 } from "@/api/members"
@@ -92,6 +93,16 @@ export function useUpdateMemberManager(id: string) {
 
   return useMutation({
     mutationFn: (managerId: string | null) => updateMemberManager(id, managerId),
+    onSuccess: invalidate,
+  })
+}
+
+export function useUpdateMemberDefaultCostCenter(id: string) {
+  const invalidate = useInvalidateTeam()
+
+  return useMutation({
+    mutationFn: (costCenterId: string | null) =>
+      updateMemberDefaultCostCenter(id, costCenterId),
     onSuccess: invalidate,
   })
 }

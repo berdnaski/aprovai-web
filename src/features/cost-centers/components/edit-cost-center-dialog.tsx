@@ -143,6 +143,11 @@ export function EditCostCenterDialog({
 
             <div className="flex flex-col gap-2">
               <span className="text-label text-foreground">Gestor</span>
+              <p className="-mt-1 text-caption text-muted-foreground">
+                Responde pelo orçamento só deste Centro de Custo. Não é o
+                perfil da pessoa — ela continua Aprovador ou Admin Financeiro
+                em todo o resto do sistema.
+              </p>
               <div className="max-h-48 overflow-y-auto rounded-md border border-border">
                 {eligible.map((member) => {
                   const selected = managerId === member.id
