@@ -117,19 +117,29 @@ export function EditCostCenterDialog({
                 />
               </div>
 
-              <div className="flex w-28 flex-col gap-1.5">
+              <div className="flex w-32 flex-col gap-1.5">
                 <Label htmlFor="edit-code" className="text-label text-foreground">
-                  Código
+                  Código{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (opcional)
+                  </span>
                 </Label>
                 <Input
                   id="edit-code"
                   value={code}
                   onChange={(event) => setCode(event.target.value)}
                   autoComplete="off"
+                  aria-describedby="edit-code-hint"
+                  placeholder="CC-04"
                   className="h-10 text-body tabular-nums md:text-body"
                 />
               </div>
             </div>
+
+            <p id="edit-code-hint" className="-mt-3 text-caption text-muted-foreground">
+              O código é o mesmo que o seu contador usa no ERP. Deixe em branco
+              se a empresa ainda não usa um.
+            </p>
 
             <div className="flex flex-col gap-2">
               <span className="text-label text-foreground">Gestor</span>

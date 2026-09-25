@@ -10,7 +10,6 @@ import { formatCents } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 import type { Tier } from "../matrix"
-import { ApproverTypeChoice } from "./approver-type-choice"
 import { SignatureChoice } from "./signature-choice"
 
 export const COL_AMOUNTS = "2xl:w-[19rem]"
@@ -218,16 +217,7 @@ export function TierRow({
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row 2xl:min-w-0 2xl:flex-1">
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <StackedLabel>Quem aprova</StackedLabel>
-            <ApproverTypeChoice
-              value={tier.approverType}
-              onChange={(approverType) => onChange({ approverType })}
-              disabled={readOnly}
-            />
-          </div>
-
+        <div className="flex flex-col gap-3 sm:flex-row 2xl:min-w-0 2xl:flex-1 2xl:justify-end">
           <div className={cn("flex flex-col gap-1.5 sm:shrink-0", COL_SIGNATURE)}>
             <StackedLabel>Assinaturas</StackedLabel>
             <SignatureChoice

@@ -10,6 +10,7 @@ import {
   type CostCenterSummary,
 } from "@/api/cost-centers"
 import type { Member } from "@/api/members"
+import { CompanyMemberRole } from "@/types/enums"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { EmptyState } from "@/components/shared/empty-state"
 import { Button } from "@/components/ui/button"
@@ -142,6 +143,8 @@ export function MemberCostCenters({ member }: { member: Member }) {
     },
   ]
 
+  const isFinanceAdmin = member.role === CompanyMemberRole.FINANCE_ADMIN
+
   return (
     <>
       <DataTableShell
@@ -149,7 +152,7 @@ export function MemberCostCenters({ member }: { member: Member }) {
         count={rows.length}
         className="rise-in [animation-delay:120ms]"
         toolbar={
-          available.length > 0 ? (
+          !isFinanceAdmin && available.length > 0 ? (
             <LinkMenu
               member={member}
               centers={available}
@@ -159,6 +162,13 @@ export function MemberCostCenters({ member }: { member: Member }) {
           ) : undefined
         }
       >
+        {isFinanceAdmin ? (
+          <p className="border-b border-border bg-muted/25 px-5 py-2.5 text-caption text-muted-foreground">
+            Como Admin Financeiro, já abre pedidos em qualquer Centro de
+            Custo — vincular aqui não muda nada.
+          </p>
+        ) : null}
+
         <DataTable
           columns={columns}
           rows={rows}

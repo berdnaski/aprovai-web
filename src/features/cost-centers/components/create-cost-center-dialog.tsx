@@ -111,8 +111,9 @@ export function CreateCostCenterDialog({
                 : "Novo Centro de Custo"}
             </DialogTitle>
             <DialogDescription className="text-caption leading-relaxed">
-              O gestor aprova os pedidos que nascem aqui e responde pelo
-              orçamento do período.
+              O gestor responde pelo orçamento do período e é o primeiro a
+              receber os pedidos que nascem aqui, quando tem alçada para o
+              valor.
             </DialogDescription>
           </DialogHeader>
 
@@ -133,9 +134,12 @@ export function CreateCostCenterDialog({
                 />
               </div>
 
-              <div className="flex w-28 flex-col gap-1.5">
+              <div className="flex w-32 flex-col gap-1.5">
                 <Label htmlFor="cc-code" className="text-label text-foreground">
-                  Código
+                  Código{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (opcional)
+                  </span>
                 </Label>
                 <Input
                   id="cc-code"
@@ -143,10 +147,16 @@ export function CreateCostCenterDialog({
                   onChange={(event) => setCode(event.target.value)}
                   placeholder="CC-04"
                   autoComplete="off"
+                  aria-describedby="cc-code-hint"
                   className="h-10 text-body tabular-nums md:text-body"
                 />
               </div>
             </div>
+
+            <p id="cc-code-hint" className="-mt-3 text-caption text-muted-foreground">
+              O código é o mesmo que o seu contador usa no ERP. Deixe em branco
+              se a empresa ainda não usa um.
+            </p>
 
             <div className="flex flex-col gap-2">
               <span className="text-label text-foreground">Gestor</span>

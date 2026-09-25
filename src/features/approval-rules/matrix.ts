@@ -4,12 +4,10 @@ import type {
   ApprovalScope,
 } from "@/api/approval-rules"
 import { formatCents } from "@/lib/money"
-import { ApproverType } from "@/types/enums"
 
 export interface Tier {
   key: string
   ceilingCents: string | null
-  approverType: ApproverType
   requiresDualApproval: boolean
 }
 
@@ -28,7 +26,6 @@ export function toTiers(rules: ApprovalRule[]): Tier[] {
     .map((rule) => ({
       key: nextKey(),
       ceilingCents: rule.maxAmountCents,
-      approverType: rule.approverType,
       requiresDualApproval: rule.requiresDualApproval,
     }))
     .map((tier, index, all) =>
@@ -40,7 +37,6 @@ export function toRanges(tiers: Tier[]): ApprovalRuleRange[] {
   return tiers.map((tier, index) => ({
     minAmountCents: floorOf(tiers, index),
     maxAmountCents: index === tiers.length - 1 ? null : tier.ceilingCents,
-    approverType: tier.approverType,
     requiresDualApproval: tier.requiresDualApproval,
   }))
 }
@@ -63,7 +59,6 @@ export function newTier(from?: Partial<Tier>): Tier {
   return {
     key: nextKey(),
     ceilingCents: null,
-    approverType: from?.approverType ?? ApproverType.DIRECT_MANAGER,
     requiresDualApproval: from?.requiresDualApproval ?? false,
   }
 }
@@ -155,7 +150,7 @@ export function validateTiers(tiers: Tier[]): TierProblem[] {
     if (BigInt(tier.ceilingCents) <= BigInt(floor)) {
       problems.push({
         key: tier.key,
-        message: `Precisa passar de ${formatCents(floor)}, que é onde esta faixa começa.`,
+        message: `Precisa passar de ${boundaryLabel(floor)}, que é onde esta faixa começa.`,
       })
     }
   })
@@ -173,7 +168,6 @@ export function isMatrixEqual(a: Tier[], b: Tier[]): boolean {
 
     return (
       (tier.ceilingCents ?? null) === (other.ceilingCents ?? null) &&
-      tier.approverType === other.approverType &&
       tier.requiresDualApproval === other.requiresDualApproval
     )
   })
@@ -243,20 +237,27 @@ export function groupByScope(rules: ApprovalRule[]): ScopeMatrix[] {
   )
 }
 
+/** A fronteira que a pessoa digitou é o teto da faixa de baixo, não o centavo seguinte. */
+export function boundaryLabel(floor: string): string {
+  const cents = BigInt(floor || "0")
+
+  return formatCents((cents > 0n ? cents - 1n : 0n).toString())
+}
+
 export function rangeLabel(floor: string, ceiling: string | null): string {
   if (ceiling === null) {
-    return floor === "0" ? "Qualquer valor" : `Acima de ${formatCents(floor)}`
+    return floor === "0" ? "Qualquer valor" : `Acima de ${boundaryLabel(floor)}`
   }
 
   if (!ceiling) {
-    return floor === "0" ? "A partir de R$ 0,00" : `A partir de ${formatCents(floor)}`
+    return floor === "0" ? "Qualquer valor" : `Acima de ${boundaryLabel(floor)}`
   }
 
   if (floor === "0") {
     return `Até ${formatCents(ceiling)}`
   }
 
-  return `${formatCents(floor)} a ${formatCents(ceiling)}`
+  return `${boundaryLabel(floor)} a ${formatCents(ceiling)}`
 }
 
 export function compareCents(a: string, b: string): number {

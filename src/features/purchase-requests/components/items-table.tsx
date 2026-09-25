@@ -4,6 +4,7 @@ import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/api/client"
 import type { RequestItem } from "@/api/purchase-requests"
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { MoneyDisplay } from "@/components/shared/money-display"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -154,19 +155,27 @@ function Row({
       </span>
 
       {readOnly ? null : (
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation()
+        <ConfirmDialog
+          trigger={
+            <button
+              type="button"
+              onClick={(event) => event.stopPropagation()}
+              aria-label={`Remover ${item.description}`}
+              className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover/item:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <Trash size={13} aria-hidden />
+            </button>
+          }
+          title={`Remover ${item.description}?`}
+          description="O item some do pedido. Você adiciona outro a qualquer momento."
+          confirmLabel="Remover"
+          isPending={remove.isPending}
+          onConfirm={() =>
             remove.mutate(item.id, {
               onError: (error) => toast.error(getApiErrorMessage(error)),
             })
-          }}
-          aria-label={`Remover ${item.description}`}
-          className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover/item:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-        >
-          <Trash size={13} aria-hidden />
-        </button>
+          }
+        />
       )}
     </li>
   )

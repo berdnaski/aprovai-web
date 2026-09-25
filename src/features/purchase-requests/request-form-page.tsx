@@ -23,6 +23,8 @@ import {
   useAddItem,
   useExtraction,
   usePurchaseRequest,
+  useReplaceRequestAllocations,
+  useRequestAllocations,
   useRequestFiles,
   useRequestItems,
   useSubmitRequest,
@@ -32,7 +34,7 @@ import { useSuppliers } from "@/hooks/suppliers/use-suppliers"
 import { cn } from "@/lib/utils"
 import { RequestStatus, URGENCY_LABELS, Urgency } from "@/types/enums"
 
-import { resolveExtraction, titleFrom } from "./extraction"
+import { resolveExtraction, splitToShareBps, titleFrom } from "./extraction"
 import { DuplicateDialog } from "./components/duplicate-dialog"
 import { ExtractionPanel } from "./components/extraction-panel"
 import { FilesPanel } from "./components/files-panel"
@@ -46,6 +48,7 @@ const PLACEHOLDER_TITLE = "Pedido sem título"
 interface Draft {
   title: string
   description: string
+  costCenterId: string | null
   categoryId: string | null
   supplierId: string | null
   urgency: Urgency
@@ -118,6 +121,8 @@ export function RequestFormPage() {
   const addItem = useAddItem(id ?? "")
   const update = useUpdateDraft(id ?? "")
   const submit = useSubmitRequest(id ?? "")
+  const replaceAllocations = useReplaceRequestAllocations(id ?? "")
+  const allocationsQuery = useRequestAllocations(id)
 
   const request = requestQuery.data
   const suppliers = suppliersQuery.data?.items ?? []
@@ -126,6 +131,7 @@ export function RequestFormPage() {
     setDraft({
       title: request.title === PLACEHOLDER_TITLE ? "" : request.title,
       description: request.description ?? "",
+      costCenterId: request.costCenterId,
       categoryId: request.categoryId,
       supplierId: request.supplierId,
       urgency: request.urgency,
@@ -151,25 +157,29 @@ export function RequestFormPage() {
     )
   }
 
-  const costCenter = costCenters.find((cc) => cc.id === request.costCenterId)
+  const costCenter = costCenters.find((cc) => cc.id === draft.costCenterId)
   const supplier = suppliers.find((item) => item.id === draft.supplierId)
 
-  function save(next: Draft) {
+  function save(next: Draft, onSuccess?: () => void) {
     const title = next.title.trim()
 
     setTouched(true)
-    update.mutate({
-      title: title.length >= 3 ? title : PLACEHOLDER_TITLE,
-      urgency: next.urgency,
-      ...(next.description.trim()
-        ? { description: next.description.trim() }
-        : {}),
-      ...(next.categoryId ? { categoryId: next.categoryId } : {}),
-      ...(next.supplierId ? { supplierId: next.supplierId } : {}),
-      ...(next.paymentTerms.trim()
-        ? { paymentTerms: next.paymentTerms.trim() }
-        : {}),
-    } satisfies Partial<CreateDraftPayload>)
+    update.mutate(
+      {
+        title: title.length >= 3 ? title : PLACEHOLDER_TITLE,
+        urgency: next.urgency,
+        ...(next.description.trim()
+          ? { description: next.description.trim() }
+          : {}),
+        ...(next.costCenterId ? { costCenterId: next.costCenterId } : {}),
+        ...(next.categoryId ? { categoryId: next.categoryId } : {}),
+        ...(next.supplierId ? { supplierId: next.supplierId } : {}),
+        ...(next.paymentTerms.trim()
+          ? { paymentTerms: next.paymentTerms.trim() }
+          : {}),
+      } satisfies Partial<CreateDraftPayload>,
+      onSuccess ? { onSuccess } : undefined,
+    )
   }
 
   function set(patch: Partial<Draft>, persist = false) {
@@ -183,13 +193,19 @@ export function RequestFormPage() {
 
   const fields = extraction.data?.fields ?? null
   const resolved = fields
-    ? resolveExtraction(fields, suppliers, categories)
+    ? resolveExtraction(fields, suppliers, categories, costCenters)
     : null
 
   function applyExtraction() {
     if (!fields || !resolved || !draft) {
       return
     }
+
+    const splitPrimary = resolved.costCenterSplit
+      ? resolved.costCenterSplit.reduce((max, item) =>
+          item.percent > max.percent ? item : max,
+        ).costCenter
+      : null
 
     const next: Draft = {
       ...draft,
@@ -199,6 +215,11 @@ export function RequestFormPage() {
       ...(resolved.category.match
         ? { categoryId: resolved.category.match.id }
         : {}),
+      ...(!draft.costCenterId && splitPrimary
+        ? { costCenterId: splitPrimary.id }
+        : !draft.costCenterId && resolved.costCenter.match
+          ? { costCenterId: resolved.costCenter.match.id }
+          : {}),
       ...(resolved.paymentTerms ? { paymentTerms: resolved.paymentTerms } : {}),
       ...(draft.title.trim() ? {} : { title: titleFrom(fields, "") }),
       ...(draft.description?.trim() || !fields.description
@@ -208,7 +229,38 @@ export function RequestFormPage() {
 
     setDraft(next)
     setApplied(true)
-    save(next)
+
+    const pendingSplit =
+      resolved.costCenterSplit &&
+      !draft.costCenterId &&
+      !allocationsQuery.data?.custom
+        ? resolved.costCenterSplit
+        : null
+
+    if (pendingSplit) {
+      const defaultAccountId = resolved.category.match?.defaultAccountId ?? null
+
+      // O rateio só pode ser gravado depois que o Centro de Custo do
+      // rascunho existir no servidor: a validação do rateio exige que o
+      // centro primário já esteja salvo no pedido.
+      save(next, () => {
+        replaceAllocations.mutate(
+          splitToShareBps(pendingSplit).map((line) => ({
+            costCenterId: line.costCenterId,
+            chartAccountId: defaultAccountId,
+            shareBps: line.shareBps,
+          })),
+          {
+            onError: (error) =>
+              toast.error(
+                `Não deu para aplicar o rateio automático: ${getApiErrorMessage(error)}`,
+              ),
+          },
+        )
+      })
+    } else {
+      save(next)
+    }
 
     if (items.length > 0) {
       return
@@ -275,7 +327,7 @@ export function RequestFormPage() {
     },
     {
       label: "Centro de Custo",
-      done: Boolean(request.costCenterId),
+      done: Boolean(draft.costCenterId),
       missing: "Define o orçamento e quem aprova.",
     },
     {
@@ -325,7 +377,7 @@ export function RequestFormPage() {
         </div>
 
         <p className="text-subhead text-muted-foreground">
-          {costCenter?.name ?? "Sem Centro de Custo"}
+          {costCenter?.name ?? "Centro de Custo a definir"}
           {supplier ? ` · ${supplier.tradeName ?? supplier.legalName}` : ""}
         </p>
       </header>
@@ -363,6 +415,47 @@ export function RequestFormPage() {
                   aria-label="Título do pedido"
                   className="h-9 max-w-md text-body md:text-body"
                 />
+              }
+            />
+
+            <SettingRow
+              label="Centro de Custo"
+              description={
+                draft.costCenterId
+                  ? "Define o orçamento e quem aprova"
+                  : "Falta escolher: é ele que define o orçamento e quem aprova"
+              }
+              control={
+                <Select
+                  value={draft.costCenterId}
+                  onValueChange={(next) =>
+                    set({ costCenterId: (next ?? null) as string | null }, true)
+                  }
+                >
+                  <SelectTrigger
+                    className={cn(
+                      "h-9 w-64 bg-card px-3",
+                      draft.costCenterId ? "" : "border-warning/50",
+                    )}
+                    aria-label="Centro de Custo"
+                  >
+                    <SelectValue>
+                      {(value: string | null) =>
+                        value
+                          ? (costCenters.find((item) => item.id === value)
+                              ?.name ?? "Centro de Custo")
+                          : "Escolher"
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {costCenters.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               }
             />
 
@@ -474,15 +567,15 @@ export function RequestFormPage() {
             />
 
             <SettingRow
-              label="Condições"
-              description="Opcional"
+              label="Prazo negociado com o fornecedor"
+              description="Opcional. Como a empresa paga (Pix, boleto, cartão) é decidido na hora de liberar o pagamento, não aqui."
               control={
                 <Input
                   value={draft.paymentTerms}
                   onChange={(event) => set({ paymentTerms: event.target.value })}
                   onBlur={() => save(draft)}
-                  placeholder="30 dias após a entrega"
-                  aria-label="Condições de pagamento"
+                  placeholder="30 dias após a entrega, à vista, parcelado em 3x..."
+                  aria-label="Prazo negociado com o fornecedor"
                   className="h-9 max-w-md text-body md:text-body"
                 />
               }
@@ -508,7 +601,7 @@ export function RequestFormPage() {
           <AllocationPanel
             requestId={request.id}
             requestStatus={request.status}
-            primaryCostCenterId={request.costCenterId}
+            primaryCostCenterId={draft.costCenterId}
             totalCents={request.totalAmountCents}
             editable
           />

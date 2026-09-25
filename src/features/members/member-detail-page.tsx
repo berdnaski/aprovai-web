@@ -82,7 +82,7 @@ export function MemberDetailPage() {
         ]}
       />
 
-      <MemberSummary member={member} members={members} />
+      <MemberSummary member={member} />
 
       <SettingGroup title="Poder de decisão">
         <RoleRow member={member} />
@@ -164,7 +164,6 @@ function LimitRow({ member }: { member: Member }) {
     setAmount(formatCents(member.approvalLimitCents))
   }, [member.approvalLimitCents])
 
-  const isFinanceAdmin = member.role === CompanyMemberRole.FINANCE_ADMIN
   const cents = toCents(amount)
   const changed = cents !== member.approvalLimitCents
 
@@ -182,17 +181,22 @@ function LimitRow({ member }: { member: Member }) {
     })
   }
 
-  if (isFinanceAdmin) {
+  if (member.role === CompanyMemberRole.FINANCE_ADMIN) {
     return (
       <SettingRow
         label="Aprova até"
         control={
           <p className="text-caption text-muted-foreground">
-            O teto volta a valer se o perfil mudar para Aprovador.
+            Sem teto — Admin Financeiro aprova qualquer valor. Um teto volta a
+            valer se o perfil mudar para Aprovador.
           </p>
         }
       />
     )
+  }
+
+  if (member.role !== CompanyMemberRole.APPROVER) {
+    return null
   }
 
   return (
@@ -285,6 +289,7 @@ function ManagerRow({
   return (
     <SettingRow
       label="Responde a"
+      description="Não muda quem aprova: serve para escalonar um pedido parado tempo demais."
       control={
         <div className="max-w-sm">
           <PersonPicker

@@ -20,7 +20,7 @@ import { LoadError } from "@/components/shared/load-error"
 import { MoneyDisplay } from "@/components/shared/money-display"
 import { ItemsSummary } from "./components/items-summary"
 import { RequestFacts } from "./components/request-facts"
-import { StatusBadge } from "@/components/shared/status-badge"
+import { RequestStatusMark } from "./components/request-status-mark"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { usePermissions } from "@/hooks/auth/use-permissions"
@@ -36,7 +36,6 @@ import {
   useRequestTimeline,
 } from "@/hooks/purchase-requests/use-purchase-requests"
 import { useRecurringContractByRequest } from "@/hooks/recurring-contracts/use-recurring-contracts"
-import { REQUEST_STATUS } from "@/lib/status-labels"
 import { RequestStatus, URGENCY_LABELS } from "@/types/enums"
 
 import { CancelDialog } from "./components/cancel-dialog"
@@ -235,22 +234,28 @@ export function RequestDetailPage() {
 
       <div className="flex flex-col gap-5 rounded-lg border border-border bg-card px-7 py-6 shadow-xs">
         <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
-            
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
+            <RequestStatusMark
+              status={request.status}
+              currentApproverName={currentStep?.expectedApproverName}
+              size="lg"
+            />
 
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              <span className="text-caption tabular-nums text-muted-foreground">
+            <div className="flex flex-col gap-1">
+              <h1 className="text-display text-balance text-foreground">
+                {request.title}
+              </h1>
+
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-caption tabular-nums text-muted-foreground">
                 {request.number}
-              </span>
-              <StatusBadge map={REQUEST_STATUS} value={request.status} />
-              <span className="text-caption text-muted-foreground">
-                urgência {URGENCY_LABELS[request.urgency].toLowerCase()}
-              </span>
+                <span aria-hidden className="text-border">
+                  ·
+                </span>
+                <span className="tabular-nums">
+                  urgência {URGENCY_LABELS[request.urgency].toLowerCase()}
+                </span>
+              </p>
             </div>
-
-            <h1 className="text-display text-balance text-foreground">
-              {request.title}
-            </h1>
           </div>
 
           <div className="flex shrink-0 flex-col items-start gap-1 sm:items-end">
@@ -282,8 +287,8 @@ export function RequestDetailPage() {
                 ...(category ? {} : { tone: "muted" as const }),
               },
               {
-                label: "Condições",
-                value: request.paymentTerms ?? "Não informadas",
+                label: "Prazo com o fornecedor",
+                value: request.paymentTerms ?? "Não informado",
                 ...(request.paymentTerms ? {} : { tone: "muted" as const }),
               },
               {

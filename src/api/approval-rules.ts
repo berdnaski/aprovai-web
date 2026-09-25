@@ -1,5 +1,4 @@
 import { apiClient } from "@/api/client"
-import type { ApproverType } from "@/types/enums"
 
 export interface ApprovalRule {
   id: string
@@ -7,7 +6,6 @@ export interface ApprovalRule {
   categoryId: string | null
   minAmountCents: string
   maxAmountCents: string | null
-  approverType: ApproverType
   requiresDualApproval: boolean
   isActive: boolean
 }
@@ -15,7 +13,6 @@ export interface ApprovalRule {
 export interface ApprovalRuleRange {
   minAmountCents: string
   maxAmountCents?: string | null
-  approverType: ApproverType
   requiresDualApproval?: boolean
 }
 

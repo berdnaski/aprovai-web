@@ -56,7 +56,7 @@ export function AllocationPanel({
 }: {
   requestId: string
   requestStatus: RequestStatus
-  primaryCostCenterId: string
+  primaryCostCenterId: string | null
   totalCents: string
   editable: boolean
 }) {
@@ -79,6 +79,10 @@ export function AllocationPanel({
   }, [allocationsQuery.dataUpdatedAt])
 
   if (accountsQuery.isPending || accounts.length === 0) {
+    return null
+  }
+
+  if (!primaryCostCenterId) {
     return null
   }
 

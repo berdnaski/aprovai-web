@@ -1,5 +1,6 @@
 import { Play, Scales, Trash, WarningCircle } from "@phosphor-icons/react"
 import { useMemo, useState } from "react"
+import { Link } from "react-router-dom"
 import { toast } from "sonner"
 
 import type { ApprovalScope } from "@/api/approval-rules"
@@ -248,9 +249,22 @@ export function ApprovalRulesPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Matriz de alçadas"
-        description="Define quem aprova cada pedido, pelo valor."
+        description="Define quantas assinaturas cada faixa de valor exige."
         action={simulateAction}
       />
+
+      <p className="max-w-3xl text-caption leading-relaxed text-muted-foreground">
+        Quem aprova não é escolhido aqui: o pedido vai para quem tem alçada
+        suficiente, começando pela menor que cobre o valor, e cai no Admin
+        Financeiro quando ninguém alcança. A alçada de cada pessoa fica em{" "}
+        <Link
+          to="/equipe"
+          className="font-medium text-foreground underline underline-offset-2 hover:text-primary"
+        >
+          Equipe
+        </Link>
+        . Estas faixas definem só quantas assinaturas o valor exige.
+      </p>
 
       {globalMissing && !drafts[scopeKey(GLOBAL_SCOPE)] ? (
         <div

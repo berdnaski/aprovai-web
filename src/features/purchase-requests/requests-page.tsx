@@ -7,7 +7,6 @@ import { EmptyState } from "@/components/shared/empty-state"
 import { LoadError } from "@/components/shared/load-error"
 import { MoneyDisplay } from "@/components/shared/money-display"
 import { PageHeader } from "@/components/shared/page-header"
-import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
 import {
   CellPerson,
@@ -30,10 +29,10 @@ import { useCostCenters } from "@/hooks/onboarding/use-onboarding"
 import { usePurchaseRequests } from "@/hooks/purchase-requests/use-purchase-requests"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { initialsOf, displayName } from "@/lib/people"
-import { REQUEST_STATUS } from "@/lib/status-labels"
 import { RequestStatus, RequestView } from "@/types/enums"
 
 import { RequestFilters, type Filters } from "./components/request-filters"
+import { RequestStatusMark } from "./components/request-status-mark"
 import { UrgencyMark } from "./components/urgency-mark"
 
 const PER_PAGE = 25
@@ -115,7 +114,9 @@ export function RequestsPage() {
       width: "180px",
       cell: (request) => (
         <span className="truncate text-caption text-muted-foreground">
-          {costCenterName.get(request.costCenterId) ?? "—"}
+          {(request.costCenterId
+            ? costCenterName.get(request.costCenterId)
+            : null) ?? "—"}
         </span>
       ),
     },
@@ -137,9 +138,12 @@ export function RequestsPage() {
     {
       id: "status",
       header: "Situação",
-      width: "150px",
+      width: "190px",
       cell: (request) => (
-        <StatusBadge map={REQUEST_STATUS} value={request.status} />
+        <RequestStatusMark
+          status={request.status}
+          currentApproverName={request.currentApproverName}
+        />
       ),
     },
     {

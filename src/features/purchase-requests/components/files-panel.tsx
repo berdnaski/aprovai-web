@@ -3,6 +3,7 @@ import { DownloadSimple, Paperclip, Trash } from "@phosphor-icons/react"
 import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/api/client"
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { FileDropzone } from "@/components/shared/file-dropzone"
 import { getFileDownloadUrl, type RequestFile } from "@/api/purchase-requests"
 import {
@@ -99,19 +100,27 @@ export function FilesPanel({
                 </button>
 
                 {readOnly ? null : (
-                  <button
-                    type="button"
-                    onClick={() =>
+                  <ConfirmDialog
+                    trigger={
+                      <button
+                        type="button"
+                        aria-label={`Remover ${file.fileName}`}
+                        className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                      >
+                        <Trash size={13} aria-hidden />
+                      </button>
+                    }
+                    title={`Remover ${file.fileName}?`}
+                    description="O anexo some do pedido. Não dá para desfazer."
+                    confirmLabel="Remover"
+                    isPending={remove.isPending}
+                    onConfirm={() =>
                       remove.mutate(file.id, {
                         onError: (error) =>
                           toast.error(getApiErrorMessage(error)),
                       })
                     }
-                    aria-label={`Remover ${file.fileName}`}
-                    className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                  >
-                    <Trash size={13} aria-hidden />
-                  </button>
+                  />
                 )}
               </span>
             </li>

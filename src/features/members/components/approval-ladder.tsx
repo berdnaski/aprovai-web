@@ -104,28 +104,36 @@ export function ApprovalLadder({
       </header>
 
       <ol className="divide-y divide-border/60">
-        {tiers.map((tier) => (
-          <li
-            key={`${tier.from}-${tier.to ?? "top"}`}
-            className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-6"
-          >
-            <p className="shrink-0 text-body tabular-nums text-foreground sm:w-56">
-              {tier.to === null ? (
-                <>
-                  acima de {formatCents(tier.from)}
-                </>
-              ) : Number(tier.from) === 0 ? (
-                <>até {formatCents(tier.to)}</>
-              ) : (
-                <>
-                  {formatCents(tier.from)} — {formatCents(tier.to)}
-                </>
-              )}
-            </p>
+        {tiers.map((tier) => {
+          // tier.from é o teto da faixa anterior (inclusive): a faixa
+          // seguinte começa 1 centavo depois, senão o valor aparece em duas
+          // faixas ao mesmo tempo.
+          const from =
+            Number(tier.from) === 0
+              ? tier.from
+              : (BigInt(tier.from) + 1n).toString()
 
-            <Avatars members={tier.members} />
-          </li>
-        ))}
+          return (
+            <li
+              key={`${tier.from}-${tier.to ?? "top"}`}
+              className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-6"
+            >
+              <p className="shrink-0 text-body tabular-nums text-foreground sm:w-56">
+                {tier.to === null ? (
+                  <>acima de {formatCents(tier.from)}</>
+                ) : Number(tier.from) === 0 ? (
+                  <>até {formatCents(tier.to)}</>
+                ) : (
+                  <>
+                    {formatCents(from)} — {formatCents(tier.to)}
+                  </>
+                )}
+              </p>
+
+              <Avatars members={tier.members} />
+            </li>
+          )
+        })}
       </ol>
     </section>
   )

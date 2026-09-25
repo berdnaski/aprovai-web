@@ -45,9 +45,8 @@ export function RequestStartPage() {
   const { data: costCenters = [] } = useCostCenters()
   const create = useCreateDraft()
 
-  const ready = Boolean(costCenterId)
   const hasText = text.trim().length >= MIN_TEXT
-  const canRead = ready && (hasText || file !== null) && !working
+  const canRead = (hasText || file !== null) && !working
   const hints = analyzeRequestText(text)
 
   function grow(element: HTMLTextAreaElement) {
@@ -75,7 +74,7 @@ export function RequestStartPage() {
   }
 
   async function start(withExtraction: boolean) {
-    if (!costCenterId || working) {
+    if (working) {
       return
     }
 
@@ -83,7 +82,7 @@ export function RequestStartPage() {
 
     try {
       const draft = await create.mutateAsync({
-        costCenterId,
+        costCenterId: costCenterId ?? undefined,
         title: PLACEHOLDER_TITLE,
       })
 
@@ -106,16 +105,15 @@ export function RequestStartPage() {
   }
 
   const isPdf = file?.type === "application/pdf"
+  const chosen = Boolean(costCenterId)
 
-  const hint = !ready
-    ? "Escolha o Centro de Custo"
-    : hasText
-      ? "Enter para enviar"
-      : isPdf
-        ? "Vou ler o PDF e preencher o rascunho"
-        : file
-          ? "Imagem não é lida, cole o texto"
-          : "Cole o texto ou anexe um PDF"
+  const hint = hasText
+    ? "Enter para enviar"
+    : isPdf
+      ? "Vou ler o PDF e preencher o rascunho"
+      : file
+        ? "Imagem não é lida, cole o texto"
+        : "Cole o texto ou anexe um PDF"
 
   return (
     <div className="flex min-h-[calc(100svh-13rem)] flex-col">
@@ -130,8 +128,9 @@ export function RequestStartPage() {
         <header className="flex flex-col items-center gap-2.5 text-center">
           <h1 className="text-display text-foreground">Novo pedido</h1>
           <p className="max-w-lg text-subhead text-muted-foreground">
-            Cole o orçamento, a proposta ou o e-mail do fornecedor. Os dados são
-            lidos e preenchidos no rascunho para você conferir.
+            Cole o orçamento, a proposta ou o e-mail do fornecedor. Os dados
+            são lidos e preenchidos no rascunho, incluindo o Centro de Custo,
+            para você conferir.
           </p>
         </header>
 
@@ -206,7 +205,7 @@ export function RequestStartPage() {
                 aria-label="Centro de Custo"
                 className={cn(
                   "h-8 w-auto max-w-60 gap-1.5 rounded-md border px-2.5 text-caption",
-                  ready
+                  chosen
                     ? "border-primary/25 bg-primary/6 text-primary"
                     : "border-border bg-card text-muted-foreground",
                 )}
@@ -217,11 +216,12 @@ export function RequestStartPage() {
                     value
                       ? (costCenters.find((cc) => cc.id === value)?.name ??
                         "Centro de Custo")
-                      : "Centro de Custo"
+                      : "Centro de Custo: a IA identifica"
                   }
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value={null}>A IA identifica</SelectItem>
                 {costCenters.map((costCenter) => (
                   <SelectItem key={costCenter.id} value={costCenter.id}>
                     {costCenter.name}
@@ -270,7 +270,7 @@ export function RequestStartPage() {
           <button
             type="button"
             onClick={() => void start(false)}
-            disabled={!ready || working}
+            disabled={working}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-caption transition-colors",
               "text-muted-foreground hover:text-foreground",
@@ -279,9 +279,7 @@ export function RequestStartPage() {
             )}
           >
             <PencilSimpleLine size={13} aria-hidden />
-            {ready
-              ? "Prefiro preencher na mão"
-              : "Escolha o Centro de Custo para preencher na mão"}
+            Prefiro preencher na mão
           </button>
         </div>
       </div>

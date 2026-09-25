@@ -1,7 +1,7 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom"
+import { Navigate, Outlet, useLocation, useSearchParams } from "react-router-dom"
 
 import { useMyCompany } from "@/hooks/companies/use-companies"
-import { appHomeFor } from "@/routes/destinations"
+import { appHomeFor, safeRedirect } from "@/routes/destinations"
 import { useSession } from "@/hooks/auth/use-session"
 
 function FullScreenLoader() {
@@ -17,7 +17,7 @@ function FullScreenLoader() {
 }
 
 function landingWithoutCompany(user: { isSuperAdmin?: boolean } | null) {
-  return user?.isSuperAdmin ? "/plataforma" : "/onboarding/empresa"
+  return user?.isSuperAdmin ? "/plataforma" : "/entrando"
 }
 
 export function RequireAuth() {
@@ -71,6 +71,7 @@ export function RequireOnboarding() {
 }
 
 export function RedirectIfAuthenticated() {
+  const [searchParams] = useSearchParams()
   const { isAuthenticated, membership, user, isLoading } = useSession()
 
   if (isLoading) {
@@ -78,9 +79,16 @@ export function RedirectIfAuthenticated() {
   }
 
   if (isAuthenticated) {
+    const redirect = safeRedirect(searchParams.get("redirect"))
+
     return (
       <Navigate
-        to={membership ? appHomeFor(membership.role) : landingWithoutCompany(user)}
+        to={
+          redirect ??
+          (membership
+            ? appHomeFor(membership.role)
+            : landingWithoutCompany(user))
+        }
         replace
       />
     )

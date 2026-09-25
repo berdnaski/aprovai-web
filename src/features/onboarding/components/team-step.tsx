@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { getApiErrorMessage } from "@/api/client"
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -216,17 +217,25 @@ export function TeamStep({
                     {ROLE_LABELS[invite.role]} · aguardando aceite
                   </p>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => revokeMutation.mutate(invite.id)}
-                  disabled={revokeMutation.isPending}
-                  className="shrink-0 text-muted-foreground hover:text-destructive"
-                  aria-label={`Remover convite de ${invite.email}`}
-                >
-                  <X className="size-4" />
-                </Button>
+                <ConfirmDialog
+                  trigger={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0 text-muted-foreground hover:text-destructive"
+                      aria-label={`Remover convite de ${invite.email}`}
+                    >
+                      <X className="size-4" />
+                    </Button>
+                  }
+                  title={`Cancelar o convite de ${invite.email}?`}
+                  description="O link enviado deixa de funcionar. Você pode convidar a mesma pessoa de novo depois."
+                  confirmLabel="Cancelar convite"
+                  cancelLabel="Manter convite"
+                  isPending={revokeMutation.isPending}
+                  onConfirm={() => revokeMutation.mutate(invite.id)}
+                />
               </li>
             ))}
           </ul>

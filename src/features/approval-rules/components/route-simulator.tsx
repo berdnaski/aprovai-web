@@ -58,7 +58,7 @@ function readFailure(error: unknown): Failure {
   if (rule === "RN27") {
     return {
       message,
-      fix: { label: "Ajustar alçadas e líderes na Equipe", to: "/equipe" },
+      fix: { label: "Ajustar alçadas na Equipe", to: "/equipe" },
     }
   }
 
@@ -261,7 +261,7 @@ export function RouteSimulator({
 
           <Field
             label="Centro de Custo"
-            hint="Define o gestor e, junto com a categoria, qual matriz vale."
+            hint="Junto com a categoria, define qual matriz vale. Quem responde por ele aprova primeiro."
           >
             <Select
               value={costCenterId}
@@ -293,7 +293,7 @@ export function RouteSimulator({
 
           <Field
             label="Quem abre o pedido"
-            hint="A cadeia sobe a partir do líder desta pessoa."
+            hint="Ninguém aprova o próprio pedido, então esta pessoa fica fora da rota."
           >
             <PersonPicker
               options={members.map((member) => ({ member }))}

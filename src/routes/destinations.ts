@@ -18,3 +18,15 @@ export function appHomeFor(
 
   return APP_HOME
 }
+
+/**
+ * Só caminho interno: um "redirect" vindo da URL não pode levar para fora do
+ * app nem para outro host.
+ */
+export function safeRedirect(value: string | null): string | null {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return null
+  }
+
+  return value
+}

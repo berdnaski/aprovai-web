@@ -55,3 +55,18 @@ export async function getInviteByToken(token: string): Promise<InvitePreview> {
 export async function acceptInvite(token: string): Promise<void> {
   await apiClient.post(`/invites/token/${token}/accept`)
 }
+
+export interface PendingInvite {
+  id: string
+  companyName: string
+  role: CompanyMemberRole
+}
+
+export async function listMyPendingInvites(): Promise<PendingInvite[]> {
+  const { data } = await apiClient.get<PendingInvite[]>("/invites/mine")
+  return data
+}
+
+export async function acceptPendingInvite(id: string): Promise<void> {
+  await apiClient.post(`/invites/${id}/accept`)
+}

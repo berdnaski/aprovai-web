@@ -22,11 +22,9 @@ const DATE = new Intl.DateTimeFormat("pt-BR", {
 export function InvitesPanel({
   invites,
   isPending,
-  inviteAction,
 }: {
   invites: Invite[]
   isPending: boolean
-  inviteAction: React.ReactNode
 }) {
   const [revoking, setRevoking] = useState<Invite | null>(null)
 
@@ -56,7 +54,6 @@ export function InvitesPanel({
         icon={EnvelopeSimple}
         title="Nenhum convite enviado"
         description="Convide alguém para a empresa e o convite pendente aparece aqui até ser aceito."
-        action={inviteAction}
       />
     )
   }

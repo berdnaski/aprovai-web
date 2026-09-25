@@ -124,14 +124,18 @@ function Step({ step, last }: { step: TimelineStep; last: boolean }) {
           </span>
 
           {step.isCurrent ? (
-            <span className="rounded bg-primary/10 px-1.5 text-micro font-medium text-primary">
+            <span className="flex items-center gap-1 text-micro font-medium text-primary">
+              <span
+                aria-hidden
+                className="size-1.5 shrink-0 animate-pulse rounded-full bg-primary"
+              />
               decide agora
             </span>
           ) : null}
 
           {step.requiresDualApproval ? (
-            <span className="rounded bg-muted px-1.5 text-micro text-muted-foreground">
-              2 assinaturas
+            <span className="text-micro text-muted-foreground/80">
+              precisa de 2 assinaturas
             </span>
           ) : null}
         </div>

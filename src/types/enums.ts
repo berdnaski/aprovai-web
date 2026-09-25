@@ -50,18 +50,6 @@ export const InviteStatus = {
 
 export type InviteStatus = (typeof InviteStatus)[keyof typeof InviteStatus]
 
-export const ApproverType = {
-  DIRECT_MANAGER: "DIRECT_MANAGER",
-  COST_CENTER_MANAGER: "COST_CENTER_MANAGER",
-} as const
-
-export type ApproverType = (typeof ApproverType)[keyof typeof ApproverType]
-
-export const APPROVER_TYPE_LABELS: Record<ApproverType, string> = {
-  DIRECT_MANAGER: "Líder direto",
-  COST_CENTER_MANAGER: "Gestor do Centro de Custo",
-}
-
 export const BudgetPeriodType = {
   MONTHLY: "MONTHLY",
   QUARTERLY: "QUARTERLY",

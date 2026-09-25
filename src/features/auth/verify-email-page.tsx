@@ -42,7 +42,7 @@ export function VerifyEmailPage() {
     return (
       <AuthLayout
         title="E-mail confirmado"
-        description="Sua conta está pronta. Entre para configurar sua empresa."
+        description="Sua conta está pronta. Entre para continuar."
       >
         <div className="mb-7 flex justify-center">
           <span className="flex size-12 items-center justify-center rounded-full bg-brand-accent/10 text-brand-accent">

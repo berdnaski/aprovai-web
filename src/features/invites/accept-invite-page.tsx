@@ -130,7 +130,11 @@ export function AcceptInvitePage() {
           <div className="flex flex-col gap-2">
             <Button
               size="lg"
-              onClick={() => navigate(`/registrar?redirect=${returnTo}`)}
+              onClick={() =>
+                navigate(
+                  `/registrar?redirect=${returnTo}&email=${encodeURIComponent(invite.email)}`,
+                )
+              }
               className="w-full bg-primary font-medium text-primary-foreground hover:bg-primary-hover"
             >
               Criar conta

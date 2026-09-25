@@ -14,7 +14,7 @@ export interface PurchaseRequest {
   id: string
   number: string
   requesterId: string
-  costCenterId: string
+  costCenterId: string | null
   categoryId: string | null
   supplierId: string | null
   title: string
@@ -26,6 +26,7 @@ export interface PurchaseRequest {
   createdAt: string
   submittedAt: string | null
   finalizedAt: string | null
+  currentApproverName: string | null
 }
 
 export interface RequestItem {
@@ -74,7 +75,7 @@ export async function getPurchaseRequest(id: string): Promise<PurchaseRequest> {
 }
 
 export interface CreateDraftPayload {
-  costCenterId: string
+  costCenterId?: string
   categoryId?: string
   supplierId?: string
   title: string
@@ -380,7 +381,10 @@ export interface ExtractedFields {
   supplierName: string | null
   totalAmountCents: string | null
   categoryName: string | null
+  costCenterName: string | null
+  costCenterSplits: { costCenterName: string; percent: number }[] | null
   paymentTerms: string | null
+  foreignCurrencyNote: string | null
   items: ExtractedItem[]
 }
 

@@ -10,10 +10,8 @@ import {
   useApprovalRules,
   useReplaceApprovalMatrix,
 } from "@/hooks/approval-rules/use-approval-rules"
-import { formatCents } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
-import { ApproverTypeChoice } from "@/features/approval-rules/components/approver-type-choice"
 import { SignatureChoice } from "@/features/approval-rules/components/signature-choice"
 import {
   GLOBAL_SCOPE,
@@ -21,6 +19,8 @@ import {
   insertTierAfter,
   isMatrixEqual,
   MAX_TIERS,
+  boundaryLabel,
+  rangeLabel,
   removeTier,
   seedTiers,
   toRanges,
@@ -81,13 +81,13 @@ export function MatrixStep({
 
   return (
     <StepFrame
-      question="Quem aprova o quê?"
-      support="Quanto maior o valor, mais alto o pedido sobe. Comece pelas faixas sugeridas e ajuste os valores para a realidade da sua empresa."
+      question="A partir de que valor um pedido precisa de duas assinaturas?"
+      support="Como você é Admin Financeiro, já aprova qualquer pedido sozinho — nada trava se pular esta etapa. Ela só serve para pedir uma segunda assinatura a partir de um valor, se a empresa quiser esse controle a mais."
       onBack={onBack}
       onNext={handleNext}
       nextDisabled={problems.length > 0}
       isSubmitting={replace.isPending}
-      hint="Dá para mudar isso depois, e criar exceções por Centro de Custo ou categoria, em Matriz de alçadas."
+      hint="Dá para mudar depois, e criar exceções por Centro de Custo ou categoria, em Matriz de alçadas."
     >
       {isPending ? (
         <ul className="flex flex-col gap-2">
@@ -119,16 +119,12 @@ export function MatrixStep({
 
                   {last ? (
                     <p className="text-body font-semibold tabular-nums text-foreground">
-                      {floor === "0"
-                        ? "Qualquer valor"
-                        : `Acima de ${formatCents(floor)}`}
+                      {rangeLabel(floor, null)}
                     </p>
                   ) : (
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-caption text-muted-foreground">
-                        {floor === "0"
-                          ? "Até"
-                          : `${formatCents(floor)} até`}
+                        {floor === "0" ? "Até" : `${boundaryLabel(floor)} até`}
                       </span>
                       <MoneyInput
                         value={tier.ceilingCents ?? ""}
@@ -160,15 +156,6 @@ export function MatrixStep({
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  <ApproverTypeChoice
-                    value={tier.approverType}
-                    onChange={(approverType) =>
-                      setTiers((current) =>
-                        updateTier(current, index, { approverType }),
-                      )
-                    }
-                    className="flex-1"
-                  />
                   <SignatureChoice
                     value={tier.requiresDualApproval}
                     onChange={(requiresDualApproval) =>

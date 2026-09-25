@@ -3,6 +3,7 @@ import {
   Check,
   ListBullets,
   Package,
+  Stack,
   Tag,
   WarningCircle,
 } from "@phosphor-icons/react"
@@ -24,13 +25,16 @@ function Line({
   value,
   state,
   note,
+  noteTone,
 }: {
   icon: Icon
   label: string
   value: React.ReactNode
   state: MatchState | "plain"
   note?: React.ReactNode
+  noteTone?: "warning" | "muted"
 }) {
+  const resolvedNoteTone = noteTone ?? (state === "unregistered" ? "warning" : "muted")
   if (state === "absent") {
     return null
   }
@@ -52,7 +56,14 @@ function Line({
         <p className="text-micro text-muted-foreground/70">{label}</p>
         <p className="text-caption text-foreground">{value}</p>
         {note ? (
-          <p className="mt-0.5 text-caption leading-relaxed text-warning-strong">
+          <p
+            className={cn(
+              "mt-0.5 text-caption leading-relaxed",
+              resolvedNoteTone === "warning"
+                ? "text-warning-strong"
+                : "text-muted-foreground",
+            )}
+          >
             {note}
           </p>
         ) : null}
@@ -201,6 +212,24 @@ export function ExtractionPanel({
         </div>
       </header>
 
+      {fields.foreignCurrencyNote ? (
+        <p
+          role="alert"
+          className="flex items-start gap-2 border-b border-warning/25 bg-warning/[0.08] px-4 py-2.5 text-caption leading-relaxed text-foreground"
+        >
+          <WarningCircle
+            size={15}
+            className="mt-0.5 shrink-0 text-warning-strong"
+            aria-hidden
+          />
+          <span>
+            O documento traz o valor em outra moeda ({fields.foreignCurrencyNote}
+            ). O AprovAI só opera em reais, então não convertemos sozinhos:
+            confira a cotação e informe o valor em reais no formulário abaixo.
+          </span>
+        </p>
+      ) : null}
+
       <ul className="divide-y divide-border/50">
         <Line
           icon={Package}
@@ -230,6 +259,42 @@ export function ExtractionPanel({
             ) : undefined
           }
         />
+
+        {resolved.costCenterSplit ? (
+          <Line
+            icon={Stack}
+            label="Rateio entre Centros de Custo"
+            state="matched"
+            value={resolved.costCenterSplit
+              .map(
+                (split) =>
+                  `${split.percent % 1 === 0 ? split.percent : split.percent.toFixed(1)}% ${split.costCenter.name}`,
+              )
+              .join(" · ")}
+            note="Aplicado automaticamente no pedido. Confira no rateio, mais abaixo."
+          />
+        ) : (
+          <Line
+            icon={Stack}
+            label="Centro de Custo"
+            state={
+              resolved.costCenter.state === "absent"
+                ? "plain"
+                : resolved.costCenter.state
+            }
+            value={
+              resolved.costCenter.match?.name ?? (fields.costCenterName ?? "Não identificado")
+            }
+            note={
+              resolved.costCenter.state === "unregistered"
+                ? "Nenhum Centro de Custo da empresa bate com esse nome. Escolha na mão abaixo."
+                : resolved.costCenter.state === "absent"
+                  ? "Não deu para identificar pelo documento. Escolha na mão abaixo."
+                  : undefined
+            }
+            noteTone="warning"
+          />
+        )}
 
         <Line
           icon={Tag}
@@ -293,6 +358,7 @@ export function ExtractionPanel({
                 ? "Sem preço no texto. Informe o valor antes de enviar."
                 : undefined
             }
+            noteTone="warning"
           />
         ) : null}
       </ul>

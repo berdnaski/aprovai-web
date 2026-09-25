@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/shared/password-input"
 import { useRegister, useResendVerification } from "@/hooks/auth/use-auth"
 import { useCooldown } from "@/hooks/use-cooldown"
+import { cn } from "@/lib/utils"
 
 import { AuthLayout } from "./auth-layout"
 import { registerSchema, type RegisterFormValues } from "./register-schema"
@@ -27,6 +28,7 @@ const fieldClass =
 export function RegisterPage() {
   const [searchParams] = useSearchParams()
   const redirect = searchParams.get("redirect")
+  const invitedEmail = searchParams.get("email")
 
   const registerMutation = useRegister()
 
@@ -35,7 +37,7 @@ export function RegisterPage() {
     mode: "onBlur",
     defaultValues: {
       name: "",
-      email: "",
+      email: invitedEmail ?? "",
       password: "",
       termsAccepted: undefined,
     },
@@ -99,10 +101,19 @@ export function RegisterPage() {
                     type="email"
                     placeholder="E-mail corporativo"
                     autoComplete="email"
-                    className={fieldClass}
+                    readOnly={Boolean(invitedEmail)}
+                    className={cn(
+                      fieldClass,
+                      invitedEmail && "cursor-not-allowed text-muted-foreground",
+                    )}
                     {...field}
                   />
                 </FormControl>
+                {invitedEmail ? (
+                  <p className="px-1 text-caption text-muted-foreground">
+                    É para este e-mail que o convite foi emitido.
+                  </p>
+                ) : null}
                 <FormMessage className="px-1 text-caption" />
               </FormItem>
             )}

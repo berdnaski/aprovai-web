@@ -90,7 +90,7 @@ export function CreateRecurringContractDialog({
         frequency,
         amountCents,
         startDate: new Date(`${startDate}T12:00:00`).toISOString(),
-        costCenterId,
+        costCenterId: costCenterId ?? undefined,
         chartAccountId: chartAccountId ?? undefined,
       },
       {

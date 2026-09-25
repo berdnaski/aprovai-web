@@ -104,10 +104,10 @@ export function MembersPage() {
         Number(member.approvalLimitCents) > 0),
   )
 
-  const withoutManager = members.filter(
+  const approversWithoutLimit = members.filter(
     (member) =>
-      member.managerId === null &&
-      member.role !== CompanyMemberRole.FINANCE_ADMIN,
+      member.role === CompanyMemberRole.APPROVER &&
+      Number(member.approvalLimitCents) <= 0,
   )
 
   const absent = members.filter((member) => isAbsent(member))
@@ -304,14 +304,14 @@ export function MembersPage() {
           hint="com alçada definida"
         />
         <StatTile
-          label="Sem líder definido"
-          value={withoutManager.length}
+          label="Aprovador sem alçada"
+          value={approversWithoutLimit.length}
           icon={Warning}
-          tone={withoutManager.length > 0 ? "warning" : "neutral"}
+          tone={approversWithoutLimit.length > 0 ? "warning" : "neutral"}
           hint={
-            withoutManager.length > 0
-              ? "pedidos acima do teto travam"
-              : "toda a hierarquia fechada"
+            approversWithoutLimit.length > 0
+              ? "não recebem pedido nenhum"
+              : "todo aprovador tem alçada"
           }
         />
         <StatTile
@@ -424,7 +424,6 @@ export function MembersPage() {
             <InvitesPanel
               invites={invites}
               isPending={invitesQuery.isPending}
-              inviteAction={inviteAction}
             />
           </TabsPanel>
         ) : null}

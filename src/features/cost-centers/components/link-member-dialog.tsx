@@ -20,7 +20,7 @@ import {
   useLinkCostCenterMembers,
 } from "@/hooks/cost-centers/use-cost-centers"
 import { initialsOf } from "@/lib/people"
-import { ROLE_LABELS } from "@/types/enums"
+import { CompanyMemberRole, ROLE_LABELS } from "@/types/enums"
 import { cn } from "@/lib/utils"
 
 
@@ -39,11 +39,17 @@ export function LinkMemberDialog({
   const [query, setQuery] = useState("")
   const [picked, setPicked] = useState<string[]>([])
 
-  const { data: members = [], isPending } = useCompanyMembers()
+  const { data: allMembers = [], isPending } = useCompanyMembers()
   const link = useLinkCostCenterMembers(costCenterId)
 
   const alreadyLinked = new Set(linkedIds)
   const term = query.trim().toLowerCase()
+
+  // Admin Financeiro já vê e aprova em qualquer Centro de Custo: vinculá-lo
+  // aqui não muda nada, só confunde quem está configurando.
+  const members = allMembers.filter(
+    (member) => member.role !== CompanyMemberRole.FINANCE_ADMIN,
+  )
 
   const candidates = members.filter((member) => {
     if (!term) {

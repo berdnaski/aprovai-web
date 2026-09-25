@@ -27,10 +27,7 @@ function ColumnHeader({ readOnly }: { readOnly: boolean }) {
         Faixa de valor
       </span>
 
-      <div className="flex min-w-0 flex-1 gap-3">
-        <span className="min-w-0 flex-1 text-overline text-muted-foreground/70">
-          Quem aprova
-        </span>
+      <div className="flex min-w-0 flex-1 justify-end gap-3">
         <span
           className={cn(
             "shrink-0 text-overline text-muted-foreground/70",
@@ -139,7 +136,7 @@ export function TierLadder({
         <p className="ml-auto text-caption text-muted-foreground">
           {atLimit
             ? `Limite de ${MAX_TIERS} faixas.`
-            : "Da faixa, o pedido sobe pela hierarquia até alguém ter alçada."}
+            : "O pedido vai para a menor alçada que cobre o valor."}
         </p>
       </footer>
     </section>

@@ -5,6 +5,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
 
 import { getApiErrorCode, getApiErrorMessage } from "@/api/client"
+import { safeRedirect } from "@/routes/destinations"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -41,14 +42,19 @@ export function LoginPage() {
 
     loginMutation.mutate(values, {
       onSuccess: (session) => {
-        const redirect = searchParams.get("redirect")
+        const redirect = safeRedirect(searchParams.get("redirect"))
 
-        if (!session.membership) {
-          navigate("/onboarding/empresa", { replace: true })
+        if (redirect) {
+          navigate(redirect, { replace: true })
           return
         }
 
-        navigate(redirect ?? "/", { replace: true })
+        if (!session.membership) {
+          navigate("/entrando", { replace: true })
+          return
+        }
+
+        navigate("/", { replace: true })
       },
       onError: (error) => {
         if (getApiErrorCode(error) === "FORBIDDEN") {

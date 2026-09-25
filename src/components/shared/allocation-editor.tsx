@@ -35,6 +35,19 @@ export function sumPercent(rows: AllocationRow[]): number {
   return rows.reduce((sum, row) => sum + Number(row.percent || "0"), 0)
 }
 
+function redistribute(rows: AllocationRow[]): AllocationRow[] {
+  if (rows.length === 0) {
+    return rows
+  }
+
+  const share = Math.floor((FULL_PERCENT / rows.length) * 100) / 100
+  const rounded = rows.map(() => share)
+  const leftover = FULL_PERCENT - share * rows.length
+  rounded[rounded.length - 1] += Math.round(leftover * 100) / 100
+
+  return rows.map((row, index) => ({ ...row, percent: String(rounded[index]) }))
+}
+
 export function AllocationEditor({
   rows,
   onChange,
@@ -77,19 +90,20 @@ export function AllocationEditor({
   }
 
   function remove(index: number) {
-    onChange(rows.filter((_, i) => i !== index))
+    onChange(redistribute(rows.filter((_, i) => i !== index)))
   }
 
   function add() {
-    const remaining = Math.max(FULL_PERCENT - total, 0)
-    onChange([
-      ...rows,
-      {
-        costCenterId: costCenters[0]?.id ?? "",
-        chartAccountId: null,
-        percent: remaining > 0 ? String(remaining) : "0",
-      },
-    ])
+    onChange(
+      redistribute([
+        ...rows,
+        {
+          costCenterId: costCenters[0]?.id ?? "",
+          chartAccountId: null,
+          percent: "0",
+        },
+      ]),
+    )
   }
 
   return (

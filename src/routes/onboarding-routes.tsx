@@ -1,12 +1,14 @@
 import { Route } from "react-router-dom"
 
 import { CreateCompanyPage } from "@/features/onboarding/create-company-page"
+import { PendingInvitesPage } from "@/features/invites/pending-invites-page"
 import { OnboardingPage } from "@/features/onboarding/onboarding-page"
 import { RequireNoCompany } from "@/routes/guards"
 
 export function createCompanyRoutes() {
   return (
     <Route element={<RequireNoCompany />}>
+      <Route path="/entrando" element={<PendingInvitesPage />} />
       <Route path="/onboarding/empresa" element={<CreateCompanyPage />} />
     </Route>
   )

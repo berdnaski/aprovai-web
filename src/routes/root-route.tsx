@@ -19,9 +19,14 @@ export function RootRoute() {
     )
   }
 
-  return isAuthenticated ? (
-    <Navigate to={appHomeFor(membership?.role)} replace />
-  ) : (
-    <LandingPage />
+  if (!isAuthenticated) {
+    return <LandingPage />
+  }
+
+  return (
+    <Navigate
+      to={membership ? appHomeFor(membership.role) : "/entrando"}
+      replace
+    />
   )
 }

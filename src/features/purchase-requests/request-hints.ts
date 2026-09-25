@@ -55,10 +55,10 @@ const CHECKS: {
   },
   {
     key: "payment",
-    label: "Pagamento",
-    snippet: "Pagamento: ",
+    label: "Condição com o fornecedor",
+    snippet: "Condição negociada: ",
     pattern:
-      /\b(boleto|pix|cart[aã]o|parcel\w*|faturad\w*|pagamento|[aà]\s+vista|\d+\s*dias)\b/i,
+      /\b(parcelad\w*|[aà]\s+vista|\d+\s*dias\s+(de\s+)?prazo|prazo\s+de\s+\d+\s*dias)\b/i,
   },
 ]
 
