@@ -31,8 +31,34 @@ const ROLES: CompanyMemberRole[] = [
   CompanyMemberRole.ACCOUNTANT,
 ]
 
-export function InviteMemberDialog({ trigger }: { trigger: React.ReactElement }) {
-  const [open, setOpen] = useState(false)
+export function InviteMemberDialog({
+  trigger,
+  open: controlledOpen,
+  onOpenChange,
+  onInvited,
+  title = "Convidar para a empresa",
+  description = "A pessoa recebe um link por e-mail e escolhe a própria senha. O perfil abaixo vale assim que ela aceitar.",
+  cancelLabel = "Cancelar",
+}: {
+  trigger?: React.ReactElement
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  onInvited?: () => void
+  title?: string
+  description?: string
+  cancelLabel?: string
+}) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : uncontrolledOpen
+
+  function setOpen(next: boolean) {
+    if (!isControlled) {
+      setUncontrolledOpen(next)
+    }
+    onOpenChange?.(next)
+  }
   const [email, setEmail] = useState("")
   const [role, setRole] = useState<CompanyMemberRole>(
     CompanyMemberRole.REQUESTER,
@@ -69,6 +95,7 @@ export function InviteMemberDialog({ trigger }: { trigger: React.ReactElement })
       {
         onSuccess: () => {
           toast.success(`Convite enviado para ${email.trim()}.`)
+          onInvited?.()
           setOpen(false)
         },
         onError: (error) => toast.error(getApiErrorMessage(error)),
@@ -86,17 +113,14 @@ export function InviteMemberDialog({ trigger }: { trigger: React.ReactElement })
         }
       }}
     >
-      <DialogTrigger render={trigger} />
+      {trigger ? <DialogTrigger render={trigger} /> : null}
 
       <DialogContent className="sm:max-w-lg">
         <form onSubmit={onSubmit}>
           <DialogHeader>
-            <DialogTitle className="text-heading">
-              Convidar para a empresa
-            </DialogTitle>
+            <DialogTitle className="text-heading">{title}</DialogTitle>
             <DialogDescription className="text-caption leading-relaxed">
-              A pessoa recebe um link por e-mail e escolhe a própria senha. O
-              perfil abaixo vale assim que ela aceitar.
+              {description}
             </DialogDescription>
           </DialogHeader>
 
@@ -202,7 +226,7 @@ export function InviteMemberDialog({ trigger }: { trigger: React.ReactElement })
                 />
               }
             >
-              Cancelar
+              {cancelLabel}
             </DialogClose>
             <Button
               type="submit"

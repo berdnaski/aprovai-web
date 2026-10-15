@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation, useSearchParams } from "react-router-dom"
 
 import { useMyCompany } from "@/hooks/companies/use-companies"
+import { CompanyMemberRole } from "@/types/enums"
 import { appHomeFor, safeRedirect } from "@/routes/destinations"
 import { useSession } from "@/hooks/auth/use-session"
 
@@ -58,13 +59,26 @@ export function RequireNoCompany() {
 
 export function RequireOnboarding() {
   const companyQuery = useMyCompany()
+  const { membership } = useSession()
 
   if (companyQuery.isLoading) {
     return <FullScreenLoader />
   }
 
   if (companyQuery.data && !companyQuery.data.onboardingCompletedAt) {
-    return <Navigate to="/onboarding" replace />
+    // Só quem administra o financeiro consegue concluir a configuração.
+    // Quem entrou por convite espera, em vez de cair num assistente que
+    // não tem permissão para terminar.
+    return (
+      <Navigate
+        to={
+          membership?.role === CompanyMemberRole.FINANCE_ADMIN
+            ? "/onboarding"
+            : "/empresa-em-configuracao"
+        }
+        replace
+      />
+    )
   }
 
   return <Outlet />

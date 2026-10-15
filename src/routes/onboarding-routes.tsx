@@ -1,5 +1,6 @@
 import { Route } from "react-router-dom"
 
+import { CompanySetupPendingPage } from "@/features/onboarding/company-setup-pending-page"
 import { CreateCompanyPage } from "@/features/onboarding/create-company-page"
 import { PendingInvitesPage } from "@/features/invites/pending-invites-page"
 import { OnboardingPage } from "@/features/onboarding/onboarding-page"
@@ -15,5 +16,13 @@ export function createCompanyRoutes() {
 }
 
 export function onboardingRoutes() {
-  return <Route path="/onboarding" element={<OnboardingPage />} />
+  return (
+    <>
+      <Route path="/onboarding" element={<OnboardingPage />} />
+      <Route
+        path="/empresa-em-configuracao"
+        element={<CompanySetupPendingPage />}
+      />
+    </>
+  )
 }

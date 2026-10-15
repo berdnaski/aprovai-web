@@ -4,7 +4,6 @@ import { Link, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/api/client"
-import { ApprovalMark } from "@/components/shared/approval-mark"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -15,12 +14,12 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/shared/password-input"
-import { useRegister, useResendVerification } from "@/hooks/auth/use-auth"
-import { useCooldown } from "@/hooks/use-cooldown"
+import { useRegister } from "@/hooks/auth/use-auth"
 import { cn } from "@/lib/utils"
 
 import { AuthLayout } from "./auth-layout"
 import { registerSchema, type RegisterFormValues } from "./register-schema"
+import { VerificationSent } from "./verification-sent"
 
 const fieldClass =
   "h-12 rounded-xl border-border/70 bg-muted/50 px-4 text-body md:text-body placeholder:text-muted-foreground/70 focus-visible:bg-card"
@@ -44,7 +43,16 @@ export function RegisterPage() {
   })
 
   if (registerMutation.isSuccess) {
-    return <VerificationSent email={registerMutation.data.email} />
+    return (
+      <VerificationSent
+        email={registerMutation.data.email}
+        description="Falta abrir o link que acabamos de enviar."
+        back={{
+          label: "Digitei o e-mail errado",
+          onClick: () => registerMutation.reset(),
+        }}
+      />
+    )
   }
 
   function onSubmit(values: RegisterFormValues) {
@@ -184,66 +192,6 @@ export function RegisterPage() {
           />
         </form>
       </Form>
-    </AuthLayout>
-  )
-}
-
-function VerificationSent({ email }: { email: string }) {
-  const resendMutation = useResendVerification()
-  const cooldown = useCooldown(60)
-
-  function handleResend() {
-    resendMutation.mutate(email, {
-      onSuccess: () => {
-        cooldown.start()
-        toast.success("Link reenviado. Confira sua caixa de entrada.")
-      },
-      onError: (error) => toast.error(getApiErrorMessage(error)),
-    })
-  }
-
-  return (
-    <AuthLayout
-      title="Confirme seu e-mail"
-      description={
-        <>
-          Enviamos um link de confirmação para{" "}
-          <span className="font-medium text-foreground">{email}</span>. Abra o
-          e-mail e clique no link para ativar sua conta.
-        </>
-      }
-    >
-      <div className="mb-7 flex justify-center">
-        <span className="flex size-12 items-center justify-center rounded-full bg-brand-accent/10 text-brand-accent">
-          <ApprovalMark className="size-6" />
-        </span>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleResend}
-          disabled={cooldown.isActive || resendMutation.isPending}
-          className="h-12 w-full rounded-xl font-semibold"
-        >
-          {cooldown.isActive
-            ? `Reenviar em ${cooldown.remaining}s`
-            : resendMutation.isPending
-              ? "Enviando..."
-              : "Reenviar e-mail"}
-        </Button>
-
-        <p className="text-center text-label font-normal text-muted-foreground">
-          Já confirmou?{" "}
-          <Link
-            to="/entrar"
-            className="font-semibold text-foreground hover:text-primary"
-          >
-            Entrar
-          </Link>
-        </p>
-      </div>
     </AuthLayout>
   )
 }

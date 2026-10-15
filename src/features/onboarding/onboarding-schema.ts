@@ -1,7 +1,6 @@
 import { z } from "zod"
 
 import { isValidCnpj, onlyDigits } from "@/lib/cnpj"
-import { CompanyMemberRole } from "@/types/enums"
 
 export const companySchema = z.object({
   cnpj: z
@@ -32,18 +31,6 @@ export const costCenterSchema = z.object({
 })
 
 export type CostCenterFormValues = z.infer<typeof costCenterSchema>
-
-export const inviteSchema = z.object({
-  email: z.email("Informe um e-mail válido."),
-  role: z.enum([
-    CompanyMemberRole.REQUESTER,
-    CompanyMemberRole.APPROVER,
-    CompanyMemberRole.FINANCE_ADMIN,
-  ]),
-  defaultCostCenterId: z.string().optional(),
-})
-
-export type InviteFormValues = z.infer<typeof inviteSchema>
 
 export const COMPANY_SIZES = [
   "1-10",

@@ -16,8 +16,9 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/shared/password-input"
-import { useLogin, useResendVerification } from "@/hooks/auth/use-auth"
+import { useLogin } from "@/hooks/auth/use-auth"
 import { AuthLayout } from "@/features/auth/auth-layout"
+import { VerificationSent } from "@/features/auth/verification-sent"
 
 import { loginSchema, type LoginFormValues } from "./login-schema"
 
@@ -28,7 +29,6 @@ export function LoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const loginMutation = useLogin()
-  const resendMutation = useResendVerification()
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null)
 
   const form = useForm<LoginFormValues>({
@@ -36,6 +36,19 @@ export function LoginPage() {
     mode: "onBlur",
     defaultValues: { email: "", password: "" },
   })
+
+  if (unverifiedEmail) {
+    return (
+      <VerificationSent
+        email={unverifiedEmail}
+        description="Sua conta existe, mas o e-mail ainda não foi confirmado."
+        back={{
+          label: "Já confirmou? Voltar e entrar",
+          onClick: () => setUnverifiedEmail(null),
+        }}
+      />
+    )
+  }
 
   function onSubmit(values: LoginFormValues) {
     setUnverifiedEmail(null)
@@ -59,6 +72,7 @@ export function LoginPage() {
       onError: (error) => {
         if (getApiErrorCode(error) === "FORBIDDEN") {
           setUnverifiedEmail(values.email)
+          return
         }
 
         toast.error(getApiErrorMessage(error))
@@ -81,31 +95,6 @@ export function LoginPage() {
         </>
       }
     >
-      {unverifiedEmail ? (
-        <div className="mb-5 rounded-xl border border-warning/30 bg-warning/[0.06] p-4">
-          <p className="text-label font-normal leading-relaxed text-foreground">
-            Confirme seu e-mail antes de entrar. Enviamos um link para{" "}
-            <span className="font-medium">{unverifiedEmail}</span>.
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={resendMutation.isPending}
-            onClick={() =>
-              resendMutation.mutate(unverifiedEmail, {
-                onSuccess: () =>
-                  toast.success("Novo link enviado. Confira sua caixa de entrada."),
-                onError: (error) => toast.error(getApiErrorMessage(error)),
-              })
-            }
-            className="mt-3 h-9 bg-card font-medium"
-          >
-            {resendMutation.isPending ? "Enviando..." : "Reenviar e-mail"}
-          </Button>
-        </div>
-      ) : null}
-
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}

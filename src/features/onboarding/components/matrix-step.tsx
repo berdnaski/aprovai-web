@@ -35,9 +35,13 @@ import { StepFrame } from "./step-frame"
 export function MatrixStep({
   onBack,
   onNext,
+  nextLabel,
+  isSubmitting = false,
 }: {
   onBack: () => void
   onNext: () => void
+  nextLabel?: string
+  isSubmitting?: boolean
 }) {
   const { data: rules, isPending } = useApprovalRules()
   const replace = useReplaceApprovalMatrix()
@@ -85,8 +89,9 @@ export function MatrixStep({
       support="Como você é Admin Financeiro, já aprova qualquer pedido sozinho — nada trava se pular esta etapa. Ela só serve para pedir uma segunda assinatura a partir de um valor, se a empresa quiser esse controle a mais."
       onBack={onBack}
       onNext={handleNext}
+      nextLabel={nextLabel}
       nextDisabled={problems.length > 0}
-      isSubmitting={replace.isPending}
+      isSubmitting={replace.isPending || isSubmitting}
       hint="Dá para mudar depois, e criar exceções por Centro de Custo ou categoria, em Matriz de alçadas."
     >
       {isPending ? (

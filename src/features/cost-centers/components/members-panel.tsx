@@ -339,14 +339,13 @@ export function MembersPanel({
         />
 
         {linked.length === 0 ? (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border px-4 py-3">
-            <p className="min-w-0 flex-1 text-caption text-muted-foreground">
+          <div className="border-t border-border px-4 py-3">
+            <p className="text-caption text-muted-foreground">
               Ninguém além do gestor abre pedidos neste centro.
               {canManage
                 ? " Vincule as pessoas do time para liberar o resto."
                 : ""}
             </p>
-            {canManage ? linkAction : null}
           </div>
         ) : null}
 
